@@ -1,4 +1,9 @@
 import type { Metadata } from "next";
+
+import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { fontDisplay, fontSans } from "@/lib/fonts";
+
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -11,8 +16,11 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en-GB">
-      <body>{children}</body>
+    <html lang="en-GB" className={`${fontDisplay.variable} ${fontSans.variable}`}>
+      <body>
+        <TooltipProvider delayDuration={150}>{children}</TooltipProvider>
+        <Toaster />
+      </body>
     </html>
   );
 }

@@ -1,1 +1,287 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+
+/*
+ * Design tokens, from docs/reference/design-system/tokens.json. One light theme.
+ * Change values there first, then here. Never use a raw colour outside this block.
+ */
+:root {
+  color-scheme: light;
+
+  /* Primary */
+  --primary: oklch(19% 0.008 60);
+  --primary-hover: oklch(14% 0.006 60);
+  --primary-content: oklch(97.7% 0.006 80);
+
+  /* Secondary */
+  --secondary: oklch(47% 0.06 60);
+  --secondary-border: oklch(55% 0.06 60);
+  --secondary-content: var(--primary-content);
+
+  /* Accent */
+  --accent: oklch(78% 0.055 78);
+  --accent-subtle: oklch(78% 0.055 78 / 0.22);
+  --accent-content: oklch(19% 0.008 60);
+
+  /* Status */
+  --status-success: oklch(50% 0.07 150);
+  --status-success-bg: oklch(94% 0.025 150);
+  --status-warning: oklch(52% 0.09 70);
+  --status-warning-bg: oklch(94% 0.035 80);
+  --status-danger: oklch(50% 0.15 27);
+  --status-danger-bg: oklch(95% 0.025 27);
+  --status-info: oklch(48% 0.03 240);
+  --status-info-bg: oklch(94% 0.01 240);
+
+  /* Content */
+  --content: oklch(19% 0.008 60);
+  --content-muted: oklch(45% 0.012 60);
+  --content-inverse: oklch(97.7% 0.006 80);
+
+  /* Surface */
+  --surface: oklch(97.7% 0.006 80);
+  --surface-raised: oklch(98.5% 0.005 80);
+  --surface-sunken: oklch(94% 0.006 75);
+  --surface-selected: oklch(93% 0.008 75);
+  --surface-inverse: oklch(14% 0.006 60);
+  --surface-border: oklch(88% 0.008 75);
+  --surface-overlay: oklch(14% 0.006 60 / 0.38);
+
+  /* shadcn/ui variables, mapped to tokens (design-system/README.md).
+     `--primary`, `--secondary` and `--accent` keep their token meaning: in the
+     README `--secondary` maps to surface-selected, but the token of that name
+     wins and shadcn's role is `--secondary-role`. See docs/CONTEXT.md, Findings. */
+  --background: var(--surface);
+  --foreground: var(--content);
+  --card: var(--surface-raised);
+  --card-foreground: var(--content);
+  --popover: var(--surface-raised);
+  --popover-foreground: var(--content);
+  --muted: var(--surface-sunken);
+  --muted-foreground: var(--content-muted);
+  --primary-foreground: var(--primary-content);
+  --secondary-role: var(--surface-selected);
+  --secondary-foreground: var(--content);
+  --accent-foreground: var(--accent-content);
+  --border: var(--surface-border);
+  --input: var(--surface-border);
+  --ring: var(--secondary-border);
+  --destructive: var(--status-danger);
+}
+
+@theme inline {
+  /* Tokens only: the default Tailwind palette, radii and shadows are removed so
+     a stray `bg-red-500`, `rounded-lg` or `shadow-md` generates nothing. */
+  --color-*: initial;
+  --radius-*: initial;
+  --shadow-*: initial;
+  --inset-shadow-*: initial;
+  --drop-shadow-*: initial;
+
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-content: var(--primary-content);
+  --color-secondary: var(--secondary);
+  --color-secondary-border: var(--secondary-border);
+  --color-secondary-content: var(--secondary-content);
+  --color-accent: var(--accent);
+  --color-accent-subtle: var(--accent-subtle);
+  --color-accent-content: var(--accent-content);
+  --color-status-success: var(--status-success);
+  --color-status-success-bg: var(--status-success-bg);
+  --color-status-warning: var(--status-warning);
+  --color-status-warning-bg: var(--status-warning-bg);
+  --color-status-danger: var(--status-danger);
+  --color-status-danger-bg: var(--status-danger-bg);
+  --color-status-info: var(--status-info);
+  --color-status-info-bg: var(--status-info-bg);
+  --color-content: var(--content);
+  --color-content-muted: var(--content-muted);
+  --color-content-inverse: var(--content-inverse);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-surface-selected: var(--surface-selected);
+  --color-surface-inverse: var(--surface-inverse);
+  --color-surface-border: var(--surface-border);
+  --color-surface-overlay: var(--surface-overlay);
+
+  /* shadcn names, for components added later by the CLI. */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-destructive: var(--destructive);
+
+  --font-display: var(--font-cormorant), Georgia, "Times New Roman", serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --radius-pill: 2px;
+  --radius-card: 4px;
+  --radius-round: 50%;
+
+  --spacing-control: 44px;
+  --spacing-control-sm: 36px;
+  --spacing-pill: 22px;
+  --spacing-nav-row: 40px;
+  --spacing-table-row: 52px;
+  --spacing-topbar: 64px;
+  --spacing-sidebar: 264px;
+  --spacing-icon: 18px;
+  --container-content: 1200px;
+
+  /* The shell's only breakpoint from the design system: sidebar to sheet at 900px. */
+  --breakpoint-shell: 900px;
+  --breakpoint-phone: 560px;
+}
+
+/* Type styles, from tokens.json. Colour stays with the call site. */
+@utility type-hero-title {
+  font-family: var(--font-display);
+  font-size: 52px;
+  line-height: 56px;
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+@utility type-page-title {
+  font-family: var(--font-display);
+  font-size: 40px;
+  line-height: 44px;
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+  @media (max-width: 559.98px) {
+    font-size: 32px;
+    line-height: 36px;
+  }
+}
+@utility type-section-title {
+  font-family: var(--font-display);
+  font-size: 28px;
+  line-height: 34px;
+  font-weight: 300;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+@utility type-card-display {
+  font-family: var(--font-display);
+  font-size: 24px;
+  line-height: 28px;
+  font-weight: 300;
+  letter-spacing: -0.01em;
+}
+@utility type-card-title {
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
+}
+@utility type-body {
+  font-size: 15px;
+  line-height: 24px;
+  font-weight: 400;
+}
+@utility type-small {
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 400;
+}
+@utility type-table {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+}
+@utility type-value {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+@utility type-big-number {
+  font-size: 32px;
+  line-height: 36px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+@utility type-eyebrow {
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+@utility type-button-label {
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+@utility type-pill-label {
+  font-size: 10.5px;
+  line-height: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+@layer base {
+  *,
+  ::after,
+  ::before {
+    border-color: var(--surface-border);
+  }
+
+  html,
+  body {
+    min-height: 100%;
+  }
+
+  body {
+    background: var(--surface);
+    color: var(--content);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 24px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* The one focus ring: 2px secondary-border, 2px offset, on everything. */
+  :focus-visible {
+    outline: 2px solid var(--secondary-border);
+    outline-offset: 2px;
+  }
+
+  /* Icons: lucide outline at 1.5 stroke, 18px unless a size utility says otherwise. */
+  .lucide {
+    stroke-width: 1.5;
+    width: var(--spacing-icon);
+    height: var(--spacing-icon);
+  }
+
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::after,
+    ::before {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
