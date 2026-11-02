@@ -1,6 +1,6 @@
 # Clinic Hub: technical context
 
-Owned by the `context-keeper` subagent. The code is the truth; this document describes it. Last updated [2026-11].
+Owned by the `context-keeper` subagent. The code is the truth; this document describes it. Last updated [2026-11]. Latest change: Vercel Analytics and Speed Insights, and the sign-in photograph (both uncommitted).
 
 ## 1. Product summary
 
@@ -45,6 +45,7 @@ Checked against `package.json` and `pnpm-lock.yaml` [2026-11].
 | `tw-animate-css` | 1.4.0 |
 | `@supabase/ssr` | 0.12.7 |
 | `@supabase/supabase-js` | 2.118.0 |
+| `@vercel/analytics`, `@vercel/speed-insights` | 2.0.1, 2.0.0 (uncommitted) [2026-11] |
 | Supabase CLI | 2.122.0 |
 | Resend | 6.37.x |
 | Zod | 4.6.7 |
@@ -304,7 +305,7 @@ Create a new one with `supabase migration new <name> </dev/null`: the command ha
 
 | Path | State |
 |---|---|
-| `app/layout.tsx` | Built. `en-GB`, fonts, `TooltipProvider`, `Toaster`, `noindex`, favicon and Apple icon from `public/brand/`. Calls `await connection()`, so every page renders per request and can carry its own CSP nonce [2026-11, uncommitted] |
+| `app/layout.tsx` | Built. `en-GB`, fonts, `TooltipProvider`, `Toaster`, `VercelInsights` (uncommitted), `noindex`, favicon and Apple icon from `public/brand/`. Calls `await connection()`, so every page renders per request and can carry its own CSP nonce [2026-11, uncommitted] |
 | `app/globals.css` | Built. Every design token and type utility |
 | `app/dev/ui/` | Built. Component gallery |
 | `app/fonts/` | Cormorant Garamond and Inter, self-hosted woff2 |
@@ -313,6 +314,7 @@ Create a new one with `supabase migration new <name> </dev/null`: the command ha
 | `app/portal/` | Built [2026-11]. `layout.tsx` (routing guard, shell), `page.tsx` (home), `loading.tsx`, `error.tsx` |
 | `app/clinic/` | Built [2026-11]. Same four files; home reads `?location=` |
 | `components/ui/` | Built. Restyled shadcn primitives and design-system components (alert-bar, status-pill, stat-card, sparkline, page-header, empty-state, demo-banner, wordmark and others; `order-steps` added in phase 6) |
+| `components/vercel-insights.tsx` | Client Component, uncommitted [2026-11]. Mounts Vercel Web Analytics and Speed Insights. Both `beforeSend` hooks cut every URL to origin plus path, dropping query strings and fragments (an emailed link's `token_hash`, `?location=`). Cookie-free; the scripts load from the app's own origin (`/_vercel/insights/script.js`, `/_vercel/speed-insights/script.js`) and only run on Vercel, so the CSP (`script-src 'self'` with nonce and `strict-dynamic`, `connect-src 'self'`) is unchanged. Tracked in `docs/SECURITY.md` S-63 |
 | `components/auth/` | Built. `form-parts`, `password-input`, for the sign-in forms |
 | `components/shell/` | Built [2026-11]: `session-guard` (uncommitted), `app-shell`, `sidebar-content`, `nav` (unbuilt screens disabled via `coming-soon`), `mobile-nav`, `location-switcher`, `notifications-bell`, `user-menu` |
 | `lib/supabase/` | `server.ts`, `proxy.ts` (session refresh and session limits), `session-cookies.ts` (limits, cookie options, HMAC signing), `admin.ts` (service role, server only). `client.ts` was deleted [2026-11]: **there is no browser Supabase client**, and every Supabase call runs on the server |
@@ -327,6 +329,7 @@ Create a new one with `supabase migration new <name> </dev/null`: the command ha
 | `proxy.ts` | Calls `updateSession`: refreshes the session with `getClaims()`, ends a session past its limits, sets the Content-Security-Policy and redirects signed-out visitors away from `/portal` and `/clinic` to `/login`. Row-level security is the real authorisation |
 | `next.config.ts` | Static security headers (HSTS, nosniff, referrer policy, frame denial, permissions policy). The Content-Security-Policy was removed from here [2026-11, uncommitted]: it is set per request in `lib/supabase/proxy.ts` |
 | `supabase/` | `config.toml`, `migrations/` (16), `tests/` (4 pgTAP files, 188 tests), `seed.sql`, `templates/recovery.html`. See section 4 |
+| `public/pics/` | `about-clinic-door.png`, the sign-in panel photograph, uncommitted [2026-11]. The source is 7.5 MB; `next/image` serves it as WebP, about 400 KB at 1920 px. Compress the source (`docs/DESIGN-SYSTEM.md`) |
 | `public/brand/` | `schoemanClinic-logo.png` and `favicon.png`. `app/favicon.ico` was removed [2026-11] |
 | `.claude/launch.json` | Dev server configurations: `web` (port 3000, reads `.env.local`, so the hosted project) and `web-local` (port 3130, takes its URL and keys from `supabase status`, so the local stack, and sets a fixed local `SESSION_COOKIE_SECRET`) [2026-11] |
 | `docs/reference/` | Schema draft, design system, prototype. Read only |
@@ -449,7 +452,7 @@ Messaging, reminders, tasks, calendar, invoices and marketing (GoHighLevel); con
 2. [2026-11] The shadcn CLI wrote `import { cn } from "cn"` and installed an unrelated npm package `cn`. Fixed to `@/lib/utils`; package removed.
 3. [2026-11] The design-system README maps shadcn `--secondary` to surface-selected, but the tokens define `secondary` as bronze and the brief wants utilities named after tokens. Decision: the token wins; shadcn's role is `--secondary-role`.
 4. [2026-11] The prototype sign-in uses a magic link; the brief says email and password. Brief wins for security and process.
-5. [2026-11] The prototype sign-in panel uses a gradient; the design system and brief forbid gradients. Flat surface-inverse used.
+5. [2026-11] The prototype sign-in panel uses a gradient; the design system and brief forbid gradients. Photography behind a flat `surface-inverse` overlay is used instead (the Imagery rule in the reference README).
 6. [2026-11] The design-system README's generated index calls FilterChips a "square toggle", while the component README and brief say a rounded switch. Rounded switch used.
 7. [2026-11] The Button README says six variants; the brief adds `link`, making seven.
 8. [2026-11] The schema draft calls for a `staff_directory` view; the brief requires a `get_staff_directory()` function. Brief wins (security).
@@ -474,3 +477,4 @@ Messaging, reminders, tasks, calendar, invoices and marketing (GoHighLevel); con
 27. [2026-11] Resolved: `docs/PRD.md` and `docs/DESIGN-SYSTEM.md` no longer call Phase 6 uncommitted.
 28. [2026-11] `SESSION_COOKIE_SECRET` is a new required variable. Until it is set in Vercel and `.env.local`, every signed-in request fails closed. A hosted deploy of the uncommitted work without it would lock everyone out.
 29. [2026-11] `docs/SECURITY.md` is being edited by another agent in this pass; whether S-07, S-10, S-11, S-12, S-13, S-31 and S-32 are marked as the owner decided is for `security-reviewer`. This document states the decisions as given.
+30. [2026-11] The two Vercel scripts are new third-party-operated code on a clinical portal. `docs/SECURITY.md` S-63 tracks the data processing terms, PECR and the privacy notice, which are for the owner. `public/pics/about-clinic-door.png` is 7.5 MB in the repository; compress it.

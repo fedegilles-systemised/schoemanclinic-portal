@@ -3,6 +3,7 @@ import { connection } from "next/server";
 
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { VercelInsights } from "@/components/vercel-insights";
 import { fontDisplay, fontSans } from "@/lib/fonts";
 
 import "./globals.css";
@@ -25,6 +26,7 @@ export default async function RootLayout({
       <body>
         <TooltipProvider delayDuration={150}>{children}</TooltipProvider>
         <Toaster />
+        <VercelInsights />
       </body>
     </html>
   );
