@@ -813,7 +813,10 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "get_my_patient_record":
+            "auth_throttle_hit":
+{ Args: { "_keys": (string)[],"_limits": (number)[],"_window_seconds": number }; Returns: boolean
+                           },
+"get_my_patient_record":
 { Args: Record<PropertyKey, never>; Returns: {
               "can_act": boolean,"clinic_ref": string,"contact_email": string,"contact_phone": string,"country": string,"date_of_birth": string,"first_name": string,"id": string,"is_self": boolean,"last_name": string,"primary_clinician_id": string,"sex": string
             }[]

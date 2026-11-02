@@ -4,6 +4,8 @@ Owned by the `security-reviewer` subagent. Clinic Hub holds special-category hea
 
 ## Changelog
 
+- [2026-11] Fourth review, re-test of the S-46 and S-47 fixes and the S-31 extras in the working tree (`lib/supabase/proxy.ts`, `lib/supabase/session-cookies.ts`, `app/auth/confirm/route.ts`, `lib/auth/actions.ts`, `app/(auth)/forgot-password/forgot-password-form.tsx`, `lib/auth/throttle.ts`, the migration comment). S-46 and S-47 resolved. S-31 narrowed and still OPEN: a missing or future `ch_last_seen` and `/clinic` with a patient kind cookie are now refused, but an edited plausible value still works. S-54 and S-55 narrowed and still OPEN. No finding added. Counts: 56 findings, 44 open, 12 resolved.
+- [2026-11] Third review, uncommitted session and throttle work: `20261102143000_auth_throttle.sql`, `02_auth_throttle.test.sql`, `lib/auth/throttle.ts`, `lib/auth/actions.ts`, `lib/supabase/session-cookies.ts`, `lib/supabase/proxy.ts`, `lib/supabase/server.ts`, `app/(auth)/login/page.tsx`, and the removal of `lib/supabase/client.ts`. S-33 resolved. S-31 and S-32 partly fixed and still OPEN. Eleven findings added (S-46 to S-56). S-13 annotated with the owner's report. Owner decisions added to the checklist. Corrected the stale statement that the S-09 fix was uncommitted: it is in `a76efe0`.
 - [2026-11] S-09 re-tested after `private.storage_object_is_mine` replaced the earlier check: RESOLVED, with S-45 added for what remains. Only S-09 was re-attacked after the database reset; `pnpm db:test` was rerun.
 - [2026-11] Second review, Phase 6: re-tested every finding against the migrations in commit `2128195` and later, and reviewed the auth code, proxy, portal, clinic, data layer and shell, including uncommitted Phase 6 files. Eight findings resolved, fourteen added (S-31 to S-44).
 - [2026-11] First review, Phase 4: database (`supabase/migrations/`, `supabase/tests/`, `supabase/seed.sql`, `supabase/config.toml`, `supabase/templates/`), plus `next.config.ts`, `lib/env.ts`, `lib/supabase/`, `lib/email/`. Reviewed the uncommitted migrations staged on `feat/foundation` at commit `2ea4d31`.
@@ -13,19 +15,21 @@ Owned by the `security-reviewer` subagent. Clinic Hub holds special-category hea
 No CRITICAL finding, and no HIGH finding is open. A patient or guardian could not reach another patient's data or an unreleased result through PostgREST, RPC, embedded joins or Storage in any attack tried. `anon` reads nothing. Nobody can write their own role.
 
 - **All five HIGH findings are resolved and held under attack:** the lab PDF gate (S-01), forged guardian links (S-02), client-made invitations (S-03), offboarding (S-04) and server updates of `staff_profiles` (S-05). Each fix leaves a smaller follow-on, recorded as its own LOW finding: S-38, S-42 and S-43.
-- **One listed fix is incomplete and stays OPEN.** S-18: `source` is forced, but `title` and `shared_at` are still the patient's to set. S-07 and S-16 are also only partly fixed, as expected. S-09 is resolved after a second fix, which is not yet committed.
-- **The screens are sound on authorisation.** They read only through the user's session, no service-role code is reachable from a Client Component, no secret is in the client bundle, `/auth/confirm` cannot redirect off-site, and cross-origin server actions are refused. A doctor who is also a patient sees only released results on `/portal` (one gap for letters: S-41).
-- **The two new MEDIUM findings are about sessions and sign-in:** sessions never expire and their cookies are long-lived and readable by script (S-31), and rate limits count the app server, not the attacker (S-32).
-- **Fix before building** the invitation, release and import server code: S-07, S-43 and S-45 set what that code must do.
+- **The two MEDIUM findings from the third review are fixed in the working tree and held under attack.** A junk or malformed `/auth/confirm` link no longer touches the idle clock, and only a link that verifies starts a new session (S-46). Password reset gives the same "sent" reply for every Supabase 429, which is logged with no address, and only the app's own throttle says "Too many attempts" (S-47). Both are uncommitted, as is the rest of the session and throttle work.
+- **The session work is a real improvement, and is not yet a server-side limit.** Auth cookies are `HttpOnly`, last 7 days instead of 400, and the proxy ends sessions at the limits and revokes the refresh token. But the limits are enforced only by the app, on the next request, from unsigned cookies. Deleting `ch_last_seen`, or setting it to a future or non-numeric value, now ends the session, and `/clinic` always uses staff limits. An edited plausible value, or a kind cookie edited on `/portal`, still works for someone with devtools. A copied refresh token kept working past the limit until the app itself saw that session. A page already open stays readable (S-48). S-31 stays OPEN, partly fixed.
+- **The throttle works but does not cover the Auth API.** Through the app, limits held, and the correct password was refused once a limit was reached. Direct calls to `/auth/v1/token` with the public key returned 200 at that same moment, and rely on Supabase's per-IP limit, which the local stack does not apply and so was not tested. It fails open silently (S-50). S-32 stays OPEN, partly fixed.
+- **S-07 and S-16 are also only partly fixed, as expected, and S-18 is still incomplete:** `source` is forced, but `title` and `shared_at` are still the patient's to set. S-09 is resolved in `a76efe0`. S-33, S-46 and S-47 are resolved in the working tree, not yet committed.
+- **The screens are sound on authorisation.** They read only through the user's session. The only service-role use reachable from sign-in is the throttle call, on the server. `/auth/confirm` cannot redirect off-site, and cross-origin server actions are refused. A doctor who is also a patient sees only released results on `/portal` (one gap for letters: S-41).
+- **Fix before building** the invitation, release and import server code: S-07, S-43, S-45 and S-53 set what that code must do.
 
 | Severity | Total | Open | Resolved |
 |---|---|---|---|
 | CRITICAL | 0 | 0 | 0 |
 | HIGH | 5 | 0 | 5 |
-| MEDIUM | 10 | 7 | 3 |
-| LOW | 24 | 23 | 1 |
-| INFO | 6 | 6 | 0 |
-| **All** | **45** | **36** | **9** |
+| MEDIUM | 13 | 8 | 5 |
+| LOW | 30 | 28 | 2 |
+| INFO | 8 | 8 | 0 |
+| **All** | **56** | **44** | **12** |
 
 ### Test results [2026-11]
 
@@ -34,14 +38,18 @@ Run against the local stack only.
 | Command | Result |
 |---|---|
 | `pnpm db:lint` | No schema errors |
-| `pnpm db:test` | PASS, 2 files, 164 tests |
+| `pnpm db:test` | PASS, 3 files, 178 tests |
 | `pnpm db:advisors` | No issues |
 
-These pass with every OPEN finding below present, so the suite does not cover them. Each MEDIUM fix should come with a pgTAP test.
+These pass with every OPEN finding below present, so the suite does not cover them. Each MEDIUM fix should come with a pgTAP test. `isSessionExpired` and the proxy's session handling have no automated test at all.
 
 ### How claims were verified
 
 "Verified" means the attack was run against the running local database with `psql`, in a rolled-back transaction, under `set local role authenticated` with `request.jwt.claims` set to a seed user, or `service_role` for server code. Data API and app checks used read-only HTTP requests with a locally minted token, the app being the dev server on port 3000, not a production build. "From the code" means justified by reading the code, not executed. In the second run `audit_log` stayed at 301 rows, `storage.objects` at 0 and `auth.sessions` at 0.
+
+In the third run, "verified" also means real server action requests to the dev server on `http://localhost:3130`, confirmed by its CSP to be using `http://127.0.0.1:54321`, with seed accounts. Idle cookies were aged by editing them in the request. The total limit was tested by backdating one session's row in the local `auth.mfa_amr_claims` table. For S-47, a temporary second container of the same local Auth image was run with only its email settings changed, against the local database, and then removed. Afterwards `audit_log` was still 301 rows and `storage.objects` 0. The sessions and throttle counters the run created were deleted. Global sign-out tests may also have ended other local sessions of the same seed users, and reset requests left test emails in the local mailbox. No remote project was contacted and `.env.local` was not read.
+
+In the fourth run the dev server on port 3130 was started with the local URL and keys in its environment, as in the `web-local` launch configuration, and curl with a cookie jar sent real server action requests and edited cookies. For S-47 a temporary second container of the same local Auth image (`GOTRUE_RATE_LIMIT_EMAIL_SENT=2`, `GOTRUE_MAILER_AUTOCONFIRM=false`, same database) ran behind a small loopback proxy that sent `/auth/v1/*` to it and everything else to the local stack, and the dev server was restarted against that proxy for the test. Valid recovery links came from the local Auth admin `generate_link` endpoint. Afterwards the container, proxy and dev server were stopped, the throttle counters and the sessions the run created were deleted, and `audit_log` was still 301 rows and `storage.objects` 0. Test emails remain in the local mailbox. Eleanor's password was changed and set back to the seed value. No remote project was contacted and `.env.local` was not read.
 
 ## Findings
 
@@ -133,7 +141,7 @@ These pass with every OPEN finding below present, so the suite does not cover th
 
 #### S-09 A patient can claim a file that has no `documents` row yet
 
-- **Status:** RESOLVED by the uncommitted change to `20261102111718_helper_functions.sql`, `20261102111720_rls_policies.sql` and `20261102111731_grants_hardening.sql` (`private.storage_object_is_mine`). Resolved once committed.
+- **Status:** RESOLVED in `a76efe0` (`20261102111718_helper_functions.sql`, `20261102111720_rls_policies.sql`, `20261102111731_grants_hardening.sql`, `private.storage_object_is_mine`)
 - **Files:** `20261102111720_rls_policies.sql` (documents insert), `20261102111728_storage.sql`
 - **Re-test [2026-11]:** the patient branch of the insert policy now requires an object in the `documents` bucket at that path whose `owner_id` is the caller. All verified in rolled-back transactions:
   - **Refused:** the row-first attack (no object yet), an orphan with no owner, an object owned by a PA, and an object of the same name in the `avatars` bucket.
@@ -162,32 +170,87 @@ These pass with every OPEN finding below present, so the suite does not cover th
 
 - **Status:** OPEN (future work)
 - **Files:** `next.config.ts`
-- **Risk:** `script-src` includes `'unsafe-inline'`, which removes the CSP's main protection against script injection. The session cookies must be readable by the browser client, so injected script could act as the user. The cause: the proxy only refreshes the session and redirects, so it does not issue nonces.
+- **Risk:** `script-src` includes `'unsafe-inline'`, which removes the CSP's main protection against script injection. Since [2026-11] the auth cookies are `HttpOnly`, so injected script can no longer read the tokens, but it can still read what the page shows and call server actions as the user. The cause: the proxy only refreshes the session and redirects, so it does not issue nonces.
 - **Fix:** Add nonces in the proxy, or use Next's hash-based option, and remove `'unsafe-inline'`.
 
 #### S-13 Sign-up must be off in the hosted project
 
-- **Status:** OPEN (not verifiable from here)
+- **Status:** OPEN. The owner reports public sign-up is off in the hosted dashboard [2026-11]. That is not verifiable from here, as this review does not connect to the hosted project.
 - **Files:** `supabase/config.toml`
 - **Risk:** Off locally (verified: `/auth/v1/settings` reports `disable_signup: true`). The hosted project has its own setting. If it is on, anyone could create an account. They would get no role, but could read reference data and the staff directory, including names, titles and ids.
-- **Fix:** See the manual checklist.
+- **Fix:** See the manual checklist. To close this, the owner confirms that the hosted `/auth/v1/settings` reports `disable_signup: true` and records that here.
 
 #### S-31 Sessions never expire, and their cookies are long-lived and readable by script
 
-- **Status:** OPEN
-- **Files:** `lib/supabase/server.ts`, `lib/supabase/proxy.ts`, `lib/supabase/client.ts`, `supabase/config.toml` (`[auth.sessions]` commented out)
-- **Risk:** From the code: no client sets `cookieOptions`, so the `@supabase/ssr` defaults apply: `httpOnly: false`, 400 days, and no `Secure`. No time-box or inactivity limit is set, and the proxy refreshes the session on each request. Someone who closes a browser on a shared clinic computer without signing out leaves the next person a live staff session, and through S-37 a way to change its password. With `'unsafe-inline'` in the CSP (S-12), injected script could read the tokens. HSTS reduces the missing `Secure`, except on a first visit.
-- **Fix:** Set `cookieOptions` with `secure: true` in production and a shorter `maxAge`. Set a time-box and inactivity limit, shorter for staff if possible. See the manual checklist. `httpOnly` needs a decision: it is possible only if no browser client reads the session, and `lib/supabase/client.ts` exists for that purpose.
+- **Status:** OPEN, partly fixed in the working tree (not committed): `lib/supabase/session-cookies.ts`, `lib/supabase/proxy.ts`, `lib/supabase/server.ts`, removal of `lib/supabase/client.ts`
+- **Files:** those above, and `supabase/config.toml` (`[auth.sessions]` commented out)
+- **Original risk:** the `@supabase/ssr` defaults applied: `httpOnly: false`, 400 days, no `Secure`, and no time-box or inactivity limit. Someone who closed a browser on a shared clinic computer without signing out left the next person a live staff session, and through S-37 a way to change its password. With `'unsafe-inline'` in the CSP (S-12), injected script could read the tokens.
+- **Fixed and verified [2026-11]:**
+  - The auth cookie and both `ch_*` cookies are set `HttpOnly`, `SameSite=Lax`, `Max-Age=604800`, at sign-in and on a token refresh (read from the `Set-Cookie` headers).
+  - No file imports a browser client any more.
+  - Idle past 30 minutes (staff) or 2 hours (patient) gives a redirect to `/login?error=expired`, clears the cookies, and the refresh token then returns 400. A patient at 1 hour stays signed in.
+  - A session 13 hours old for staff gives the same result. Refreshing does not move the `amr` timestamp.
+  - A missing or unknown kind gets the staff limits. A token with an edited `amr` is refused, as the signature is checked (ES256 locally).
+  - An `x-middleware-subrequest` header did not skip the check.
+  - `Secure` in production: read from the code only. The main session observed it. This run did not start a production server, because that build may hold the hosted URL.
+- **Fixed and verified in the fourth run [2026-11]:**
+  - A missing `ch_last_seen`, an empty, non-numeric or negative one, `99999999999`, `1e30`, and a value 5 minutes ahead all gave a redirect to `/login?error=expired`. A value 30 seconds ahead (inside the 1 minute clock-skew allowance) was accepted, as intended. Before, the last two ended the check for good.
+  - A staff session with `ch_session_kind=patient` and 1 hour idle is refused on `/clinic` (redirect to `/login?error=expired`). The same cookies on `/portal` are accepted, because the patient limit is 2 hours: see below.
+  - Sign-in sets both `ch_*` cookies. A password change sets both again (`staff` was rewritten to `patient` for a patient account, last seen moved to now). A patient idle 1 hour stays signed in on `/portal`, at 2 hours 5 minutes is refused, and with no `ch_last_seen` is refused.
+  - A staff session idle 1 hour, with no cookie edited, is refused on `/portal` too, as an unknown or `staff` kind gets staff limits.
+- **What remains:**
+  - **Bypasses that need nothing but a browser:** none found. S-46 is resolved.
+  - **Unsigned cookies, on purpose.** Anyone with devtools on a shared computer can still edit them. Verified in the fourth run: setting `ch_last_seen` to a plausible recent value (for example 1000 seconds ago on a staff session) is accepted, which is the same as resetting the idle clock. A staff session with `ch_session_kind=patient` and 1 hour idle is refused on `/clinic` but accepted on `/portal`, and that request renews `ch_last_seen`, so `/clinic` then returns 200 (verified with a PA: `/portal` gave a redirect to `/clinic`, `/clinic` after it gave 200). Deleting the value, or a future or non-numeric value, no longer works.
+  - **A copied token is outside these limits.** The same person can copy the refresh token from devtools. Verified: past the 12-hour limit, it refreshed twice directly against `/auth/v1/token` and read a patient row through the Data API. It was revoked only when the app next saw that session in the browser. A session whose browser never returns is never revoked, as nothing ends it on the server.
+  - **The Supabase-side time-box and inactivity settings need the Pro plan** (Supabase docs: "only available on Pro Plans and up"), so no server-side limit exists. Even then they apply to the whole project, not per role.
+  - **On-screen data:** S-48. **Actions at excluded paths:** S-53. **How the total limit is measured:** S-54.
+- **Fix:**
+  - Done: S-46, `ch_last_seen` set at sign-in and password change with a missing or future value treated as expired, and staff limits on any `/clinic` path.
+  - Sign the two cookies (or keep the last-seen time and kind on the server, tied to the session id) so that an edited plausible value and the kind edit on `/portal` stop working. Unsigned cookies were a deliberate choice, so this needs a human to accept the risk or change it. Until then, a human must accept it in writing before S-31 can be closed. If the kind cookie stays, apply staff limits to `/portal` for anyone with a staff role.
+  - Turn on the Supabase settings once on Pro.
 
 #### S-32 Rate limits count the app server, not the attacker
 
+- **Status:** OPEN, partly fixed in the working tree (not committed): `20261102143000_auth_throttle.sql`, `lib/auth/throttle.ts`, `lib/auth/actions.ts`
+- **Files:** those above, and `supabase/config.toml` (`[auth.rate_limit]`)
+- **Original risk:** sign-in and reset go through server actions, so the Auth service sees the app server's address for everyone. With no limit in the action, all users shared one limit, and anyone could use it up and block the clinic.
+- **Fixed and verified [2026-11]:**
+  - Sign-in is limited per 15 minutes to 10 per address and account, 30 per account and 60 per address. Reset is limited per hour to 3 per address and account, 3 per account and 20 per address.
+  - 10 wrong passwords from one address then refuse the attempt, and 30 from three addresses then refuse the correct password from a fresh address.
+  - The limits apply the same way to an account that does not exist, so the throttle itself reveals nothing. The email's case does not make a new bucket.
+  - `anon` and `authenticated` get 401 and 403 on the RPC over HTTP. `private.auth_throttle` cannot be read by either, or by `service_role`. The only `private` function `service_role` can execute is `auth_throttle_hit`, so its new `usage` on the schema adds nothing else. The function is `SECURITY DEFINER` with `search_path = ''`. It has no `auth.uid()` check, which is correct, as only `service_role` may call it.
+- **What remains:**
+  - **Direct calls do not pass through the throttle.** `/auth/v1/token` and `/auth/v1/recover` take the public key, which is in no way secret. Verified: with the app refusing an account, a direct call with the correct password returned 200. Those calls depend entirely on Supabase's per-IP limit, so a distributed attacker has no per-account limit there.
+  - **The hosted shared limit can still be reached.** Calls through the app still all come from the app server's address. The app allows far more from a few client addresses than `sign_in_sign_ups = 30` per 5 minutes would, if the hosted limit is like that. Then everyone gets "Too many attempts".
+  - **Not testable here.** The local Auth container has no `GOTRUE_RATE_LIMIT_HEADER`, and 180 sign-ins in a burst through the app got no 429, so no per-IP limit was seen. The sign-in 429 branch has never run. This corrects the earlier reading that `config.toml` sets a working local limit. Treat the hosted behaviour as unknown.
+  - Follow-ons: S-49, S-50, S-51, S-52. S-47 is resolved.
+- **Fix:** Review the hosted limits (see the checklist). The local Auth image contains handling for an `Sb-Forwarded-For` header, which may let the server pass the client address to Auth: check whether the hosted project supports it, as that would address the shared limit properly. Consider a CAPTCHA on both forms, which Supabase Auth would also apply to direct calls.
+
+#### S-46 Opening `/auth/confirm` clears the idle clock
+
+- **Status:** RESOLVED in the working tree (`lib/supabase/proxy.ts`, `app/auth/confirm/route.ts`, `lib/supabase/session-cookies.ts`), not yet committed
+- **Files:** `lib/supabase/proxy.ts` (`NEW_SESSION_PATH`), `app/auth/confirm/route.ts` (`startNewSession`)
+- **Original risk:** the proxy skipped the limits on `/auth/confirm` and deleted `ch_last_seen` and `ch_session_kind` before anyone knew whether the link was valid. A staff session idle for 1 hour could be brought back by opening that address with a junk `token_hash`, with no developer tools.
+- **Re-test [2026-11]:** a staff session with `ch_last_seen` 1 hour old opened `/auth/confirm` with a junk `token_hash` and `type=recovery`, `type=bogus` or `type=email`, with `code=junk`, and with no parameters. Each gave a redirect to `/login?error=link`, set no `ch_*` cookie, and left `ch_last_seen` exactly as it was. `/clinic` straight afterwards gave a redirect to `/login?error=expired`. A valid recovery link (made through the local Auth admin endpoint) opened on the same idle session set a fresh `ch_last_seen`, deleted `ch_session_kind` and redirected to `/update-password`, which returned 200. The route's `Set-Cookie` headers survive its `redirect()`.
+- **Left over, not a finding:** after a valid link the kind is unknown, so staff limits apply until the password is set. Safe, only stricter. The proxy still skips the limits on `/auth/confirm` itself, so an over-limit session is not ended by that request, only by the next one (verified above).
+
+#### S-47 The reset reply reveals an account once the email quota is used up
+
+- **Status:** RESOLVED in the working tree (`lib/auth/actions.ts`, `app/(auth)/forgot-password/forgot-password-form.tsx`), not yet committed
+- **Files:** `lib/auth/actions.ts` (`requestPasswordReset`)
+- **Original risk:** Auth returns 200 for an unknown address without sending anything, so its email quota can only be used up by a real account. The action showed "Too many attempts" for a 429 and so told the caller which addresses had accounts.
+- **Re-test [2026-11]:** against a temporary local Auth container with `GOTRUE_RATE_LIMIT_EMAIL_SENT=2` and `GOTRUE_MAILER_AUTOCONFIRM=false`, behind the loopback proxy described above. Seven resets in a row went through the real server action: an unknown address, five real accounts and another unknown address. All seven returned 200 with the "sent" screen, and none showed "Too many attempts". A direct call to the container confirmed it was limiting: a real account then returned 429 `over_email_send_rate_limit`, and an unknown address returned 200. The server log held one line, "Password reset email limited by Supabase.", for each of the three real accounts that were limited, with no address in it. The app's own throttle still works: through the app, the fourth reset for one account from one address in an hour showed "Too many attempts", which is the same for any address. The "sent" screen now ends with "If nothing arrives in a few minutes, try again later or contact the clinic."
+- **Left over:**
+  - The log line has no alert on it (S-50 applies in the same way). A real person whose reset is limited gets no email and a "sent" screen, so the new wording is their only help.
+  - The action ignores every Supabase error, not only 429, and logs only the 429. A 500 or a network failure gives "sent" with nothing in the log. Log any error, still with no address.
+  - Reset timing may still differ for a real account: S-34.
+
+#### S-48 A page already open stays readable after the limits pass
+
 - **Status:** OPEN
-- **Files:** `lib/auth/actions.ts`, `supabase/config.toml` (`[auth.rate_limit]`)
-- **Risk:** From the code; not run, because it would lock the shared local stack. Sign-in and reset go through server actions, so the Auth service sees the app server's address for everyone. The action adds no limit of its own, and there is no per-account lockout. So `sign_in_sign_ups = 30` per 5 minutes is shared by all users:
-  - Anyone can use it up and block the whole clinic from signing in, and each person is then told to check their password, because every error gets one message.
-  - Anyone can use up `email_sent`, and real reset requests then silently fail while the screen says the link was sent.
-  - Limited guessing is still possible against any one account, with no alert.
-- **Fix:** In the actions, throttle by client address and by account. Show a neutral "try again later" for a rate-limit error, which reveals nothing about the account. Review the hosted limits (see the checklist). Consider a CAPTCHA on both forms.
+- **Files:** `lib/supabase/proxy.ts`, `components/shell/`
+- **Risk:** From the code: the limits are checked only when a request arrives, and no browser timer exists. Someone who walks away from a clinic computer leaves whatever is on screen readable until somebody clicks, however long that is. The 30-minute limit protects the next request, not the screen. A later request ends the session (verified).
+- **Fix:** Add a small client timer in the shell that goes to `/login?error=expired` at the idle limit, resets on activity and hides the page first. It need not be a security boundary: the proxy remains that.
 
 ### LOW
 
@@ -204,8 +267,8 @@ These pass with every OPEN finding below present, so the suite does not cover th
 | S-22 | `staff_profiles` is not tied to `user_roles`. An admin can add a row for a patient account, who then appears in the staff directory, and whose avatar becomes readable by anyone signed in. An admin can set their own `clinical_role = 'doctor'`, which grants nothing (verified: 0 results). No "last admin" guard: an admin suspended themselves. | Policies | Verified. Never authorise from `clinical_role`. Require a matching staff role on insert. Refuse to suspend the last admin. | OPEN |
 | S-23 | `profiles.email` can drift from `auth.users.email`, because only an insert trigger exists and the client cannot correct it. | Identity migration | From the code. Add an update trigger on `auth.users`. | OPEN |
 | S-24 | `locations.ghl_calendar_id` is readable by anyone signed in. Reference tables also have full-table insert and update grants for admins, including `id` and `created_at` (a `created_at` change is accepted where no foreign key blocks the row). | Grants migration | From the code, plus attempted id changes refused only by foreign keys. Use column grants, and hide the calendar id behind a view or function. | OPEN |
-| S-25 | The recovery email template in `supabase/templates/` applies locally only. Without it, the hosted reset email uses Supabase's default link, not `/auth/confirm`. | `supabase/templates/recovery.html` | From the code. See the manual checklist. | OPEN |
-| S-33 | `/login?error=constructor` returns a 500. The `ERRORS` lookup reaches `Object.prototype`, so a function goes to a Client Component as a prop. `toString` and `__proto__` do the same. Anyone can send a link that shows an error in place of the sign-in form. | `app/(auth)/login/page.tsx` | Verified. Use `Object.hasOwn` or a `Map`. | OPEN |
+| S-25 | The recovery email template in `supabase/templates/` applies locally only. Without it, the hosted reset email uses Supabase's default link, not `/auth/confirm`. | `supabase/templates/recovery.html` | From the code. The owner has deferred SMTP through Resend and this template until there is a domain, so hosted password reset is not reliable until then. See the manual checklist. | OPEN, deferred by the owner |
+| S-33 | `/login?error=constructor` returns a 500. The `ERRORS` lookup reaches `Object.prototype`, so a function goes to a Client Component as a prop. `toString` and `__proto__` do the same. Anyone can send a link that shows an error in place of the sign-in form. | `app/(auth)/login/page.tsx` | Verified. Fixed with `Object.hasOwn`. Re-test [2026-11]: `constructor`, `toString`, `__proto__`, `hasOwnProperty` and a repeated `error` parameter all return 200 with the form and no message. `expired` and `link` show their own text. | RESOLVED in the working tree (`app/(auth)/login/page.tsx`), not yet committed |
 | S-34 | Sign-in and reset messages do not reveal an account, but their timing may. Reset awaits the mail send for a real account only. Sign-in checks a password hash for a real account only. | `lib/auth/actions.ts` | Sign-in measured locally at 9 ms and 4 ms (median of 7), with the seed's cost; a hosted hash will widen it. Reset from the code. Send the reset after replying, and pad the sign-in reply. | OPEN |
 | S-35 | The layouts do not match what the database enforces. A deactivated staff member still holds `user_roles` rows, so `isStaff` is true and they get `/clinic`, with an empty dashboard showing "0 results to review", in place of "no access". If also a patient, they land there first. A suspended person is sent to `/login` but stays signed in, and can still open `/update-password`. `isSuspended` is false if the profile read fails. | `lib/auth/session.ts`, `app/clinic/layout.tsx`, `app/portal/layout.tsx` | Empty reads verified by SQL, routing from the code; not run in the app, as it needs a committed change. No data is reached. Read `staff_profiles.active` in `getCurrentUser`, treat a failed read as no access, and sign out on suspension. Offboarding should also ban the Auth account, since suspension alone still issues tokens. | OPEN |
 | S-36 | `/auth/confirm` signs in on a plain `GET`. A person can send their own recovery link to a colleague, whose browser is then signed in to the sender's account and asked to choose its password. A link scanner that opens the link also uses up the single-use token. | `app/auth/confirm/route.ts` | From the code; no valid token was used. Have the link open a page whose button posts the token. | OPEN |
@@ -217,6 +280,12 @@ These pass with every OPEN finding below present, so the suite does not cover th
 | S-42 | One PA alone can give any account a verified link to any patient, in her own name. Thomas then read Eleanor's 30 results. The audit trail is now true, but one person can still disclose a record. Follow-on from S-02. | `patient_guardians` policies | Verified. Needs a clinic decision on a second approver, at least for `can_act`. | OPEN |
 | S-43 | Invitation acceptance is not built, so nothing checks expiry, that the inviter is still active, that `patient_profiles.user_id` is empty, or that the signed-in email matches. An expired pending row blocks a new invitation to that address. Server code can defeat the expiry check by setting `created_at`. Follow-on from S-03. | `invitations`, `20261102111657_identity_and_accounts.sql` | Blocking and `created_at` verified as `service_role`. Build those checks, delete or expire stale rows, and never pass `created_at`. Decide whether team-role invitations need a second approver. | OPEN |
 | S-45 | A patient can still put their own file at a path staff code will use. With a staff row and no file yet, the patient's object was accepted, so staff would open it as a clinic letter. A PA's row over a patient's object was accepted too. At a predictable path the patient can also get there first, and the server's upload then fails on the unique key. A failed upload also tells a patient that a hidden path is occupied. Follow-on from S-09. No clinical data is disclosed. | Storage insert policy, documents insert policy | Verified at database level. Limit patient uploads to a dedicated folder such as `<patient id>/uploads/`, keep staff files out of it, use random file names, and check the object's owner in the staff branch. | OPEN |
+| S-49 | Anyone can block a named person. 30 wrong passwords from three addresses refuse that person's correct password for the rest of the 15 minutes, and it can be repeated. 3 reset requests from one address block their reset for an hour. Successful sign-ins count too. Nobody is alerted and no screen clears a block. Reset for that account stayed allowed while sign-in was blocked, as the buckets are separate. | `lib/auth/throttle.ts` | Verified. This is the cost of an account limit, and it is smaller than the original S-32. Alert when an account bucket fills, give admins a way to clear it, and count only failures. | OPEN |
+| S-50 | The throttle fails open with one log line. A missing `SUPABASE_SERVICE_ROLE_KEY`, a migration not yet applied to the hosted project, or any RPC error means no limit, and nobody is told. A deployment could run for months like that. Failing open is a reasonable choice for availability, but no human has accepted it. | `lib/auth/throttle.ts` | From the code; the dev server was not restarted to test it. Alert on the log line, and run the post-deployment check in the checklist. | OPEN |
+| S-51 | The address limits are easy to rotate. An IPv6 client is counted per full address, and one home connection commonly controls a whole /64. Spraying one password across many accounts then meets only the 30 per account limit. Rotating the address headers does this directly on the dev server (verified, expected with no host in front; `x-real-ip` wins, then the first `x-forwarded-for`). | `lib/auth/throttle.ts` | IPv6 from the code; not run. Count IPv6 by /64. Confirm the host overwrites the headers: see the checklist. | OPEN |
+| S-52 | Concurrent attempts overshoot the limit by more than "slightly", as the function's comment says. 40 parallel RPC calls at limit 10 allowed 13, 18, 18 and 19. Through the dev server, 25 parallel sign-ins allowed exactly 10, but that server handled them with less concurrency than a hosted one may. The check and the count are separate statements. | `20261102143000_auth_throttle.sql` | Verified. Take an advisory lock on the sorted keys, or count first and check the returned totals. | OPEN |
+| S-53 | Server actions run at paths the proxy skips, so the session limits do not apply to them. `POST /foo.png` with the sign-out action id and an idle-expired session returned 404 but ran the action: its refresh token was gone afterwards. No layout runs there either. Only the session's holder or injected script could use this, and today's actions are only auth actions. Release and import actions will not be. Extends S-29. | `proxy.ts` matcher | Verified. Exclude only real static paths from the matcher, and have every server action check its own session, role and limits. | OPEN |
+| S-54 | The total limit is measured from the latest `amr` timestamp. Once MFA exists (S-11), a step-up will restart the 12 hours, and falling back to `iat` when `amr` is empty would restart it at each refresh. `ch_session_kind` is set only at sign-in or password change, so a patient made staff in mid-session keeps patient limits outside `/clinic` until the next sign-in. Since [2026-11] any `/clinic` path uses staff limits whatever the cookie says (verified), which closes the worst case: a staff member working in the clinic area is always on staff limits. | `lib/supabase/proxy.ts`, `lib/auth/actions.ts` | From the code. A refresh does not move the timestamp (verified). Use the earliest timestamp, treat no timestamp as expired, and apply staff limits wherever the signed-in user holds a staff role. | OPEN, partly fixed |
 
 ### INFO
 
@@ -225,9 +294,23 @@ These pass with every OPEN finding below present, so the suite does not cover th
 | S-26 | Admins have no read path to `audit_log`, `webhook_events` or `integration_sync_log` other than server code, though the draft says admins read the logs. No such screen is built. | OPEN |
 | S-27 | Any signed-in user gets the PostgREST OpenAPI description at `/rest/v1/`: 32 paths, with table and column names including `token_hash`. Anon gets an empty one (one root path). It exposes structure, not data. | OPEN |
 | S-28 | `service_role` keeps `delete` and `truncate` on `invitations`, `notifications`, `notification_preferences` and reference tables, and can append any row to `audit_log`, with any actor (verified [2026-11]). `postgres` owns `audit_log`, so a migration could re-grant or drop the triggers. Both are outside what a signed-in user can do. | OPEN |
-| S-29 | The proxy matcher skips paths ending in an image extension, so `/clinic/x.png` gets no session refresh or redirect. Verified [2026-11]: a signed-out request gets a 404, as no such route exists. Server layouts must check for themselves, as `CLAUDE.md` already requires. | OPEN |
+| S-29 | The proxy matcher skips paths ending in an image extension, so `/clinic/x.png` gets no session refresh or redirect. Verified [2026-11]: a signed-out request gets a 404, as no such route exists. Server layouts must check for themselves, as `CLAUDE.md` already requires. Since [2026-11] these paths also skip the session limits: see S-53. | OPEN |
 | S-30 | A signed URL keeps working until it expires, even after a document is unshared. Keep expiries short when the signed URL code is written. Not built yet. | OPEN |
 | S-44 | `requestPasswordReset` builds `redirectTo` from the request's `Origin` header. A browser cannot forge it, and a foreign `Origin` is refused, but a client that also sends a matching `X-Forwarded-Host` passed the check on the dev server (verified). Whether that works in production depends on the host overwriting the header. The damage is limited: Auth checks the allow-list, and `recovery.html` uses `{{ .SiteURL }}`. Build the URL from a configured site URL. See the checklist. | OPEN |
+| S-55 | `auth_throttle` keys are unsalted SHA-256, so the table holds pseudonymised data. The comments (migration and `throttle.ts`) now say the table holds "no plain email or IP address", which is true [2026-11], so the misleading claim is gone; the weakness is not. An IPv4 address or a known email can be recovered by trying candidates. The rows are short-lived and only the definer function can read them. Use an HMAC with a server secret. | OPEN, partly fixed |
+| S-56 | `.env.local` and the `web` launch configuration point at the one hosted project, so plain `pnpm dev` runs unreviewed local code against it, and could reach real data when it holds any. `web-local` is the safe route. Use the local stack by default, and keep real data out of any project a development machine holds keys for. See the checklist. | OPEN |
+
+## What was attacked and held in the third run [2026-11]
+
+All verified unless marked. What did not hold is under S-31, S-32 and S-48 to S-54. S-46 and S-47 were fixed and re-tested in the fourth run.
+
+- **Redirect loops:** an expired session on `/login` goes once to `/login?error=expired` with all `sb-` and `ch_*` cookies cleared, and that request then returns 200. The redirect clears the cookies itself, so a failed sign-out cannot loop (from the code).
+- **Server action on expiry:** a `POST` with an expired session gets a 307 to `/login?error=expired` with the cookies cleared, and the action does not run on that hop. A browser repeats the `POST` there. A sign-out action then got a 200 with a JSON body on the dev server and did not redirect. From Next's client code, that raises "An unexpected response was received from the server", so the person sees the error boundary, with their session already ended, in place of the sign-in page. Not run in a browser, because the `HttpOnly` cookie cannot be aged there. Actions with no session reach only RLS, which gives `anon` nothing.
+- **Sign-out:** clears all three cookies and the refresh token returns 400.
+- **Forged tokens:** an access token with an edited `amr` and `sub` redirected to `/login`.
+- **Header spoofing against the app's account limits:** rotating `x-real-ip` and `x-forwarded-for` never got past the 30 per account limit. A blocked `x-real-ip` wins over a new `x-forwarded-for`. Whether a client can rotate them in production depends on the host: see the checklist.
+- **Service role and bundle:** `lib/supabase/admin.ts` is now imported only by `lib/auth/throttle.ts`, which starts with `import "server-only"`. `SERVICE_ROLE`, `service_role` and `auth_throttle` appear in 0 files of `.next/static` and `.next/dev/static`. The throttle's error log holds no email or address (from the code). This updates the second run's statement that nothing imported `admin.ts`.
+- **Catalogue:** `pnpm db:lint`, `pnpm db:test` and `pnpm db:advisors` pass with the new migration. The counters are in `private`, not the exposed schema.
 
 ## What was attacked and held in the second run [2026-11]
 
@@ -262,7 +345,7 @@ All verified unless marked.
 - **Catalogue:** RLS enabled and forced on all 32 tables, no `FOR ALL` policy, no `CASCADE` or `SET NULL`, every function sets `search_path`. `authenticated` has no `create` on any schema. No table in the `supabase_realtime` publication. A new table or function in `public` starts with no grants, but also with RLS off, which `00_schema_checks` would catch.
 - **App code:** `lib/supabase/admin.ts` and `lib/email/send.ts` start with `import "server-only"`, and no committed file imports either from a Client Component. `lib/env.ts` reports variable names only. `.env.local` is ignored and untracked. No secret found in tracked files in scope. The seed uses only `@example.test` addresses.
 
-## Not reviewed in this run [2026-11]
+## Not reviewed in the first two runs [2026-11]
 
 - Server actions and functions for invitations, release, import confirmation and webhooks: not built.
 - Actual uploads through the Storage API, because they would have left data. Storage policies were tested at database level only.
@@ -270,6 +353,8 @@ All verified unless marked.
 - Suspended and deactivated users in the running app, because that needs a committed change. Their reads were tested by SQL, and their routing by reading the code.
 - Rate limits, because using them up would lock the shared local stack.
 - The hosted project: never connected to.
+
+Also not reviewed in the third run: a production build or Vercel, a valid recovery link end to end, the throttle's failure path in a running server, Supabase's per-IP limits (not active locally), and the idle timer in a real browser.
 
 ## Documented decisions
 
@@ -279,38 +364,44 @@ All verified unless marked.
 - [2026-11] **Definer code lives in `private`,** not exposed through the Data API. `authenticated` needs `usage` on it because policies call the helpers. Hidden columns are served through invoker wrappers in `public`.
 - [2026-11] **No hard deletes.** No `delete` for `authenticated` on clinical tables, and none for `service_role` either. No delete policy on Storage.
 - [2026-11] **A staff role needs an active staff profile.** `private.is_active_staff` is checked by `has_role`, `is_clinical_staff` and `is_team`, so deactivating someone ends their access without touching their roles.
+- [2026-11] **No browser client.** All Supabase calls run on the server and auth cookies are `HttpOnly`. Any later browser feature, such as direct uploads or Realtime, needs its own design. The Supabase origins in `connect-src` can probably go.
+- [2026-11] **Session limits are enforced by the app.** 12 hours and 30 minutes idle for staff, 7 days and 2 hours for patients, read from a signed `amr` claim and from unsigned `ch_*` cookies. The unsigned cookies were chosen on purpose. The residual risk is recorded in S-31, and no human has yet formally accepted it, so S-31 stays OPEN.
+- [2026-11] **One hosted environment for now,** with the local stack as development. Owner's decision. See the checklist and S-56.
 - [2026-11] **CSP is a starter policy.** Nonces are future work, because the proxy only refreshes the session and redirects. See S-12.
 
 ## Manual configuration checklist
 
-A human does these in the hosted project. None can be verified from this repository.
+A human does these in the hosted project. None can be verified from this repository. Items left open with a reason are the owner's decisions [2026-11], not oversights.
 
 **Before any real data**
 
-- [ ] Auth: "Allow new users to sign up" is off (S-13).
-- [ ] Auth: set the recovery email template to the content of `supabase/templates/recovery.html`, with its subject (S-25).
+- [x] Auth: "Allow new users to sign up" is off. Reported by the owner [2026-11]; not verified by this review, so S-13 stays OPEN until someone records `disable_signup: true` from the hosted `/auth/v1/settings`.
+- [ ] Auth: custom SMTP through Resend, with a verified sending domain. **Deferred until there is a domain.** Until then hosted password reset is not reliable (S-25) and the built-in mail cap will be reached sooner. The reply no longer reveals an account when it is (S-47, resolved), but a person whose reset is limited gets no email.
+- [ ] Auth: set the recovery email template to the content of `supabase/templates/recovery.html`, with its subject. **Deferred with SMTP, for the same reason** (S-25).
 - [ ] Auth: site URL and redirect allow-list hold production URLs only, with no localhost and no broad wildcards (S-44).
-- [ ] Auth: session time-box and inactivity limit are set (S-31).
-- [ ] Auth: rate limits reviewed, knowing that sign-in and reset all arrive from the app server (S-32).
-- [ ] Auth: leaked password protection is on. Minimum 12 characters, as in `config.toml`.
+- [ ] Auth: session time-box and inactivity limit are set. **Needs the Pro plan** (Supabase docs: "only available on Pro Plans and up"). Until then only the app enforces limits (S-31). They apply to the whole project, so set them no shorter than the patient limits.
+- [ ] Auth: leaked password protection is on. **Needs the Pro plan.** Minimum 12 characters, as in `config.toml`.
+- [ ] Auth: rate limits reviewed, knowing that sign-in and reset through the app all arrive from the app server and direct calls do not (S-32). Check whether the project supports the `Sb-Forwarded-For` header.
 - [ ] Auth: anonymous sign-ins and manual linking are off, as in `config.toml`.
 - [ ] Auth: secure password change and double-confirm email change are on, as in `config.toml`.
 - [ ] Auth: MFA for staff is on, and enforced by code (S-11).
-- [ ] Auth: custom SMTP through Resend, with a verified sending domain.
+- [ ] Migration `20261102143000_auth_throttle.sql` is applied and `SUPABASE_SERVICE_ROLE_KEY` is set in the host. Without either, the throttle is silently off (S-50).
 - [ ] Project in the London region (`eu-west-2`).
 - [ ] Data Processing Agreement signed with Supabase, and with Resend, Vercel and any other processor that sees personal data.
-- [ ] Separate dev and prod projects, with separate keys. Real data only in prod.
+- [ ] Separate dev and prod projects, with separate keys. **Decided against for now:** one hosted environment, with the local stack as development. Real data then needs extra care: stop pointing `.env.local` at that project before it holds any (S-56).
 - [ ] Data API: exposed schemas are `public` only. `private` must never be added (S-20).
 - [ ] Never run the seed against a hosted project (no `--include-seed`): it creates accounts, including an admin, with one shared password written in the file.
 - [ ] Realtime: no tables in the publication, public channel access off, or disable it if not used.
 - [ ] Rotate keys if ever exposed. `SUPABASE_SERVICE_ROLE_KEY` and `RESEND_API_KEY` are set as server-only variables in the host, never with `NEXT_PUBLIC_`.
-- [ ] Point-in-time recovery or backups are on, with a tested restore.
+- [ ] Point-in-time recovery or backups are on, with a tested restore. **To check: whether automatic backups need a paid plan.** If they do, real data needs that plan or another tested backup.
 - [ ] Network restrictions on direct database connections, with SSL enforced.
 
 **After deployment**
 
 - [ ] Confirm the host overwrites `X-Forwarded-Host`: a request with a foreign `Origin` and a matching `X-Forwarded-Host` must not run a server action (S-44).
-- [ ] Confirm the auth cookies carry `Secure` in production (S-31).
-- [ ] Confirm the production response headers, including that `connect-src` has the Supabase origin, since `NEXT_PUBLIC_SUPABASE_URL` must be set when headers are generated.
+- [ ] Confirm Vercel overwrites the client-address headers (S-51). With a forged `x-real-ip` and `x-forwarded-for` that change on each request, send 11 wrong passwords for one invented `@example.test` address from one machine. The 11th must say "Too many attempts". If it does not, the host is passing the headers through and the address limits can be bypassed. Repeat after any change of host or any proxy put in front.
+- [ ] Confirm the throttle is running at all, by the same test: an error in the log or no refusal means it is failing open (S-50).
+- [ ] Confirm the `sb-` and `ch_*` cookies all carry `Secure` and `HttpOnly` in production (S-31).
+- [ ] Confirm the production response headers, including that `connect-src` has the Supabase origin, since `NEXT_PUBLIC_SUPABASE_URL` must be set when headers are generated. With no browser client it may no longer be needed.
 - [ ] Confirm the domain should be HSTS preloaded before relying on the `preload` directive: it is hard to undo.
 - [ ] Rerun the advisors in the dashboard after each migration push.

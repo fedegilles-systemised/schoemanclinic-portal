@@ -18,7 +18,7 @@ Work in British English everywhere: code comments, docs, UI copy, commit message
 | `app/globals.css` | Every design token and type utility |
 | `components/ui/` | shadcn primitives (restyled) and design-system components |
 | `components/shell/` | App shell: sidebar, top bar, navigation |
-| `lib/supabase/` | `client.ts`, `server.ts`, `proxy.ts`, `admin.ts` (service role) |
+| `lib/supabase/` | `server.ts`, `proxy.ts`, `session-cookies.ts`, `admin.ts` (service role). No browser client: session cookies are `httpOnly` |
 | `lib/auth/` | Current user and role helpers |
 | `lib/data/` | Server-side reads for screens, through the user's session |
 | `lib/env.ts` | Lazy environment validation |

@@ -25,7 +25,7 @@ export function ForgotPasswordForm() {
         <Alert variant="info">
           <Check aria-hidden />
           <AlertDescription>
-            If that address has an account, we have sent a link to it. The link works once.
+            If that address has an account, we have sent a link to it. The link works once. If nothing arrives in a few minutes, try again later or contact the clinic.
           </AlertDescription>
         </Alert>
       ) : (

@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 
 import type { Database } from "@/lib/database.types";
 import { getPublicEnv } from "@/lib/env";
+import { AUTH_COOKIE_OPTIONS, withSessionMaxAge } from "@/lib/supabase/session-cookies";
 
 /**
  * The signed-in user's client: every query runs under row-level security.
@@ -16,6 +17,7 @@ export async function createClient() {
     env.NEXT_PUBLIC_SUPABASE_URL,
     env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     {
+      cookieOptions: AUTH_COOKIE_OPTIONS,
       cookies: {
         getAll() {
           return cookieStore.getAll();
@@ -23,7 +25,7 @@ export async function createClient() {
         setAll(cookiesToSet) {
           try {
             cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options),
+              cookieStore.set(name, value, withSessionMaxAge(options)),
             );
           } catch {
             // Called from a Server Component, which cannot set cookies. The

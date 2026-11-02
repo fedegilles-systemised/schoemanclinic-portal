@@ -1,11 +1,13 @@
 "use server";
 
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
 import { z } from "zod";
 
-import { getCurrentUser, homePathFor } from "@/lib/auth/session";
+import { getCurrentUser, homePathFor, type CurrentUser } from "@/lib/auth/session";
+import { allowAuthAttempt } from "@/lib/auth/throttle";
 import { createClient } from "@/lib/supabase/server";
+import { LAST_SEEN_COOKIE, SESSION_COOKIE_OPTIONS, SESSION_KIND_COOKIE } from "@/lib/supabase/session-cookies";
 
 export type AuthFormState = { error?: string; sent?: boolean; email?: string };
 
@@ -26,6 +28,15 @@ const newPassword = z.object({
 // One message for every failure, so the form never reveals whether an account exists.
 const SIGN_IN_FAILED = "We could not sign you in. Check your email and password and try again.";
 const NO_ACCESS = "This account does not have access. Please contact the clinic.";
+// Says nothing about the account: the limits apply whether or not it exists.
+const TRY_LATER = "Too many attempts. Please wait a few minutes and try again.";
+
+/** Sets which session limits apply. Staff limits win for someone who is also a patient. */
+async function recordSessionKind(user: CurrentUser): Promise<void> {
+  const cookieStore = await cookies();
+  cookieStore.set(LAST_SEEN_COOKIE, String(Math.floor(Date.now() / 1000)), SESSION_COOKIE_OPTIONS);
+  cookieStore.set(SESSION_KIND_COOKIE, user.isStaff ? "staff" : "patient", SESSION_COOKIE_OPTIONS);
+}
 
 export async function signIn(_state: AuthFormState, formData: FormData): Promise<AuthFormState> {
   const parsed = credentials.safeParse({
@@ -35,30 +46,35 @@ export async function signIn(_state: AuthFormState, formData: FormData): Promise
   // React resets the form after an action, so the email comes back to refill the field.
   const email = String(formData.get("email") ?? "");
   if (!parsed.success) return { error: SIGN_IN_FAILED, email };
+  if (!(await allowAuthAttempt("sign-in", parsed.data.email))) return { error: TRY_LATER, email };
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
-  if (error) return { error: SIGN_IN_FAILED, email };
+  if (error) return { error: error.status === 429 ? TRY_LATER : SIGN_IN_FAILED, email };
 
   const user = await getCurrentUser();
   const home = user ? homePathFor(user) : null;
-  if (!home) {
+  if (!user || !home) {
     await supabase.auth.signOut();
     return { error: NO_ACCESS, email };
   }
+  await recordSessionKind(user);
   redirect(home);
 }
 
 export async function requestPasswordReset(_state: AuthFormState, formData: FormData): Promise<AuthFormState> {
   const email = z.email().safeParse(formData.get("email"));
   if (!email.success) return { error: "Enter your email address, like you@example.com." };
+  if (!(await allowAuthAttempt("password-reset", email.data))) return { error: TRY_LATER };
 
   const supabase = await createClient();
   const origin = (await headers()).get("origin") ?? undefined;
-  // The result is ignored on purpose: the reply is the same whether or not the account exists.
-  await supabase.auth.resetPasswordForEmail(email.data, {
+  const { error } = await supabase.auth.resetPasswordForEmail(email.data, {
     redirectTo: origin ? `${origin}/auth/confirm?next=/update-password` : undefined,
   });
+  // Every result gets the same reply, whether or not the account exists. Supabase's email
+  // limits apply only to real accounts, so even its 429 must not show on the screen.
+  if (error) console.error(`Password reset email failed: ${error.status ?? "no status"} ${error.code ?? "no code"}.`);
   return { sent: true };
 }
 
@@ -80,11 +96,15 @@ export async function updatePassword(_state: AuthFormState, formData: FormData):
   }
 
   const user = await getCurrentUser();
+  if (user) await recordSessionKind(user);
   redirect((user && homePathFor(user)) ?? "/login");
 }
 
 export async function signOut(): Promise<void> {
   const supabase = await createClient();
   await supabase.auth.signOut();
+  const cookieStore = await cookies();
+  cookieStore.delete(LAST_SEEN_COOKIE);
+  cookieStore.delete(SESSION_KIND_COOKIE);
   redirect("/login");
 }

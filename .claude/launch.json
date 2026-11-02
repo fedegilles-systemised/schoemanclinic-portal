@@ -1,6 +1,7 @@
 {
   "version": "0.0.1",
   "configurations": [
-    { "name": "web", "runtimeExecutable": "pnpm", "runtimeArgs": ["dev"], "port": 3000 }
+    { "name": "web", "runtimeExecutable": "pnpm", "runtimeArgs": ["dev"], "port": 3000 },
+    { "name": "web-local", "runtimeExecutable": "sh", "runtimeArgs": ["-c", "eval \"$(pnpm exec supabase status -o env 2>/dev/null </dev/null | grep -E '^(API_URL|PUBLISHABLE_KEY|SERVICE_ROLE_KEY)=')\"; NEXT_PUBLIC_SUPABASE_URL=\"$API_URL\" NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=\"$PUBLISHABLE_KEY\" SUPABASE_SERVICE_ROLE_KEY=\"$SERVICE_ROLE_KEY\" exec pnpm dev --port 3130"], "port": 3130, "autoPort": false }
   ]
 }
