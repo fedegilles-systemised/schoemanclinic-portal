@@ -1,0 +1,50 @@
+<!-- @dsCard height=288 -->
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<title>Schoeman Clinic</title>
+<style>
+  html, body { margin:0; height:100%; }
+  body { background:var(--surface); color:var(--content); font-family:var(--font-sans); overflow:hidden; }
+  .cover { position:relative; height:288px; overflow:hidden; }
+  .art { position:absolute; top:0; left:480px; width:480px; height:288px; overflow:hidden; }
+  .art svg { display:block; width:480px; height:288px; }
+  .ink { fill:var(--content); }
+  .champ { fill:var(--accent); }
+  .bronze { fill:var(--secondary); }
+  .stone { fill:var(--surface-selected); }
+  .rule { stroke:var(--surface-border); stroke-width:var(--stroke-hairline); fill:none; }
+  .words { position:absolute; left:var(--space-10); bottom:var(--space-8); max-width:440px; }
+  .name { margin:0; font-family:var(--font-display); font-weight:300; font-size:96px; line-height:.95; letter-spacing:-.02em; color:var(--content); }
+  .name em { font-style:italic; color:var(--secondary); }
+  .tag { margin:var(--space-3) 0 0 4px; font-size:14px; line-height:20px; color:var(--content-muted); }
+</style>
+</head>
+<body>
+<div class="cover">
+<div class="art" aria-hidden="true">
+<svg viewBox="0 0 480 288" width="480" height="288">
+<!--
+  blocks      primary slab 168x240 bled off the top; accent 144x144; secondary 120x168 bled off top and right; surface-selected band 264x96 bled off bottom and right
+  arrangement one tall charcoal slab with satellites, as the site sets dark photography beside light stone
+  pattern     editorial row: "borders, not shadows" and a light serif, so four surface-border hairlines at stroke-hairline on a space-12 (48px) baseline cross the blocks
+  scales      space-6 (24) margins and gaps, space-12 (48) rule pitch, radius-none corners
+-->
+<rect class="ink" x="24" y="-12" width="168" height="240"/>
+<rect class="bronze" x="384" y="-12" width="120" height="168"/>
+<rect class="champ" x="216" y="48" width="144" height="144"/>
+<rect class="stone" x="216" y="216" width="288" height="96"/>
+<line class="rule" x1="0" x2="480" y1="96" y2="96"/>
+<line class="rule" x1="0" x2="480" y1="144" y2="144"/>
+<line class="rule" x1="0" x2="480" y1="192" y2="192"/>
+<line class="rule" x1="0" x2="480" y1="240" y2="240"/>
+</svg>
+</div>
+<div class="words">
+<h1 class="name">Schoeman <em>Clinic</em></h1>
+<p class="tag">Quiet, precise private medicine, for patients and clinicians.</p>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,765 @@
+<title>Schoeman Clinic Portal</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,500;1,300&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: fixed left sidebar + scrolling content column; demo banner on top switches Patient / Clinic views. Single light theme, matching theschoemanclinic.com. */
+:root{
+  color-scheme: light;
+  /* Primary */
+  --primary: oklch(19% .008 60);
+  --primary-hover: oklch(14% .006 60);
+  --primary-content: oklch(97.7% .006 80);
+  /* Secondary */
+  --secondary: oklch(47% .06 60);
+  --secondary-border: oklch(55% .06 60);
+  --secondary-content: oklch(97.7% .006 80);
+  /* Accent */
+  --accent: oklch(78% .055 78);
+  --accent-subtle: oklch(78% .055 78 / .22);
+  --accent-content: oklch(19% .008 60);
+  /* Status */
+  --status-success: oklch(50% .07 150); --status-success-bg: oklch(94% .025 150);
+  --status-warning: oklch(52% .09 70); --status-warning-bg: oklch(94% .035 80);
+  --status-danger: oklch(50% .15 27); --status-danger-bg: oklch(95% .025 27);
+  --status-info: oklch(48% .03 240); --status-info-bg: oklch(94% .01 240);
+  /* Content */
+  --content: oklch(19% .008 60);
+  --content-muted: oklch(45% .012 60);
+  --content-inverse: oklch(97.7% .006 80);
+  /* Surface */
+  --surface: oklch(97.7% .006 80);
+  --surface-raised: oklch(98.5% .005 80);
+  --surface-sunken: oklch(94% .006 75);
+  --surface-selected: oklch(93% .008 75);
+  --surface-inverse: oklch(14% .006 60);
+  --surface-border: oklch(88% .008 75);
+  --surface-overlay: oklch(14% .006 60 / .38);
+  /* Type */
+  --display: "Cormorant Garamond", "Cormorant", Georgia, "Times New Roman", serif;
+  --sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--surface);color:var(--content);font:400 15px/24px var(--sans);-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--secondary-border);outline-offset:2px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+/* Demo banner */
+.banner{position:sticky;top:0;z-index:40;background:var(--surface-inverse);color:var(--content-inverse);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  padding-block:6px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+.banner .switch{display:flex;align-items:center;gap:8px}
+.banner .switch button{background:transparent;border:1px solid oklch(97.7% .006 80 / .35);color:var(--content-inverse);padding:3px 10px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;cursor:pointer}
+.banner .switch button[aria-pressed="true"]{background:var(--content-inverse);color:var(--surface-inverse);border-color:var(--content-inverse)}
+
+/* Shell */
+.app{display:grid;grid-template-columns:264px minmax(0,1fr);min-height:calc(100% - 34px)}
+.sidebar{border-right:1px solid var(--surface-border);background:var(--surface);display:flex;flex-direction:column;position:sticky;top:34px;height:calc(100vh - 34px);overflow-y:auto;padding:28px 16px 20px max(16px,env(safe-area-inset-left,0px))}
+.wordmark{padding:0 12px 24px}
+.wordmark .the{font:500 10px/1 var(--sans);letter-spacing:.3em;text-transform:uppercase;color:var(--content-muted)}
+.wordmark .name{font:300 26px/1.05 var(--display);letter-spacing:-.01em;margin-top:4px}
+.wordmark .portal{margin-top:10px}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav .group{font:500 10.5px/1 var(--sans);letter-spacing:.2em;text-transform:uppercase;color:var(--content-muted);padding:18px 12px 8px}
+.nav a{display:flex;align-items:center;gap:12px;height:40px;padding:0 12px;text-decoration:none;font-size:14px;color:var(--content-muted);border-left:2px solid transparent;transition:background .15s ease-out,color .15s ease-out}
+.nav a:hover{color:var(--content);background:var(--surface-sunken)}
+.nav a[aria-current="page"]{color:var(--content);background:var(--surface-selected);border-left-color:var(--secondary-border)}
+.nav a .count{margin-left:auto;font-size:11px;min-width:20px;height:20px;display:grid;place-items:center;background:var(--content);color:var(--content-inverse);font-variant-numeric:tabular-nums}
+.side-foot{margin-top:auto;border-top:1px solid var(--surface-border);padding:16px 12px 0;display:flex;align-items:center;gap:12px}
+.avatar{width:36px;height:36px;border-radius:50%;background:var(--surface-selected);display:grid;place-items:center;font-size:12px;font-weight:600;color:var(--secondary);flex:none}
+.side-foot .who{min-width:0;flex:1}
+.side-foot .who b{display:block;font-size:13px;font-weight:600;line-height:18px}
+.side-foot .who span{font-size:12px;color:var(--content-muted)}
+.iconbtn{background:transparent;border:0;padding:6px;cursor:pointer;color:var(--content-muted);display:grid;place-items:center}
+.iconbtn:hover{color:var(--content)}
+
+.main{min-width:0;padding-block:0 64px;padding-left:max(40px,env(safe-area-inset-left,0px));padding-right:max(40px,env(safe-area-inset-right,0px))}
+.topbar{height:64px;display:flex;align-items:center;gap:16px;border-bottom:1px solid var(--surface-border);margin-bottom:36px}
+.topbar .crumb{flex:1;min-width:0}
+.topbar .search{display:flex;align-items:center;gap:8px;border:1px solid var(--surface-border);background:var(--surface-raised);height:36px;padding:0 12px;width:260px;color:var(--content-muted)}
+.topbar .search input{border:0;background:transparent;outline:0;width:100%;font-size:13px;color:var(--content)}
+.menu-btn{display:none}
+.content{max-width:1200px}
+
+/* Type */
+.eyebrow{font:500 11px/16px var(--sans);letter-spacing:.18em;text-transform:uppercase;color:var(--content-muted)}
+h1.title{font:300 40px/44px var(--display);letter-spacing:-.02em;margin:6px 0 0;text-wrap:balance}
+h1.title em,h2.sec em{font-style:italic;color:var(--secondary)}
+h2.sec{font:300 28px/34px var(--display);letter-spacing:-.015em;margin:0;text-wrap:balance}
+.lede{color:var(--content-muted);max-width:62ch;margin:10px 0 0}
+.page-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:32px}
+.small{font-size:13px;line-height:20px;color:var(--content-muted)}
+.num{font-variant-numeric:tabular-nums}
+.stack{display:flex;flex-direction:column;gap:24px}
+.section{margin-top:48px;display:flex;flex-direction:column;gap:16px}
+.section-head{display:flex;justify-content:space-between;align-items:baseline;gap:16px;flex-wrap:wrap}
+
+/* Cards */
+.grid{display:grid;gap:24px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.card{background:var(--surface-raised);border:1px solid var(--surface-border);border-radius:4px;padding:24px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.card.click{cursor:pointer;transition:border-color .15s ease-out}
+.card.click:hover{border-color:var(--secondary-border)}
+.card h3{font:600 16px/24px var(--sans);margin:0}
+.card .actions{margin-top:auto;padding-top:8px;display:flex;gap:8px;flex-wrap:wrap}
+.stat .big{font:500 32px/36px var(--sans);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 16px;font-size:14px}
+.kv dt{color:var(--content-muted)}
+.kv dd{margin:0}
+.meta-row{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--content-muted)}
+.meta-row span{display:inline-flex;align-items:center;gap:6px}
+hr.rule{border:0;border-top:1px solid var(--surface-border);margin:4px 0;width:100%}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 20px;border:2px solid var(--primary);background:var(--primary);color:var(--primary-content);border-radius:0;font:500 11px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;cursor:pointer;text-decoration:none;white-space:nowrap;transition:background .15s ease-out,color .15s ease-out,border-color .15s ease-out}
+.btn:hover{background:var(--primary-hover);border-color:var(--primary-hover)}
+.btn.sm{height:36px;padding:0 14px}
+.btn.accent{background:var(--secondary);border-color:var(--secondary);color:var(--secondary-content)}
+.btn.accent:hover{background:oklch(41% .06 60);border-color:oklch(41% .06 60)}
+.btn.outline{background:transparent;color:var(--content)}
+.btn.outline:hover{background:var(--content);color:var(--content-inverse)}
+.btn.bronze{background:transparent;color:var(--secondary);border-color:var(--secondary-border)}
+.btn.bronze:hover{background:var(--secondary);border-color:var(--secondary);color:var(--content-inverse)}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--content);padding:0 4px;height:auto;letter-spacing:.12em}
+.btn.ghost:hover{text-decoration:underline}
+.btn.danger{background:transparent;color:var(--status-danger);border-color:var(--status-danger)}
+.btn.danger:hover{background:var(--status-danger);color:var(--content-inverse)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+
+/* Pills */
+.pill{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 8px;border-radius:2px;font:500 10.5px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;background:var(--surface-sunken);color:var(--content-muted)}
+.pill svg{width:12px;height:12px}
+.pill.ok{background:var(--status-success-bg);color:var(--status-success)}
+.pill.warn{background:var(--status-warning-bg);color:var(--status-warning)}
+.pill.crit{background:var(--status-danger-bg);color:var(--status-danger)}
+.pill.info{background:var(--status-info-bg);color:var(--status-info)}
+.pill.dark{background:var(--content);color:var(--content-inverse)}
+.v-ok{color:var(--status-success)} .v-warn{color:var(--status-warning)} .v-crit{color:var(--status-danger)}
+
+/* Alert bar */
+.alert{display:flex;align-items:center;gap:14px;border:1px solid var(--surface-border);border-left-width:3px;padding:14px 18px;background:var(--surface-raised);flex-wrap:wrap}
+.alert .t{flex:1;min-width:200px}
+.alert b{font-weight:600}
+.alert.warn{border-color:var(--status-warning);background:var(--status-warning-bg)}
+.alert.crit{border-color:var(--status-danger);background:var(--status-danger-bg)}
+.alert.info{border-color:var(--status-info);background:var(--status-info-bg)}
+.alert svg{flex:none}
+
+/* Tables */
+.tablewrap{overflow-x:auto;min-width:0}
+table{width:100%;border-collapse:collapse;font-size:14px;line-height:20px}
+th{font:500 11px/16px var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--content-muted);text-align:left;padding:0 12px 10px;border-bottom:1px solid var(--surface-border);white-space:nowrap}
+td{padding:14px 12px;border-bottom:1px solid var(--surface-border);vertical-align:middle}
+tr.row{cursor:pointer;transition:background .15s ease-out}
+tr.row:hover td{background:var(--surface-sunken)}
+td.r,th.r{text-align:right}
+td .val{font-weight:500;font-variant-numeric:tabular-nums}
+td .sub{display:block;font-size:12px;color:var(--content-muted)}
+
+/* Chips & tabs */
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{height:32px;padding:0 14px;border:1px solid var(--surface-border);background:var(--surface-raised);font-size:13px;cursor:pointer;color:var(--content-muted)}
+.chip:hover{border-color:var(--secondary-border);color:var(--content)}
+.chip[aria-pressed="true"]{background:var(--primary);border-color:var(--primary);color:var(--content-inverse)}
+.tabs{display:flex;gap:28px;border-bottom:1px solid var(--surface-border);overflow-x:auto}
+.tabs button{background:transparent;border:0;border-bottom:2px solid transparent;padding:0 0 12px;font:500 11px/16px var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--content-muted);cursor:pointer;white-space:nowrap;margin-bottom:-1px}
+.tabs button[aria-selected="true"]{color:var(--content);border-bottom-color:var(--secondary-border)}
+
+/* Forms */
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.field label{font:500 11px/16px var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--content-muted)}
+.input,select.input,textarea.input{height:44px;border:1px solid var(--surface-border);background:var(--surface-raised);border-radius:0;padding:0 14px;width:100%;transition:border-color .15s ease-out}
+textarea.input{height:auto;min-height:120px;padding:12px 14px;resize:vertical;line-height:22px}
+.input:focus{outline:0;border-color:var(--secondary-border)}
+.toggle{display:flex;align-items:center;gap:10px;font-size:14px;cursor:pointer}
+.toggle input{appearance:none;width:40px;height:22px;border-radius:9999px;border:0;background:var(--surface-border);position:relative;cursor:pointer;margin:0;flex:none;transition:background .15s ease-out}
+.toggle input::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:9999px;background:var(--surface-raised);border:1px solid var(--surface-border);box-sizing:border-box;transition:left .15s ease-out}
+.toggle input:checked{background:var(--secondary)}
+.toggle input:checked::after{left:20px;border-color:var(--secondary)}
+.toggle input:disabled{cursor:not-allowed;opacity:.6}
+
+/* Steps */
+.steps{display:flex;gap:0;list-style:none;padding:0;margin:4px 0}
+.steps li{flex:1;display:flex;flex-direction:column;gap:8px;font-size:12px;color:var(--content-muted);position:relative}
+.steps li::before{content:"";height:2px;background:var(--surface-border);display:block}
+.steps li.done::before{background:var(--secondary)}
+.steps li.done{color:var(--content)}
+.steps li.now{color:var(--content);font-weight:500}
+.steps li.now::before{background:linear-gradient(90deg,var(--secondary) 50%,var(--surface-border) 50%)}
+
+/* Overlay: sheet and dialog */
+.overlay{position:fixed;inset:0;background:var(--surface-overlay);z-index:60;display:flex;justify-content:flex-end}
+.overlay.center{justify-content:center;align-items:center;padding:16px}
+.sheet{background:var(--surface);width:min(520px,100%);height:100%;overflow-y:auto;border-left:1px solid var(--surface-border);padding:28px max(28px,env(safe-area-inset-right,0px)) 40px 28px;display:flex;flex-direction:column;gap:20px}
+.dialog{background:var(--surface);width:min(520px,100%);max-height:calc(100% - 32px);overflow-y:auto;border:1px solid var(--surface-border);padding:28px;display:flex;flex-direction:column;gap:18px}
+.dialog.wide{width:min(640px,100%)}
+.ov-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.toast{position:fixed;bottom:max(24px,env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--surface-inverse);color:var(--content-inverse);padding:12px 18px;font-size:14px;z-index:80;max-width:calc(100% - 32px);display:flex;gap:10px;align-items:center}
+
+/* Misc */
+.dropzone{border:1px dashed var(--secondary-border);background:var(--surface-raised);padding:44px 24px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer}
+.dropzone.over{background:var(--surface-sunken)}
+.prep{background:var(--surface-sunken);padding:14px 16px;font-size:14px;line-height:22px}
+details summary{cursor:pointer;font-size:13px;color:var(--secondary);font-weight:500;list-style:none}
+details summary::-webkit-details-marker{display:none}
+details ul{columns:2;column-gap:24px;padding-left:18px;margin:10px 0 0;font-size:13px;line-height:22px}
+.barcode{background:var(--surface-raised);border:1px solid var(--surface-border);padding:14px 18px;display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+.barcode svg{display:block;max-width:100%}
+.letter{background:var(--surface-raised);border:1px solid var(--surface-border);padding:32px;font-size:14px;line-height:23px}
+.letter .lh{font:300 22px/1 var(--display);margin-bottom:24px}
+.comment{border:1px solid var(--surface-border);background:var(--surface-raised);padding:16px;display:flex;gap:12px}
+.comment p{margin:4px 0 0}
+.empty{border:1px dashed var(--surface-border);padding:32px;text-align:center;color:var(--content-muted)}
+.pipeline{display:grid;grid-template-columns:repeat(5,minmax(220px,1fr));gap:16px;overflow-x:auto;padding-bottom:8px}
+.col{display:flex;flex-direction:column;gap:12px;min-width:0}
+.col-head{display:flex;justify-content:space-between;border-bottom:1px solid var(--surface-border);padding-bottom:10px}
+.mini{background:var(--surface-raised);border:1px solid var(--surface-border);padding:14px;display:flex;flex-direction:column;gap:6px;font-size:13px;line-height:19px}
+.mini b{font-size:14px;font-weight:600}
+.split{display:grid;grid-template-columns:320px minmax(0,1fr);gap:24px;align-items:start}
+.qitem{background:var(--surface-raised);border:1px solid var(--surface-border);padding:16px;cursor:pointer;display:flex;flex-direction:column;gap:6px;text-align:left;width:100%}
+.qitem:hover{border-color:var(--secondary-border)}
+.qitem[aria-current="true"]{border-color:var(--content);box-shadow:inset 3px 0 0 var(--secondary-border)}
+.docprev{background:var(--surface-raised);border:1px solid var(--surface-border);padding:24px;font-size:12px;line-height:20px;color:var(--content-muted);min-height:360px}
+.docprev .ln{height:8px;background:var(--surface-sunken);margin:8px 0}
+.record-head{display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap}
+.record-head .avatar{width:56px;height:56px;font-size:16px}
+.quick{display:flex;flex-direction:column;gap:8px}
+.quick .btn{justify-content:flex-start}
+.auth{min-height:calc(100vh - 34px);display:grid;grid-template-columns:55% 45%}
+.auth-visual{background:linear-gradient(oklch(14% .006 60 / .55),oklch(14% .006 60 / .72)),radial-gradient(120% 90% at 30% 20%,oklch(62% .03 70),oklch(30% .015 60));color:var(--content-inverse);padding:48px;display:flex;flex-direction:column;justify-content:flex-end;gap:16px}
+.auth-visual .eyebrow{color:oklch(90% .008 75 / .85)}
+.auth-visual h2{font:300 52px/56px var(--display);letter-spacing:-.02em;margin:0;max-width:12ch}
+.auth-visual h2 em{color:var(--accent)}
+.auth-form{padding:48px max(48px,env(safe-area-inset-right,0px)) 48px 48px;display:flex;flex-direction:column;justify-content:center;gap:20px;max-width:480px}
+.spark{display:block}
+
+@media (max-width:1100px){.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.split{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:900px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .sidebar{position:fixed;left:0;top:0;bottom:0;height:100%;z-index:70;width:280px;transform:translateX(-100%);transition:transform .2s ease-out;padding-top:max(28px,env(safe-area-inset-top,0px))}
+  .sidebar.open{transform:none;box-shadow:0 0 0 100vmax var(--surface-overlay)}
+  .menu-btn{display:grid}
+  .main{padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
+  .topbar .search{display:none}
+  .g2,.g3{grid-template-columns:minmax(0,1fr)}
+  .auth{grid-template-columns:minmax(0,1fr)}
+  .auth-visual{min-height:280px;padding:28px}
+  .auth-visual h2{font-size:38px;line-height:42px}
+  .auth-form{padding:32px 20px}
+}
+@media (max-width:560px){
+  .g4{grid-template-columns:minmax(0,1fr)}
+  h1.title{font-size:32px;line-height:36px}
+  details ul{columns:1}
+  .letter{padding:20px}
+}
+</style>
+
+<div class="banner" role="region" aria-label="Demo">
+  <span>Demo environment · fictional data</span>
+  <span class="switch"><span>View as</span><button type="button" id="view-patient" data-act="view" data-v="p">Patient</button><button type="button" id="view-clinic" data-act="view" data-v="c">Clinic</button></span>
+</div>
+<div id="root"></div>
+<div id="ov" hidden></div>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+(function(){
+/* ---------- Icons ---------- */
+const I={
+home:'<path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z"/>',
+flask:'<path d="M9 3h6M10 3v6L4.6 18.8A1.5 1.5 0 0 0 5.9 21h12.2a1.5 1.5 0 0 0 1.3-2.2L14 9V3"/>',
+activity:'<path d="M3 12h4l3-8 4 16 3-8h4"/>',
+upload:'<path d="M12 16V4M7 9l5-5 5 5M4 20h16"/>',
+capsule:'<rect x="3" y="8" width="18" height="8" rx="4"/><path d="M12 8v8"/>',
+calendar:'<rect x="3" y="5" width="18" height="16" rx="1"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+message:'<path d="M4 5h16v11H9l-5 4z"/>',
+file:'<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/>',
+shield:'<path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/>',
+users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5M16 4.5a3.5 3.5 0 0 1 0 7M18 14.6c1.8.8 3 2.6 3.5 5.4"/>',
+settings:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/>',
+search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>',
+bell:'<path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4zM10 21h4"/>',
+tray:'<path d="M3 13h5l1 3h6l1-3h5M5 5h14l2 8v6H3v-6z"/>',
+check:'<path d="m5 12 5 5 9-10"/>',
+minus:'<path d="M5 12h14"/>',
+alert:'<path d="M12 3.5 2.5 20h19z"/><path d="M12 10v4.5M12 17.2v.3"/>',
+clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+lock:'<rect x="5" y="11" width="14" height="10" rx="1"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+x:'<path d="M6 6l12 12M18 6 6 18"/>',
+download:'<path d="M12 4v12M7 11l5 5 5-5M4 20h16"/>',
+plus:'<path d="M12 5v14M5 12h14"/>',
+menu:'<path d="M4 7h16M4 12h16M4 17h16"/>',
+up:'<path d="M12 19V5M6 11l6-6 6 6"/>',
+down:'<path d="M12 5v14M6 13l6 6 6-6"/>',
+grid:'<rect x="3.5" y="3.5" width="7" height="7"/><rect x="13.5" y="3.5" width="7" height="7"/><rect x="3.5" y="13.5" width="7" height="7"/><rect x="13.5" y="13.5" width="7" height="7"/>',
+clipboard:'<rect x="5" y="4" width="14" height="17" rx="1"/><path d="M9 4V3h6v1M9 10h6M9 14h6"/>',
+video:'<rect x="3" y="6" width="13" height="12" rx="1"/><path d="m16 10 5-3v10l-5-3"/>',
+pin:'<path d="M12 21s7-6.5 7-12a7 7 0 0 0-14 0c0 5.5 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/>',
+logout:'<path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/>',
+arrow:'<path d="M5 12h14M13 6l6 6-6 6"/>'
+};
+const ic=(n,s=18)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${I[n]||''}</svg>`;
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ---------- Data (fictional) ---------- */
+const DATES=['12 Mar 2026','16 Jun 2026','14 Oct 2026'];
+const SHORT=['Mar','Jun','Oct'];
+const markers=[
+ {id:'hba1c',name:'HbA1c',panel:'Metabolic',unit:'mmol/mol',lo:20,hi:41,vals:[46,44,43],s:'crit',ex:'Your average blood sugar over the last two to three months.',c:"Coming down steadily since March. Keep going with the changes we discussed and we'll recheck in three months."},
+ {id:'vitd',name:'Vitamin D',panel:'Vitamins and minerals',unit:'nmol/L',lo:75,hi:200,vals:[38,56,71],s:'warn',ex:'Supports bones, muscles and immunity. Levels drop in autumn and winter.',c:'Much better on supplements. Stay on 4,000 IU daily through the winter.'},
+ {id:'ferr',name:'Ferritin',panel:'Vitamins and minerals',unit:'µg/L',lo:30,hi:200,vals:[24,31,42],s:'ok',ex:'Shows how much iron your body has in store.',c:null},
+ {id:'chol',name:'Total cholesterol',panel:'Lipids',unit:'mmol/L',lo:null,hi:5.0,vals:[6.1,5.8,5.4],s:'warn',ex:'All the cholesterol in your blood, good and less good.',c:'Heading the right way. We will look at the full lipid picture at your follow-up.'},
+ {id:'hdl',name:'HDL cholesterol',panel:'Lipids',unit:'mmol/L',lo:1.2,hi:null,vals:[1.5,1.6,1.6],s:'ok',ex:'The protective type of cholesterol. Higher is better.',c:null},
+ {id:'tsh',name:'TSH',panel:'Thyroid',unit:'mIU/L',lo:0.4,hi:4.0,vals:[2.3,2.1,2.2],s:'ok',ex:'The signal your brain sends to the thyroid gland.',c:null},
+ {id:'ft4',name:'Free T4',panel:'Thyroid',unit:'pmol/L',lo:12,hi:22,vals:[15.1,15.6,15.4],s:'ok',ex:'The main hormone your thyroid makes.',c:null},
+ {id:'oest',name:'Oestradiol',panel:'Hormones',unit:'pmol/L',lo:null,hi:null,vals:[210,165,182],s:'ok',ex:'The main form of oestrogen. Its range depends on your cycle and menopause stage.',c:'Consistent with your current HRT dose.'},
+ {id:'fsh',name:'FSH',panel:'Hormones',unit:'IU/L',lo:null,hi:null,vals:[28,34,31],s:'ok',ex:'A hormone that rises as you move towards menopause.',c:null},
+ {id:'crp',name:'hs-CRP',panel:'Metabolic',unit:'mg/L',lo:null,hi:3.0,vals:[1.8,1.1,0.9],s:'ok',ex:'A sensitive marker of inflammation in the body.',c:null}
+];
+const PANELS=['All','Hormones','Metabolic','Thyroid','Vitamins and minerals','Lipids'];
+const GS5=['Oestradiol','Progesterone','FSH','LH','Testosterone','SHBG','DHEA-S','TSH','Free T4','Free T3','HbA1c','Fasting glucose','Lipid profile','Vitamin D'];
+const meds=[
+ {id:'oe',name:'Oestrogel 0.06% gel',how:'2 pumps daily, applied to the arms',by:'Dr Gina Schoeman',pharm:'Harley Street Pharmacy, London W1G',start:'18 Mar 2026',left:8,total:28,kind:'Prescription'},
+ {id:'ut',name:'Utrogestan 100 mg',how:'1 capsule at night',by:'Dr Gina Schoeman',pharm:'Harley Street Pharmacy, London W1G',start:'18 Mar 2026',left:24,total:28,kind:'Prescription'},
+ {id:'vd',name:'Vitamin D3 4,000 IU',how:'1 capsule daily with food',by:'Dr Gina Schoeman',pharm:'Clinic dispensary',start:'24 Jun 2026',left:41,total:60,kind:'Supplement'}
+];
+const letters=[
+ {id:'l1',title:'Results review letter',type:'LETTER',by:'Dr Gina Schoeman',date:'21 Oct 2026'},
+ {id:'l2',title:'Follow-up consultation letter',type:'LETTER',by:'Dr Gina Schoeman',date:'24 Jun 2026'},
+ {id:'l3',title:'Initial assessment summary',type:'REPORT',by:'Dr Gina Schoeman',date:'18 Mar 2026'}
+];
+const patients=[
+ {id:'eh',name:'Eleanor Hart',age:52,sex:'F',dob:'14 Mar 1974',pid:'SC-004821',dx:['Perimenopause','Vitamin D deficiency','Raised HbA1c, pre-diabetic range'],hba1c:43,last:'21 Oct 2026',next:'18 Nov 2026',email:'eleanor.hart@example.com',phone:'07700 900412',allergy:'Penicillin'},
+ {id:'tr',name:'Thomas Reed',age:46,sex:'M',dob:'2 Feb 1980',pid:'SC-003117',dx:['Testosterone deficiency'],hba1c:36,last:'2 Jul 2026',next:'29 Oct 2026',alert:true},
+ {id:'ah',name:'Amira Haddad',age:39,sex:'F',dob:'30 Sep 1987',pid:'SC-004102',dx:['Hypothyroidism'],hba1c:34,last:'10 Aug 2026',next:'29 Oct 2026',alert:true},
+ {id:'cb',name:'Claire Benson',age:44,sex:'F',dob:'7 Jan 1982',pid:'SC-005033',dx:['Fatigue, under investigation'],hba1c:null,last:'New patient',next:'29 Oct 2026'},
+ {id:'og',name:'Oliver Grant',age:58,sex:'M',dob:'19 May 1968',pid:'SC-002688',dx:['Metabolic syndrome','Hypertension'],hba1c:47,last:'4 Sep 2026',next:'29 Oct 2026'},
+ {id:'sm',name:'Sophie Marlow',age:49,sex:'F',dob:'11 Nov 1976',pid:'SC-004455',dx:['Perimenopause'],hba1c:35,last:'15 Jul 2026',next:'9 Nov 2026'},
+ {id:'do',name:'Daniel Okoro',age:61,sex:'M',dob:'23 Apr 1965',pid:'SC-001902',dx:['Type 2 diabetes','Hyperlipidaemia'],hba1c:52,last:'1 Sep 2026',next:'29 Oct 2026'},
+ {id:'hp',name:'Hannah Price',age:35,sex:'F',dob:'8 Aug 1991',pid:'SC-005210',dx:['Vitamin D deficiency'],hba1c:33,last:'12 Aug 2026',next:'29 Oct 2026'},
+ {id:'ml',name:'Margaret Lyle',age:67,sex:'F',dob:'3 Dec 1958',pid:'SC-000874',dx:['Type 2 diabetes','Osteopenia'],hba1c:48,last:'20 Aug 2026',next:'2 Dec 2026',alert:true}
+];
+const diary=[
+ {t:'09:00',p:'tr',type:'Follow-up',len:30,loc:'Harley Street',note:'Testosterone review',flag:'Result to review'},
+ {t:'09:45',p:'ah',type:'Results review',len:30,loc:'Video',note:'Thyroid panel in, not reviewed',flag:'Result to review'},
+ {t:'10:30',p:'cb',type:'Initial assessment',len:60,loc:'Harley Street',note:'New patient, functional medicine',flag:null},
+ {t:'11:45',p:'og',type:'Follow-up',len:30,loc:'Video',note:'Metabolic review',flag:'Bloods missing'},
+ {t:'14:00',p:'sm',type:'Follow-up',len:30,loc:'Wimbledon',note:'Perimenopause review',flag:null},
+ {t:'15:00',p:'do',type:'Results review',len:30,loc:'Harley Street',note:'Lipids',flag:'Result to review'},
+ {t:'16:00',p:'hp',type:'Follow-up',len:30,loc:'Video',note:'Vitamin D recheck',flag:'Result to review'}
+];
+const reviewSeed=[
+ {id:'r1',pid:'ah',panel:'Thyroid panel',lab:'TDL Pathology',sample:'26 Oct 2026',received:'28 Oct 2026',m:[
+  {n:'TSH',u:'mIU/L',r:'0.4–4.0',v:'6.8',p:'4.9',d:'+1.9',s:'crit'},{n:'Free T4',u:'pmol/L',r:'12–22',v:'11.2',p:'12.6',d:'−1.4',s:'crit'},{n:'Free T3',u:'pmol/L',r:'3.1–6.8',v:'4.0',p:'4.2',d:'−0.2',s:'ok'},{n:'TPO antibodies',u:'IU/mL',r:'< 34',v:'210',p:'198',d:'+12',s:'crit'}]},
+ {id:'r2',pid:'do',panel:'Lipid profile',lab:'TDL Pathology',sample:'25 Oct 2026',received:'27 Oct 2026',m:[
+  {n:'LDL cholesterol',u:'mmol/L',r:'< 3.0',v:'4.6',p:'4.1',d:'+0.5',s:'crit'},{n:'Total cholesterol',u:'mmol/L',r:'< 5.0',v:'6.7',p:'6.2',d:'+0.5',s:'crit'},{n:'Triglycerides',u:'mmol/L',r:'< 1.7',v:'2.1',p:'1.9',d:'+0.2',s:'warn'},{n:'HDL cholesterol',u:'mmol/L',r:'> 1.0',v:'1.1',p:'1.1',d:'0.0',s:'ok'}]},
+ {id:'r3',pid:'cb',panel:'Iron studies',lab:'The Doctors Laboratory',sample:'22 Oct 2026',received:'27 Oct 2026',m:[
+  {n:'Ferritin',u:'µg/L',r:'30–200',v:'18',p:'—',d:'—',s:'crit'},{n:'Transferrin saturation',u:'%',r:'20–50',v:'14',p:'—',d:'—',s:'crit'},{n:'Haemoglobin',u:'g/L',r:'115–165',v:'121',p:'—',d:'—',s:'ok'}]},
+ {id:'r4',pid:'tr',panel:'Male hormone panel',lab:'TDL Pathology',sample:'23 Oct 2026',received:'26 Oct 2026',m:[
+  {n:'Haematocrit',u:'L/L',r:'0.40–0.52',v:'0.53',p:'0.50',d:'+0.03',s:'crit'},{n:'Total testosterone',u:'nmol/L',r:'8.6–29.0',v:'24.1',p:'22.3',d:'+1.8',s:'ok'},{n:'Oestradiol',u:'pmol/L',r:'< 160',v:'142',p:'120',d:'+22',s:'ok'},{n:'PSA',u:'µg/L',r:'< 2.5',v:'0.8',p:'0.7',d:'+0.1',s:'ok'}]},
+ {id:'r5',pid:'hp',panel:'Vitamin panel',lab:'TDL Pathology',sample:'24 Oct 2026',received:'26 Oct 2026',m:[
+  {n:'Vitamin D',u:'nmol/L',r:'75–200',v:'48',p:'41',d:'+7',s:'crit'},{n:'Vitamin B12',u:'ng/L',r:'180–900',v:'410',p:'388',d:'+22',s:'ok'},{n:'Folate',u:'µg/L',r:'> 3.9',v:'7.2',p:'6.8',d:'+0.4',s:'ok'}]}
+];
+const importsSeed=[
+ {id:'i1',file:'Mediclinic_Dubai_bloods_Oct2026.pdf',source:'Patient upload',pid:'og',match:true,received:'28 Oct 2026',dup:false,items:[
+  {k:'HbA1c',v:'47',u:'mmol/mol',r:'20–41',c:'HIGH'},{k:'Fasting glucose',v:'6.4',u:'mmol/L',r:'3.9–5.5',c:'HIGH'},{k:'ALT',v:'38',u:'U/L',r:'0–41',c:'MEDIUM'},{k:'eGFR',v:'82',u:'mL/min',r:'> 60',c:'HIGH'}]},
+ {id:'i2',file:'Labor_Zuerich_Befund_2210.pdf',source:'Email',pid:null,guess:'sm',match:false,received:'27 Oct 2026',dup:false,items:[
+  {k:'Oestradiol',v:'95',u:'pmol/L',r:'varies',c:'HIGH'},{k:'FSH',v:'41',u:'IU/L',r:'varies',c:'MEDIUM'},{k:'Progesterone',v:'1.2',u:'nmol/L',r:'varies',c:'LOW'}]},
+ {id:'i3',file:'TDL_SCH-1000139.pdf',source:'TDL',pid:'hp',match:true,received:'26 Oct 2026',dup:true,items:[
+  {k:'Vitamin D',v:'48',u:'nmol/L',r:'75–200',c:'HIGH'},{k:'Vitamin B12',v:'410',u:'ng/L',r:'180–900',c:'HIGH'},{k:'Folate',v:'7.2',u:'µg/L',r:'> 3.9',c:'HIGH'}]}
+];
+const STAGES=['Sent to patient','Paid','Sample taken','Results in','Reviewed'];
+const catalogue=[
+ {n:'Female Hormone & Metabolic Panel (GS5)',price:295,tests:14,lab:'TDL Pathology'},
+ {n:'Male Hormone Panel',price:210,tests:9,lab:'TDL Pathology'},
+ {n:'Perimenopause panel',price:185,tests:8,lab:'TDL Pathology'},
+ {n:'Metabolic panel',price:160,tests:7,lab:'TDL Pathology'},
+ {n:'Thyroid panel',price:140,tests:5,lab:'TDL Pathology'},
+ {n:'Vitamin and Iron Panel',price:120,tests:6,lab:'The Doctors Laboratory'},
+ {n:'Lipid profile',price:95,tests:5,lab:'TDL Pathology'}
+];
+const ordersSeed=[
+ {id:'LO-2026-014',pid:'eh',panel:'Female Hormone & Metabolic Panel (GS5)',price:295,ordered:'21 Oct',due:'4 Nov',appt:'18 Nov',stage:0,risk:false},
+ {id:'LO-2026-016',pid:'sm',panel:'Perimenopause panel',price:185,ordered:'12 Oct',due:'26 Oct',appt:'9 Nov',stage:2,risk:true},
+ {id:'LO-2026-015',pid:'og',panel:'Metabolic panel',price:160,ordered:'1 Oct',due:'15 Oct',appt:'29 Oct',stage:1,risk:true},
+ {id:'LO-2026-013',pid:'ah',panel:'Thyroid panel',price:140,ordered:'14 Oct',due:'15 Oct',appt:'29 Oct',stage:3,risk:false},
+ {id:'LO-2026-012',pid:'hp',panel:'Vitamin and Iron Panel',price:120,ordered:'9 Oct',due:'15 Oct',appt:'29 Oct',stage:3,risk:false},
+ {id:'LO-2026-011',pid:'do',panel:'Lipid profile',price:95,ordered:'8 Oct',due:'15 Oct',appt:'29 Oct',stage:3,risk:false},
+ {id:'LO-2026-009',pid:'eh',panel:'Vitamin and Iron Panel',price:120,ordered:'30 Sep',due:'14 Oct',appt:'21 Oct',stage:4,risk:false}
+];
+const safeguarding=[
+ {pid:'ah',type:'Clinical warning',sev:'MODERATE',note:'Anxiety around blood tests. Offer a longer slot and a phlebotomist she knows.',by:'Dr Gina Schoeman',added:'10 Aug 2026',review:'10 Jan 2027',overdue:false},
+ {pid:'ml',type:'Communication',sev:'LOW',note:'Hearing impairment. Prefers written follow-up and longer appointments.',by:'Dr Laura Bennett',added:'20 Aug 2026',review:'2 Dec 2026',overdue:false},
+ {pid:'tr',type:'Chaperone',sev:'LOW',note:'Prefers a chaperone for examinations.',by:'Priya Shah',added:'14 Apr 2026',review:'14 Oct 2026',overdue:true}
+];
+const team=[
+ {n:'Dr Gina Schoeman',role:'DOCTOR',loc:'Harley Street, Wimbledon',last:'Now'},
+ {n:'Dr Laura Bennett',role:'DOCTOR',loc:'Wimbledon',last:'Today, 08:12'},
+ {n:'Cecile',role:'HEALTH COACH',loc:'Harley Street, Video',last:'Yesterday'},
+ {n:'Priya Shah',role:'PA',loc:'Harley Street',last:'Today, 08:40'},
+ {n:'Tom Ellis',role:'PA',loc:'Wimbledon',last:'Today, 07:58'},
+ {n:'Admin user',role:'ADMIN',loc:'All',last:'Mon, 16:20'}
+];
+const audit=[
+ ['29 Oct 2026, 08:41','Priya Shah','Confirmed import','Oliver Grant · Mediclinic Dubai'],
+ ['29 Oct 2026, 08:15','Dr Gina Schoeman','Viewed record','Amira Haddad'],
+ ['28 Oct 2026, 17:02','Dr Gina Schoeman','Released results','Eleanor Hart · Vitamin and Iron Panel'],
+ ['28 Oct 2026, 16:30','Tom Ellis','Created lab order','Sophie Marlow · Perimenopause panel'],
+ ['28 Oct 2026, 11:05','Eleanor Hart','Downloaded letter','Results review letter']
+];
+
+/* ---------- State ---------- */
+const S={labPaid:false,resFilter:'All',outOnly:false,uploads:[
+  {f:'Bupa_Dubai_bloods_Jun2026.pdf',d:'2 Jul 2026',st:'done',note:null},
+  {f:'Thyroid_results_photo.jpg',d:'8 May 2026',st:'info',note:'Priya: the photo is cut off at the bottom. Could you upload the full page?'}],
+  repeats:[{med:'Utrogestan 100 mg',d:'30 Sep 2026',st:'SENT TO PHARMACY'}],rxTab:'active',apptTab:'up',
+  questions:[{s:'Taking Vitamin D with HRT',d:'2 Oct 2026',st:'ANSWERED',a:'Yes, they are fine together. Take the Vitamin D with your main meal so it is absorbed well. Dr Gina Schoeman'}],
+  consents:{care:true,labs:true,research:false},
+  review:JSON.parse(JSON.stringify(reviewSeed)),revSel:'r1',imports:JSON.parse(JSON.stringify(importsSeed)),impSel:'i1',
+  orders:JSON.parse(JSON.stringify(ordersSeed)),diaryLoc:'All',pq:'',cohort:false,recordId:'eh',recTab:'overview',teamTab:'team',navOpen:false};
+
+/* ---------- Helpers ---------- */
+const pById=id=>patients.find(p=>p.id===id);
+const ini=n=>n.replace(/^Dr /,'').split(' ').map(w=>w[0]).slice(0,2).join('');
+const SL={ok:['IN RANGE','check'],warn:['BORDERLINE','minus'],crit:['OUT OF RANGE','alert']};
+const sp=s=>`<span class="pill ${s}">${ic(SL[s][1],12)}${SL[s][0]}</span>`;
+const pill=(cls,label,icon)=>`<span class="pill ${cls}">${icon?ic(icon,12):''}${label}</span>`;
+const rng=m=>m.lo!=null&&m.hi!=null?`${m.lo}–${m.hi}`:m.hi!=null?`< ${m.hi}`:m.lo!=null?`> ${m.lo}`:'Varies by cycle';
+const latest=m=>m.vals[m.vals.length-1];
+function spark(vals,s,w=96,h=28){const mn=Math.min(...vals),mx=Math.max(...vals),sp_=(mx-mn)||1;const X=i=>2+i*(w-4)/(vals.length-1),Y=v=>3+(mx-v)/sp_*(h-6);
+ const d=vals.map((v,i)=>`${i?'L':'M'}${X(i).toFixed(1)} ${Y(v).toFixed(1)}`).join(' ');const col=s==='crit'?'var(--status-danger)':s==='warn'?'var(--status-warning)':'var(--secondary)';
+ return `<svg class="spark" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true"><path d="${d}" fill="none" stroke="var(--secondary)" stroke-width="1.5"/><circle cx="${X(vals.length-1)}" cy="${Y(vals[vals.length-1])}" r="3" fill="${col}"/></svg>`;}
+function nice(x){const p=Math.pow(10,Math.floor(Math.log10(x)));const f=x/p;return (f<=1?1:f<=2?2:f<=5?5:10)*p;}
+function chart(m){const w=460,h=220,L=44,R=20,T=18,B=30;const v=m.vals;let mn=Math.min(...v,m.lo??Infinity),mx=Math.max(...v,m.hi??-Infinity);const span=(mx-mn)||1;mn=Math.max(0,mn-span*.3);mx=mx+span*.3;
+ const step=nice((mx-mn)/4);const t0=Math.ceil(mn/step)*step;const ticks=[];for(let t=t0;t<=mx+1e-9;t+=step)ticks.push(+t.toFixed(6));
+ const X=i=>L+i*(w-L-R)/(v.length-1),Y=y=>T+(mx-y)/(mx-mn)*(h-T-B);const dec=step<1?(step<0.1?2:1):0;
+ let band='';if(m.lo!=null||m.hi!=null){const y1=Y(m.hi??mx),y2=Y(m.lo??mn);band=`<rect x="${L}" y="${y1}" width="${w-L-R}" height="${Math.max(0,y2-y1)}" fill="var(--accent-subtle)"/><text x="${w-R-6}" y="${Math.max(y1+14,y2-8)}" text-anchor="end" font-size="11" fill="var(--content-muted)">Reference range ${rng(m)}</text>`;}
+ const grid=ticks.map(t=>`<line x1="${L}" x2="${w-R}" y1="${Y(t)}" y2="${Y(t)}" stroke="var(--surface-border)"/><text x="${L-8}" y="${Y(t)+4}" text-anchor="end" font-size="11" fill="var(--content-muted)">${t.toFixed(dec)}</text>`).join('');
+ const d=v.map((y,i)=>`${i?'L':'M'}${X(i)} ${Y(y)}`).join(' ');const last=v.length-1;const col=m.s==='crit'?'var(--status-danger)':m.s==='warn'?'var(--status-warning)':'var(--secondary)';
+ const pts=v.map((y,i)=>`<circle cx="${X(i)}" cy="${Y(y)}" r="${i===last?5:3.5}" fill="${i===last?col:'var(--surface-raised)'}" stroke="${i===last?col:'var(--secondary)'}" stroke-width="1.5"/>`).join('');
+ const xl=v.map((y,i)=>`<text x="${X(i)}" y="${h-8}" text-anchor="${i===0?'start':i===last?'end':'middle'}" font-size="11" fill="var(--content-muted)">${SHORT[i]} 2026</text>`).join('');
+ return `<svg viewBox="0 0 ${w} ${h}" width="100%" role="img" aria-label="${esc(m.name)} over time">${band}${grid}<path d="${d}" fill="none" stroke="var(--secondary)" stroke-width="2"/>${pts}<text x="${X(last)-10}" y="${Y(v[last])-12}" text-anchor="end" font-size="12" font-weight="600" fill="${col}">${v[last]} ${esc(m.unit)}</text>${xl}</svg>`;}
+function barcode(code){let x=0,bars='';const s=code+'*';for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);for(let k=0;k<5;k++){const wdt=((c>>k)&1)?3:1.4;bars+=`<rect x="${x}" y="0" width="${wdt}" height="54" fill="var(--surface-inverse)"/>`;x+=wdt+((c>>(k+1))&1?2.2:1.2);}}
+ return `<svg width="${x}" height="54" viewBox="0 0 ${x} 54" role="img" aria-label="Barcode ${code}">${bars}</svg>`;}
+function toast(msg){const t=document.getElementById('toast');t.innerHTML=ic('check',16)+`<span>${esc(msg)}</span>`;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>{t.hidden=true},3600);}
+function openOv(html,mode){const o=document.getElementById('ov');o.className='overlay'+(mode==='dialog'?' center':'');o.innerHTML=html;o.hidden=false;const f=o.querySelector('input,textarea,select,button');f&&f.focus();}
+function closeOv(){const o=document.getElementById('ov');o.hidden=true;o.innerHTML='';}
+const ovHead=(eb,title)=>`<div class="ov-head"><div><div class="eyebrow">${eb}</div><h2 class="sec" style="margin-top:6px">${title}</h2></div><button class="iconbtn" data-act="close" aria-label="Close">${ic('x',20)}</button></div>`;
+
+/* ---------- Navigation ---------- */
+const PNAV=[['p-home','Home','home'],['p-orders','Lab orders','flask'],['p-results','My results','activity'],['p-upload','Upload results','upload'],['p-prescriptions','Prescriptions','capsule'],['p-appointments','Appointments','calendar'],['p-ask','Ask the clinic','message'],['p-letters','Letters and documents','file'],['p-privacy','Privacy and consent','shield']];
+const CNAV=[['TODAY',[['c-dashboard','Dashboard','grid']]],['PATIENTS',[['c-patients','Patient list','users'],['c-review','Results review','clipboard'],['c-imports','Import queue','tray'],['c-orders','Lab orders','flask']]],['CLINICAL',[['c-safeguarding','Safeguarding alerts','shield']]],['CLINIC',[['c-team','Team and settings','settings']]]];
+function route(){const h=(location.hash||'').slice(1);return h||'p-home';}
+function go(r){if(location.hash.slice(1)===r)render();else location.hash=r;}
+
+function shell(r,body,crumb){const isP=r[0]==='p';
+ const counts={'c-review':S.review.length,'c-imports':S.imports.filter(i=>!i.done).length};
+ const nav=isP?PNAV.map(([id,l,i])=>`<a href="#${id}" ${r===id?'aria-current="page"':''}>${ic(i)}<span>${l}</span></a>`).join('')
+  :CNAV.map(([g,items])=>`<div class="group">${g}</div>`+items.map(([id,l,i])=>`<a href="#${id}" ${r===id||(r==='c-record'&&id==='c-patients')?'aria-current="page"':''}>${ic(i)}<span>${l}</span>${counts[id]?`<span class="count">${counts[id]}</span>`:''}</a>`).join('')).join('');
+ const user=isP?['EH','Eleanor Hart','Patient']:['GS','Dr Gina Schoeman','Doctor · Medical Director'];
+ return `<div class="app"><aside class="sidebar ${S.navOpen?'open':''}" id="sidebar"><div class="wordmark"><div class="the">The</div><div class="name">Schoeman Clinic</div><div class="eyebrow portal">${isP?'Patient portal':'Clinic portal'}</div></div><nav class="nav" aria-label="Main">${nav}</nav>
+ <div class="side-foot"><div class="avatar">${user[0]}</div><div class="who"><b>${user[1]}</b><span>${user[2]}</span></div><button class="iconbtn" data-act="signout" aria-label="Sign out" title="Sign out">${ic('logout')}</button></div></aside>
+ <main class="main"><div class="topbar"><button class="iconbtn menu-btn" data-act="menu" aria-label="Open menu">${ic('menu',22)}</button><div class="crumb eyebrow">${crumb}</div>${isP?'':`<label class="search">${ic('search',16)}<input id="global-search" placeholder="Search patients" aria-label="Search patients"></label>`}<button class="iconbtn" aria-label="Notifications" data-act="notify">${ic('bell',20)}</button></div><div class="content">${body}</div></main></div>`;}
+
+/* ---------- Patient screens ---------- */
+function pSignin(){return `<div class="auth"><div class="auth-visual"><div class="eyebrow">A private Harley Street &amp; Wimbledon clinic</div><h2>Your health, <em>in one place</em>.</h2></div>
+<form class="auth-form" id="signin-form"><div class="wordmark" style="padding:0"><div class="the">The</div><div class="name">Schoeman Clinic</div></div><h1 class="title">Sign in</h1>
+<div class="field"><label for="signin-email">Email address</label><input class="input" id="signin-email" type="email" value="eleanor.hart@example.com" required></div>
+<button class="btn" type="submit">Send sign-in link</button><p class="small">We'll email you a secure link. No password needed.</p>
+<div id="signin-sent" hidden class="alert info">${ic('check')}<div class="t"><b>Check your inbox.</b> We sent a link to eleanor.hart@example.com. <button type="button" class="btn ghost" data-act="enter">Open demo link</button></div></div>
+<p class="small">Clinic staff? <button type="button" class="btn ghost" data-act="view" data-v="c">Go to the clinic portal</button></p></form></div>`;}
+
+function bloodsSteps(){const st=S.labPaid?1:0;const names=['Ordered','Paid','Sample taken','Results in'];return `<ol class="steps">${names.map((n,i)=>`<li class="${i<=st?'done':i===st+1?'now':''}">${n}</li>`).join('')}</ol>`;}
+function pHome(){const glance=['hba1c','vitd','ferr','chol'].map(id=>markers.find(m=>m.id===id));const oe=meds[0];
+ return `<div class="page-head"><div><div class="eyebrow">Thursday 29 October 2026</div><h1 class="title">Good morning, <em>Eleanor</em></h1></div></div>
+<div class="grid g3">
+ <div class="card"><div class="eyebrow">Next appointment</div><h3>Follow-up consultation</h3><div class="meta-row"><span>${ic('calendar',15)}Wed 18 Nov 2026, 10:30</span><span>${ic('pin',15)}Harley Street</span></div><p class="small" style="margin:0">With Dr Gina Schoeman · 30 minutes</p><div class="actions"><a class="btn outline sm" href="#p-appointments">View details</a></div></div>
+ <div class="card"><div class="eyebrow">Bloods due by 4 Nov 2026</div><h3>${S.labPaid?'Book your sample':'Female Hormone &amp; Metabolic Panel'}</h3>${bloodsSteps()}<p class="small" style="margin:0">Results need to reach us two weeks before your appointment.</p><div class="actions">${S.labPaid?`<a class="btn outline sm" href="#p-orders">Download barcode form</a>`:`<a class="btn sm" href="#p-orders">Pay and get barcode</a>`}</div></div>
+ <div class="card"><div class="eyebrow">New results</div><h3>3 results released</h3><p class="small" style="margin:0">Dr Schoeman reviewed your October bloods on 21 Oct and left comments on HbA1c and Vitamin D.</p><div class="actions"><a class="btn outline sm" href="#p-results">View results</a></div></div>
+</div>
+<section class="section"><div class="section-head"><h2 class="sec">Your markers <em>at a glance</em></h2><a class="btn ghost" href="#p-results">All results ${ic('arrow',14)}</a></div>
+<div class="grid g4">${glance.map(m=>`<button class="card click" data-act="marker" data-id="${m.id}" style="text-align:left"><div class="eyebrow">${m.name}</div><div style="display:flex;align-items:flex-end;justify-content:space-between;gap:8px"><div><span class="stat"><span class="big ${m.s==='ok'?'':'v-'+m.s}">${latest(m)}</span></span> <span class="small">${m.unit}</span></div>${spark(m.vals,m.s)}</div><div>${sp(m.s)}</div></button>`).join('')}</div></section>
+<section class="section"><h2 class="sec">From your <em>clinic</em></h2><div class="grid g2">
+ <div class="card"><div class="eyebrow">Latest letter · 21 Oct 2026</div><h3>Results review letter</h3><p class="small" style="margin:0">From Dr Gina Schoeman</p><div class="actions"><button class="btn outline sm" data-act="letter" data-id="l1">View letter</button></div></div>
+ <div class="card"><div class="eyebrow">Prescription</div><h3>${oe.name}</h3><p class="small" style="margin:0"><span class="v-warn" style="font-weight:500">${oe.left} days left.</span> Request a repeat now so it arrives in time.</p><div class="actions"><button class="btn accent sm" data-act="repeat" data-id="oe">Request repeat</button></div></div>
+</div></section>`;}
+
+function pOrders(){const paid=S.labPaid;
+ const card1=!paid?`<div class="card"><div class="eyebrow">Order LO-2026-014 · Ordered 21 Oct 2026 · Dr Gina Schoeman</div><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start"><h3 style="font:300 26px/30px var(--display)">Female Hormone &amp; Metabolic Panel (GS5)</h3>${pill('warn','Awaiting payment','clock')}</div>
+ <div class="meta-row"><span>${ic('flask',15)}TDL Pathology, 60 Whitfield Street, London W1T 4EU</span><span>${ic('calendar',15)}Results needed by 4 Nov 2026</span></div>
+ <div class="prep"><b>Before your test.</b> Fast for 10 hours (water is fine). Morning sample before 10:00. Days 2–5 of your cycle, or any day if your periods have stopped. Take your usual hormones after the sample.</div>
+ <details><summary>14 tests included</summary><ul>${GS5.map(t=>`<li>${t}</li>`).join('')}</ul></details>
+ <hr class="rule"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><span class="eyebrow">Total</span><div class="stat"><span class="big">£295.00</span></div></div><button class="btn" data-act="checkout">Pay now — £295.00</button></div></div>`
+ :`<div class="card"><div class="eyebrow">Order LO-2026-014 · Paid 29 Oct 2026</div><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start"><h3 style="font:300 26px/30px var(--display)">Female Hormone &amp; Metabolic Panel (GS5)</h3>${pill('ok','Paid','check')}</div>
+ <div class="barcode">${barcode('SCH-1000142')}<span class="num small">SCH-1000142</span></div>
+ <p class="small" style="margin:0">Take this form to any TDL centre. We have also emailed it to you and to the clinic team.</p>
+ <div class="actions"><button class="btn outline sm" data-act="toast" data-msg="Barcode form downloaded (demo)">${ic('download',15)}Download barcode form</button><a class="btn bronze sm" href="https://www.tdlpathology.com" target="_blank" rel="noopener">Find a TDL centre</a></div></div>`;
+ return `<div class="page-head"><div><div class="eyebrow">My care</div><h1 class="title">Lab <em>orders</em></h1><p class="lede">Pay for the tests your doctor has ordered and download the form for the lab.</p></div><div class="meta-row num"><span>${paid?0:1} awaiting payment</span><span>${paid?1:0} ready</span><span>3 completed</span></div></div>
+<div class="stack">${card1}
+<div class="card"><div class="eyebrow">Order LO-2026-009 · Completed 14 Oct 2026</div><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><h3>Vitamin and Iron Panel</h3>${pill('dark','Results released')}</div><p class="small" style="margin:0">The Doctors Laboratory · £120.00 paid on 2 Oct 2026</p><div class="actions"><a class="btn outline sm" href="#p-results">View results</a></div></div>
+<div class="alert info">${ic('pin')}<div class="t"><b>Having bloods done abroad?</b> Take the test list to your local lab, then upload the report and our team will add it to your record.</div><a class="btn bronze sm" href="#p-upload">Upload results</a></div></div>`;}
+
+function pResults(){const list=markers.filter(m=>(S.resFilter==='All'||m.panel===S.resFilter)&&(!S.outOnly||m.s!=='ok'));const out=markers.filter(m=>m.s==='crit').length;
+ const groups=[...new Set(list.map(m=>m.panel))];
+ return `<div class="page-head"><div><div class="eyebrow">Health</div><h1 class="title">Your <em>results</em></h1><p class="lede num">${markers.length} markers · ${out} out of range · ${markers.filter(m=>m.s==='warn').length} borderline · last updated 21 Oct 2026</p></div></div>
+<div class="stack"><div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:center"><div class="chips" role="group" aria-label="Filter by panel">${PANELS.map(p=>`<button class="chip" data-act="resfilter" data-v="${p}" aria-pressed="${S.resFilter===p}">${p}</button>`).join('')}</div><label class="toggle"><input type="checkbox" id="out-only" data-act="outonly" ${S.outOnly?'checked':''}>Show out of range only</label></div>
+<div class="alert">${ic('clock')}<div class="t">2 new results from your October panel are with your doctor for review. You'll see them here once they're released.</div></div>
+${list.length?`<div class="tablewrap"><table><thead><tr><th>Marker</th><th class="r">Latest</th><th>Unit</th><th>Range</th><th>Status</th><th>Trend</th><th>Date</th></tr></thead><tbody>
+${groups.map(g=>`<tr><td colspan="7" style="padding-top:24px;border-bottom:0"><span class="eyebrow">${g}</span></td></tr>`+list.filter(m=>m.panel===g).map(m=>`<tr class="row" data-act="marker" data-id="${m.id}" tabindex="0"><td><b style="font-weight:500">${m.name}</b>${m.c?`<span class="sub">Doctor's comment</span>`:''}</td><td class="r"><span class="val ${m.s==='ok'?'':'v-'+m.s}">${latest(m)}</span></td><td class="small">${m.unit}</td><td class="num small">${rng(m)}</td><td>${sp(m.s)}</td><td>${spark(m.vals,m.s)}</td><td class="small">${DATES[2]}</td></tr>`).join('')).join('')}
+</tbody></table></div>`:`<div class="empty">No markers match these filters.</div>`}</div>`;}
+
+function markerSheet(id){const m=markers.find(x=>x.id===id);openOv(`<aside class="sheet" role="dialog" aria-modal="true" aria-label="${esc(m.name)}">${ovHead(m.panel,m.name)}
+<p style="margin:0;color:var(--content-muted)">${m.ex}</p>
+<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap"><span class="stat"><span class="big ${m.s==='ok'?'':'v-'+m.s}" style="font-size:40px;line-height:44px">${latest(m)}</span></span><span class="small">${m.unit}<br>Range ${rng(m)}</span>${sp(m.s)}</div>
+<div class="card" style="padding:16px">${chart(m)}</div>
+<table><thead><tr><th>Date</th><th class="r">Value</th><th>Status</th></tr></thead><tbody>${m.vals.map((v,i)=>`<tr><td class="small">${DATES[i]}</td><td class="r"><span class="val">${v}</span> <span class="small">${m.unit}</span></td><td>${i===2?sp(m.s):'<span class="small">Earlier result</span>'}</td></tr>`).reverse().join('')}</tbody></table>
+${m.c?`<div class="comment"><div class="avatar">GS</div><div><div class="eyebrow">Doctor's comment · 21 Oct 2026</div><b style="font-weight:600">Dr Gina Schoeman</b><p>${esc(m.c)}</p></div></div>`:`<p class="small">No comment from your doctor on this marker.</p>`}
+<button class="btn ghost" data-act="toast" data-msg="Source report opened (demo)" style="align-self:flex-start">View source report ${ic('arrow',14)}</button></aside>`);}
+
+function pUpload(){const stl={done:pill('ok','Added to your record','check'),team:pill('warn','With the team','clock'),info:pill('info','We need more information','alert')};
+ return `<div class="page-head"><div><div class="eyebrow">Health</div><h1 class="title">Upload <em>results</em></h1><p class="lede">Had bloods done elsewhere? Upload the report and our team will check it and add it to your record.</p></div></div>
+<div class="stack"><label class="dropzone" id="dropzone" for="upload-file">${ic('upload',28)}<span>Drop a PDF or photo here, or <b style="color:var(--secondary)">browse</b></span><span class="small">PDF, JPG or PNG · up to 20 MB</span><input type="file" id="upload-file" accept=".pdf,.jpg,.jpeg,.png" hidden></label>
+<div class="grid g3"><div class="field"><label for="up-date">Test date</label><input class="input" id="up-date" type="date" value="2026-10-20"></div><div class="field"><label for="up-lab">Lab name</label><input class="input" id="up-lab" placeholder="e.g. Mediclinic City Hospital"></div><div class="field"><label for="up-country">Country</label><input class="input" id="up-country" placeholder="e.g. United Arab Emirates"></div></div>
+<section class="section" style="margin-top:24px"><h2 class="sec">Upload <em>history</em></h2><div class="tablewrap"><table><thead><tr><th>File</th><th>Uploaded</th><th>Status</th></tr></thead><tbody>
+${S.uploads.map(u=>`<tr><td>${ic('file',16)} <span style="vertical-align:3px">${esc(u.f)}</span>${u.note?`<span class="sub">${esc(u.note)}</span>`:''}</td><td class="small">${u.d}</td><td>${stl[u.st]}</td></tr>`).join('')}</tbody></table></div></section></div>`;}
+
+function pPrescriptions(){const oe=meds[0];
+ const active=meds.map(m=>{const pct=Math.round(m.left/m.total*100);return `<div class="card"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><div class="eyebrow">${m.kind}</div><h3 style="font:300 24px/28px var(--display);margin-top:4px">${m.name}</h3></div>${m.left<=10?pill('warn',m.left+' days left','clock'):pill('ok','Active','check')}</div>
+ <p style="margin:0">${m.how}</p><dl class="kv"><dt>Prescriber</dt><dd>${m.by}</dd><dt>Pharmacy</dt><dd>${m.pharm}</dd><dt>Started</dt><dd>${m.start}</dd></dl>
+ <div><div class="small num">${m.left} of ${m.total} days remaining</div><div style="height:4px;background:var(--surface-selected);margin-top:6px"><div style="height:4px;width:${pct}%;background:${m.left<=10?'var(--status-warning)':'var(--secondary)'}"></div></div></div>
+ <div class="actions"><button class="btn accent sm" data-act="repeat" data-id="${m.id}">Request repeat</button></div></div>`;}).join('');
+ const req=`<div class="tablewrap"><table><thead><tr><th>Medication</th><th>Requested</th><th>Status</th></tr></thead><tbody>${S.repeats.map(r=>`<tr><td>${esc(r.med)}</td><td class="small">${r.d}</td><td>${r.st==='REQUESTED'?pill('warn','Requested','clock'):r.st==='APPROVED'?pill('info','Approved','check'):pill('ok','Sent to pharmacy','check')}</td></tr>`).join('')}</tbody></table></div>`;
+ return `<div class="page-head"><div><div class="eyebrow">My care</div><h1 class="title">Your <em>prescriptions</em></h1></div></div>
+<div class="stack"><div class="alert warn">${ic('alert')}<div class="t"><b>${oe.name}</b> — ${oe.left} days left</div><button class="btn accent sm" data-act="repeat" data-id="oe">Request repeat</button></div>
+<div class="tabs" role="tablist"><button role="tab" data-act="rxtab" data-v="active" aria-selected="${S.rxTab==='active'}">Active (${meds.length})</button><button role="tab" data-act="rxtab" data-v="req" aria-selected="${S.rxTab==='req'}">Requests (${S.repeats.length})</button></div>
+${S.rxTab==='active'?`<div class="grid g2">${active}</div>`:req}</div>`;}
+
+function repeatDialog(id){const m=meds.find(x=>x.id===id);openOv(`<form class="dialog" id="repeat-form" data-id="${id}" role="dialog" aria-modal="true" aria-label="Request a repeat">${ovHead('Repeat prescription','Request a <em>repeat</em>')}
+<dl class="kv"><dt>Medication</dt><dd><b style="font-weight:600">${m.name}</b><br><span class="small">${m.how}</span></dd><dt>Pharmacy</dt><dd>${m.pharm}</dd><dt>Fee</dt><dd class="num">£30.00</dd></dl>
+<div class="field"><label for="repeat-note">Anything your doctor should know? (optional)</label><textarea class="input" id="repeat-note" style="min-height:80px" placeholder="e.g. no changes since my last visit"></textarea></div>
+<p class="small" style="margin:0">Demo checkout · no payment is taken.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn accent" type="submit">Pay £30.00 and request</button><button class="btn outline" type="button" data-act="close">Cancel</button></div></form>`,'dialog');}
+
+function checkoutSheet(){openOv(`<form class="sheet" id="checkout-form" role="dialog" aria-modal="true" aria-label="Checkout">${ovHead('Secure checkout','Pay for your <em>bloods</em>')}
+<div class="card" style="gap:6px"><div class="eyebrow">LO-2026-014</div><b style="font-weight:600">Female Hormone &amp; Metabolic Panel (GS5)</b><span class="small">14 tests · TDL Pathology</span><hr class="rule"><div style="display:flex;justify-content:space-between"><span>Total</span><b class="num" style="font-weight:600">£295.00</b></div></div>
+<button class="btn outline" type="button" data-act="paynow">Pay with Apple Pay</button><div class="small" style="text-align:center">or pay by card</div>
+<div class="field"><label for="card-name">Name on card</label><input class="input" id="card-name" value="Eleanor Hart"></div>
+<div class="field"><label for="card-no">Card number</label><input class="input num" id="card-no" value="Demo card •••• 4242" readonly></div>
+<div class="grid g2" style="gap:16px"><div class="field"><label for="card-exp">Expiry</label><input class="input" id="card-exp" value="09 / 28" readonly></div><div class="field"><label for="card-cvc">CVC</label><input class="input" id="card-cvc" value="•••" readonly></div></div>
+<p class="small" style="margin:0">Demo checkout · no payment is taken. Your card will be saved for future clinic payments only if you agree.</p>
+<button class="btn" type="submit">Pay £295.00</button></form>`);}
+
+function pAppointments(){const up=`<div class="card"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><div class="eyebrow">Wednesday 18 November 2026 · 10:30</div><h3 style="font:300 26px/30px var(--display);margin-top:4px">Follow-up consultation</h3></div>${pill('info','Confirmed','check')}</div>
+<div class="meta-row"><span>${ic('clock',15)}30 minutes</span><span>${ic('pin',15)}The Schoeman Clinic, Harley Street, London</span><span>${ic('users',15)}Dr Gina Schoeman</span></div>
+<div class="alert ${S.labPaid?'info':'warn'}">${ic(S.labPaid?'check':'alert')}<div class="t">${S.labPaid?'Bloods paid. Please have your sample taken by <b>4 Nov 2026</b>.':'Bloods due by <b>4 Nov 2026</b>. Pay for your lab order so we have results in time.'}</div>${S.labPaid?'':'<a class="btn sm" href="#p-orders">Pay now</a>'}</div>
+<p class="small" style="margin:0"><b>What to bring:</b> a list of any supplements you've started since June.</p>
+<div class="actions"><button class="btn bronze sm" data-act="reschedule">Reschedule</button><button class="btn danger sm" data-act="cancelappt">Cancel</button></div></div>`;
+ const past=`<div class="tablewrap"><table><thead><tr><th>Date</th><th>Appointment</th><th>Clinician</th><th></th></tr></thead><tbody>
+ <tr><td class="small">21 Oct 2026</td><td>Results review (video)</td><td>Dr Gina Schoeman</td><td class="r"><button class="btn ghost" data-act="letter" data-id="l1">Letter</button></td></tr>
+ <tr><td class="small">24 Jun 2026</td><td>Follow-up consultation</td><td>Dr Gina Schoeman</td><td class="r"><button class="btn ghost" data-act="letter" data-id="l2">Letter</button></td></tr>
+ <tr><td class="small">18 Mar 2026</td><td>Initial assessment</td><td>Dr Gina Schoeman</td><td class="r"><button class="btn ghost" data-act="letter" data-id="l3">Report</button></td></tr></tbody></table></div>`;
+ return `<div class="page-head"><div><div class="eyebrow">My care</div><h1 class="title"><em>Appointments</em></h1></div></div>
+<div class="stack"><div class="tabs" role="tablist"><button role="tab" data-act="appttab" data-v="up" aria-selected="${S.apptTab==='up'}">Upcoming (1)</button><button role="tab" data-act="appttab" data-v="past" aria-selected="${S.apptTab==='past'}">Past (3)</button></div>${S.apptTab==='up'?up:past}</div>`;}
+
+function pAsk(){return `<div class="page-head"><div><div class="eyebrow">My care</div><h1 class="title">Ask the <em>clinic</em></h1><p class="lede">For non-urgent questions about your care. We reply within 2 working days.</p></div></div>
+<div class="stack"><div class="alert crit">${ic('alert')}<div class="t"><b>Anything urgent?</b> Call the clinic on <span class="num" style="user-select:all">020 7946 0000</span> or dial 999. Messages here are not monitored in real time.</div></div>
+<form class="card" id="ask-form" style="gap:18px"><div class="field"><label for="ask-subject">Subject</label><input class="input" id="ask-subject" required placeholder="e.g. Question about my HRT dose"></div>
+<div class="field"><label for="ask-body">Your question</label><textarea class="input" id="ask-body" maxlength="1000" required placeholder="Include any symptoms, readings or dates that will help us answer."></textarea><span class="small" id="ask-count">0 / 1,000</span></div>
+<div class="field"><label>Urgency</label><div class="chips" role="radiogroup"><button type="button" class="chip" data-act="urg" data-v="Routine" aria-pressed="true" id="urg-routine">Routine</button><button type="button" class="chip" data-act="urg" data-v="Important" aria-pressed="false" id="urg-important">Important</button></div></div>
+<div><button class="btn" type="submit">Send question</button></div></form>
+<section class="section" style="margin-top:24px"><h2 class="sec">Previous <em>questions</em></h2><div class="stack" style="gap:12px">${S.questions.map(q=>`<details class="card" style="padding:18px 24px"><summary style="color:var(--content);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:15px"><span>${esc(q.s)} <span class="small">· ${q.d}</span></span>${q.st==='ANSWERED'?pill('ok','Answered','check'):pill('warn','Awaiting reply','clock')}</summary>${q.a?`<p style="margin:12px 0 0">${esc(q.a)}</p>`:`<p class="small" style="margin:12px 0 0">The team will reply within 2 working days.</p>`}</details>`).join('')}</div></section></div>`;}
+
+function pLetters(){return `<div class="page-head"><div><div class="eyebrow">My care</div><h1 class="title">Letters and <em>documents</em></h1><p class="lede">Letters and reports your doctor has shared with you.</p></div></div>
+<div class="tablewrap"><table><thead><tr><th>Document</th><th>Type</th><th>From</th><th>Date</th><th></th></tr></thead><tbody>${letters.map(l=>`<tr class="row" data-act="letter" data-id="${l.id}" tabindex="0"><td>${ic('file',16)} <span style="vertical-align:3px;font-weight:500">${l.title}</span></td><td>${pill('',l.type)}</td><td>${l.by}</td><td class="small">${l.date}</td><td class="r"><span class="btn ghost">View</span></td></tr>`).join('')}</tbody></table></div>`;}
+
+function letterSheet(id){const l=letters.find(x=>x.id===id);openOv(`<aside class="sheet" role="dialog" aria-modal="true" aria-label="${esc(l.title)}">${ovHead(l.type+' · '+l.date,l.title)}
+<div class="letter"><div class="lh">The Schoeman Clinic</div><p class="small" style="margin:0 0 20px">Harley Street, London · ${l.date}</p><p>Dear Eleanor,</p>
+<p>Thank you for coming in. I've reviewed your latest blood results. Your HbA1c has come down from 46 to 43 mmol/mol since March, which shows the changes you've made are working. It is still just above the reference range, so we'll keep monitoring it.</p>
+<p>Your Vitamin D has nearly doubled on supplements. Please continue 4,000 IU daily through the winter. Your thyroid and inflammation markers are all within range.</p>
+<p>Your next bloods are due by 4 November, ahead of your follow-up on 18 November.</p><p style="margin-bottom:0">Kind regards,<br><b style="font-weight:600">Dr Gina Schoeman</b><br><span class="small">Medical Director</span></p></div>
+<button class="btn outline" data-act="toast" data-msg="Letter downloaded (demo)" style="align-self:flex-start">${ic('download',15)}Download PDF</button></aside>`);}
+
+function pPrivacy(){const c=S.consents;const row=(id,t,d,date)=>`<div class="card" style="flex-direction:row;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap"><div style="min-width:0;flex:1"><h3>${t}</h3><p class="small" style="margin:2px 0 0">${d}</p><p class="small" style="margin:2px 0 0">${date}</p></div><label class="toggle"><input type="checkbox" id="consent-${id}" data-act="consent" data-v="${id}" ${c[id]?'checked':''} ${id==='care'?'disabled':''}><span>${c[id]?'Given':'Not given'}</span></label></div>`;
+ return `<div class="page-head"><div><div class="eyebrow">Account</div><h1 class="title">Privacy and <em>consent</em></h1><p class="lede">Your rights under UK GDPR. You can change optional consents at any time.</p></div><button class="btn outline" data-act="toast" data-msg="We're preparing your data. We'll email you when it's ready.">${ic('download',15)}Download my data</button></div>
+<div class="stack" style="gap:12px">${row('care','Care and treatment','Needed to provide your care. Required while you are a patient.','Version 2.1 · given 18 Mar 2026')}${row('labs','Sharing with partner labs','So we can send orders to TDL and receive your results.','Version 1.2 · given 18 Mar 2026')}${row('research','Anonymised research','Your results, with your name removed, may help clinic research.','Version 1.0 · not given')}</div>
+<p class="small" style="margin-top:24px">Data controller: The Schoeman Clinic. Questions about your data: <span style="user-select:all">privacy@theschoemanclinic.example</span></p>`;}
+
+/* ---------- Clinic screens ---------- */
+function firstCrit(r){return r.m.find(x=>x.s==='crit')||r.m[0];}
+function cDashboard(){const rev=S.review;const outCount=rev.filter(r=>r.m.some(x=>x.s==='crit')).length;const imp=S.imports.filter(i=>!i.done).length;
+ const d=diary.filter(x=>S.diaryLoc==='All'||x.loc===S.diaryLoc);
+ const risk=[{pid:'og',appt:'Today, 11:45',st:'Paid, no sample',days:'Overdue',crit:true},{pid:'sm',appt:'Mon 9 Nov',st:'Sample taken 24 Oct',days:'Overdue by 3 days',crit:true},{pid:'eh',appt:'Wed 18 Nov',st:S.labPaid?'Paid':'Awaiting payment',days:'6 days left',crit:false}];
+ return `<div class="page-head"><div><div class="eyebrow">Thursday 29 October 2026 · Harley Street</div><h1 class="title">Good morning, <em>Dr Schoeman</em></h1></div></div>
+<div class="grid g4">
+ <a class="card click" href="#c-dashboard" style="text-decoration:none" data-act="scroll" data-v="diary"><div class="eyebrow">Today's appointments</div><div class="stat"><span class="big">7</span></div><span class="small">Next at 09:00 · Thomas Reed</span></a>
+ <a class="card click" href="#c-review" style="text-decoration:none"><div class="eyebrow">Results to review</div><div class="stat"><span class="big ${outCount?'v-crit':''}">${rev.length}</span></div><span class="small">${outCount} with out-of-range values</span></a>
+ <a class="card click" href="#c-imports" style="text-decoration:none"><div class="eyebrow">Imports waiting</div><div class="stat"><span class="big">${imp}</span></div><span class="small">Uploaded and emailed reports</span></a>
+ <div class="card"><div class="eyebrow">Open tasks</div><div class="stat"><span class="big">6</span></div><span class="small">In GoHighLevel · 2 due today</span></div>
+</div>
+<section class="section"><div class="section-head"><h2 class="sec">Needs your <em>attention</em></h2><a class="btn ghost" href="#c-review">Open review queue ${ic('arrow',14)}</a></div>
+${rev.length?`<div class="tablewrap"><table><thead><tr><th>Patient</th><th>Marker</th><th class="r">Value</th><th>Range</th><th>Change</th><th>Received</th><th></th></tr></thead><tbody>${rev.map(r=>{const m=firstCrit(r);const up=m.d.startsWith('+');return `<tr class="row" data-act="openrev" data-id="${r.id}" tabindex="0"><td><b style="font-weight:500">${pById(r.pid).name}</b><span class="sub">${r.panel}</span></td><td>${m.n}</td><td class="r"><span class="val v-${m.s}">${ic(m.s==='crit'?'alert':'check',13)} ${m.v}</span> <span class="small">${m.u}</span></td><td class="small num">${m.r}</td><td class="small num">${m.d==='—'?'No previous':`${ic(up?'up':'down',12)} ${m.d} from ${m.p}`}</td><td class="small">${r.received}</td><td class="r"><span class="btn outline sm">Review</span></td></tr>`;}).join('')}</tbody></table></div>`:`<div class="empty">All results reviewed. Nice work.</div>`}</section>
+<section class="section" id="diary"><div class="section-head"><h2 class="sec">Today's <em>diary</em></h2><div class="chips">${['All','Harley Street','Wimbledon','Video'].map(l=>`<button class="chip" data-act="diaryloc" data-v="${l}" aria-pressed="${S.diaryLoc===l}">${l==='All'?'All locations':l}</button>`).join('')}</div></div>
+<div class="tablewrap"><table><tbody>${d.map(x=>{const p=pById(x.p);return `<tr class="row" data-act="record" data-id="${p.id}" tabindex="0"><td class="num" style="width:72px;font-weight:600">${x.t}</td><td><b style="font-weight:500">${p.name}</b><span class="sub">${x.note}</span></td><td>${pill(x.type==='Initial assessment'?'dark':'',x.type)}</td><td class="small">${x.len} min</td><td class="small">${ic(x.loc==='Video'?'video':'pin',14)} ${x.loc}</td><td>${x.flag?pill(x.flag==='Bloods missing'?'crit':'warn',x.flag,x.flag==='Bloods missing'?'alert':'clock'):''}</td><td class="r"><span class="btn ghost">Open record</span></td></tr>`;}).join('')||`<tr><td class="empty">No appointments at this location today.</td></tr>`}</tbody></table></div></section>
+<section class="section"><div class="section-head"><h2 class="sec">Bloods <em>at risk</em></h2><span class="small">Appointments in the next 14 days without results</span></div>
+<div class="grid g3">${risk.map(r=>`<div class="card"><div style="display:flex;justify-content:space-between;gap:8px"><h3>${pById(r.pid).name}</h3>${pill(r.crit?'crit':'warn',r.days,r.crit?'alert':'clock')}</div><dl class="kv"><dt>Appointment</dt><dd>${r.appt}</dd><dt>Order</dt><dd>${r.st}</dd></dl><div class="actions"><button class="btn bronze sm" data-act="toast" data-msg="Chaser sent from GoHighLevel to ${pById(r.pid).name}">Send chaser</button><button class="btn ghost" data-act="toast" data-msg="Task created in GoHighLevel: consider moving appointment">Move appointment</button></div></div>`).join('')}</div></section>`;}
+
+function cPatients(){const q=S.pq.toLowerCase();let list=patients.filter(p=>!q||p.name.toLowerCase().includes(q)||p.dob.toLowerCase().includes(q)||p.pid.toLowerCase().includes(q));
+ if(S.cohort)list=list.filter(p=>p.dx.includes('Type 2 diabetes')&&p.hba1c>42);
+ return `<div class="page-head"><div><div class="eyebrow">Patients</div><h1 class="title">Patient <em>list</em></h1><p class="lede num">${patients.length} active patients in this demo</p></div><button class="btn outline" data-act="export">Export anonymised</button></div>
+<div class="stack"><div class="grid g3" style="gap:16px;align-items:end"><div class="field" style="grid-column:span 2"><label for="pt-search">Search</label><input class="input" id="pt-search" placeholder="Name, date of birth or patient ID" value="${esc(S.pq)}"></div><div class="field"><label for="pt-marker">Marker filter</label><select class="input" id="pt-marker"><option>HbA1c &gt; 42 mmol/mol</option><option>Vitamin D &lt; 50 nmol/L</option><option>LDL &gt; 3.0 mmol/L</option></select></div></div>
+<div class="chips"><span class="eyebrow" style="align-self:center;margin-right:6px">Saved cohorts</span><button class="chip" data-act="cohort" aria-pressed="${S.cohort}">Type 2 diabetes with HbA1c &gt; 42 · 2</button></div>
+<div class="tablewrap"><table><thead><tr><th>Patient</th><th>Age</th><th>Main diagnoses</th><th class="r">HbA1c</th><th>Last visit</th><th>Next visit</th><th></th></tr></thead><tbody>${list.map(p=>`<tr class="row" data-act="record" data-id="${p.id}" tabindex="0"><td><b style="font-weight:500">${p.name}</b><span class="sub num">${p.pid} · ${p.dob}</span></td><td class="small">${p.age} ${p.sex}</td><td class="small">${p.dx.join(', ')}</td><td class="r"><span class="val ${p.hba1c>41?'v-crit':''}">${p.hba1c??'—'}</span></td><td class="small">${p.last}</td><td class="small">${p.next}</td><td>${p.alert?`<span title="Has a clinical alert" style="color:var(--status-warning)">${ic('shield',16)}</span>`:''}</td></tr>`).join('')||`<tr><td colspan="7" class="empty">No patients match. Try a different name or clear the cohort.</td></tr>`}</tbody></table></div></div>`;}
+
+function cRecord(){const p=pById(S.recordId)||patients[0];const isE=p.id==='eh';const rev=S.review.find(r=>r.pid===p.id);const al=safeguarding.find(a=>a.pid===p.id);
+ const tabs=[['overview','Overview'],['results','Results'],['dx','Diagnoses'],['meds','Medication'],['orders','Lab orders'],['timeline','Timeline']];
+ let body='';
+ if(S.recTab==='overview'){body=`<div class="grid g2"><div class="card"><div class="eyebrow">Working diagnoses</div>${p.dx.map((d,i)=>`<div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><span>${d}</span>${pill(i===1&&isE?'info':'warn',i===1&&isE?'Treating':'Monitoring')}</div>`).join('<hr class="rule">')}</div>
+ <div class="card"><div class="eyebrow">Key markers</div>${isE?markers.slice(0,4).map(m=>`<div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><span>${m.name}</span><span style="display:flex;gap:12px;align-items:center"><span class="val num ${m.s==='ok'?'':'v-'+m.s}">${latest(m)}</span>${spark(m.vals,m.s,72,22)}</span></div>`).join('<hr class="rule">'):rev?rev.m.map(m=>`<div style="display:flex;justify-content:space-between;gap:8px"><span>${m.n}</span><span class="val num v-${m.s}">${m.v} <span class="small">${m.u}</span></span></div>`).join('<hr class="rule">'):'<p class="small">No results on file yet.</p>'}</div>
+ <div class="card"><div class="eyebrow">Current medication</div>${isE?meds.map(m=>`<div><b style="font-weight:500">${m.name}</b><div class="small">${m.how}</div></div>`).join('<hr class="rule">'):'<p class="small">Recorded in Semble for this demo patient.</p>'}</div>
+ <div class="card"><div class="eyebrow">Open tasks · GoHighLevel</div>${isE?`<div>Chase payment for LO-2026-014 <div class="small">Priya Shah · due 1 Nov</div></div><hr class="rule"><div>Send follow-up letter <div class="small">Dr Gina Schoeman · done</div></div>`:'<p class="small">No open tasks.</p>'}</div></div>`;}
+ else if(S.recTab==='results'){body=isE?`<div class="tablewrap"><table><thead><tr><th>Marker</th>${DATES.map(d=>`<th class="r">${d}</th>`).join('')}<th>Range</th><th>Status</th><th>Trend</th></tr></thead><tbody>${markers.map(m=>`<tr class="row" data-act="marker" data-id="${m.id}" tabindex="0"><td><b style="font-weight:500">${m.name}</b><span class="sub">${m.unit}</span></td>${m.vals.map((v,i)=>`<td class="r"><span class="val ${i===2&&m.s!=='ok'?'v-'+m.s:''}">${v}</span></td>`).join('')}<td class="small num">${rng(m)}</td><td>${sp(m.s)}</td><td>${spark(m.vals,m.s)}</td></tr>`).join('')}</tbody></table></div>`:rev?revTable(rev):'<div class="empty">No results on file yet.</div>';}
+ else if(S.recTab==='dx'){body=`<div class="tablewrap"><table><thead><tr><th>Diagnosis</th><th>ICD-10</th><th>Status</th><th>Since</th></tr></thead><tbody>${p.dx.map((d,i)=>`<tr><td>${d}</td><td class="small num">${({'Perimenopause':'N95.9','Vitamin D deficiency':'E55.9','Raised HbA1c, pre-diabetic range':'R73.0','Type 2 diabetes':'E11.9','Hypothyroidism':'E03.9','Hypertension':'I10','Testosterone deficiency':'E29.1','Hyperlipidaemia':'E78.5','Metabolic syndrome':'E88.8','Osteopenia':'M85.8','Fatigue, under investigation':'R53.8'})[d]||'—'}</td><td>${pill('warn','Active')}</td><td class="small">${isE?['Mar 2026','Mar 2026','Jun 2026'][i]:'2025'}</td></tr>`).join('')}</tbody></table></div>`;}
+ else if(S.recTab==='meds'){body=isE?`<div class="tablewrap"><table><thead><tr><th>Medication</th><th>How to take</th><th>Started</th><th class="r">Days left</th></tr></thead><tbody>${meds.map(m=>`<tr><td><b style="font-weight:500">${m.name}</b><span class="sub">${m.kind}</span></td><td class="small">${m.how}</td><td class="small">${m.start}</td><td class="r"><span class="val ${m.left<=10?'v-warn':''}">${m.left}</span></td></tr>`).join('')}</tbody></table></div><p class="small">E-prescribing stays in Semble until v2.</p>`:'<div class="empty">Medication is recorded in Semble for this demo patient.</div>';}
+ else if(S.recTab==='orders'){const os=S.orders.filter(o=>o.pid===p.id);body=os.length?`<div class="tablewrap"><table><thead><tr><th>Order</th><th>Panel</th><th>Status</th><th>Due by</th><th class="r">Price</th></tr></thead><tbody>${os.map(o=>`<tr><td class="small num">${o.id}</td><td>${o.panel}</td><td>${pill(o.stage===4?'ok':o.stage===0?'warn':'info',STAGES[o.stage])}</td><td class="small">${o.due}</td><td class="r num">£${o.price}.00</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">No lab orders yet.</div>';}
+ else {body=`<div class="stack" style="gap:0">${(isE?[['28 Oct 2026','Results released','Vitamin and Iron Panel, by Dr Gina Schoeman'],['21 Oct 2026','Lab order created','LO-2026-014 Female Hormone & Metabolic Panel'],['21 Oct 2026','Results review (video)','Letter shared with patient'],['24 Jun 2026','Follow-up consultation','Started Vitamin D3 4,000 IU'],['18 Mar 2026','Initial assessment','Started Oestrogel and Utrogestan']]:[['—','Registered','Patient added to the Clinic Hub']]).map(e=>`<div style="display:grid;grid-template-columns:120px 1fr;gap:16px;padding:14px 0;border-bottom:1px solid var(--surface-border)"><span class="small">${e[0]}</span><div><b style="font-weight:500">${e[1]}</b><div class="small">${e[2]}</div></div></div>`).join('')}</div>`;}
+ return `<div class="stack" style="gap:28px"><a class="btn ghost" href="#c-patients" style="align-self:flex-start">← All patients</a>
+<div class="record-head"><div class="avatar">${ini(p.name)}</div><div style="flex:1;min-width:240px"><h1 class="title" style="margin:0">${p.name}</h1><div class="meta-row" style="margin-top:8px"><span>${p.sex==='F'?'Female':'Male'}, ${p.age}</span><span>DOB ${p.dob}</span><span class="num">${p.pid}</span>${p.phone?`<span>${p.phone}</span>`:''}${p.email?`<span>${p.email}</span>`:''}</div><div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">${p.allergy?pill('crit','Allergy: '+p.allergy,'alert'):pill('','No known allergies')}${pill('','Next visit '+p.next,'calendar')}</div></div></div>
+${al?`<div class="alert warn">${ic('lock')}<div class="t"><b>${al.type}.</b> ${al.note} <span class="small">· Visible to clinicians only</span></div></div>`:''}
+<div class="split" style="grid-template-columns:minmax(0,1fr) 240px"><div class="stack" style="min-width:0"><div class="tabs" role="tablist">${tabs.map(([id,l])=>`<button role="tab" data-act="rectab" data-v="${id}" aria-selected="${S.recTab===id}">${l}</button>`).join('')}</div>${body}</div>
+<div class="card quick"><div class="eyebrow">Quick actions</div><button class="btn sm" data-act="neworder" data-id="${p.id}">${ic('flask',15)}Order bloods</button><button class="btn outline sm" data-act="toast" data-msg="Diagnosis form opened (demo)">${ic('plus',15)}Add diagnosis</button><button class="btn outline sm" data-act="toast" data-msg="Task sent to GoHighLevel">${ic('clipboard',15)}Create task</button><button class="btn outline sm" data-act="gotoimp">${ic('upload',15)}Upload document</button><p class="small" style="margin:4px 0 0">Tasks and messages are sent through GoHighLevel.</p></div></div></div>`;}
+
+function revTable(r){return `<div class="tablewrap"><table><thead><tr><th>Marker</th><th class="r">Value</th><th>Range</th><th class="r">Previous</th><th>Change</th><th>Status</th></tr></thead><tbody>${[...r.m].sort((a,b)=>(a.s==='crit'?0:a.s==='warn'?1:2)-(b.s==='crit'?0:b.s==='warn'?1:2)).map(m=>`<tr><td><b style="font-weight:500">${m.n}</b><span class="sub">${m.u}</span></td><td class="r"><span class="val ${m.s==='ok'?'':'v-'+m.s}">${m.v}</span></td><td class="small num">${m.r}</td><td class="r small num">${m.p}</td><td class="small num">${m.d}</td><td>${sp(m.s)}</td></tr>`).join('')}</tbody></table></div>`;}
+function cReview(){const q=S.review;if(!q.length)return `<div class="page-head"><div><div class="eyebrow">Patients</div><h1 class="title">Results <em>review</em></h1></div></div><div class="empty">All results reviewed. New results will appear here as they arrive.</div>`;
+ if(!q.find(r=>r.id===S.revSel))S.revSel=q[0].id;const r=q.find(x=>x.id===S.revSel);const p=pById(r.pid);
+ return `<div class="page-head"><div><div class="eyebrow">Patients</div><h1 class="title">Results <em>review</em></h1><p class="lede num">${q.length} panels waiting · out-of-range first</p></div></div>
+<div class="split"><div class="stack" style="gap:10px">${q.map(x=>{const n=x.m.filter(m=>m.s==='crit').length;return `<button class="qitem" data-act="revsel" data-id="${x.id}" aria-current="${x.id===S.revSel}"><span style="display:flex;justify-content:space-between;gap:8px;width:100%"><b style="font-weight:600">${pById(x.pid).name}</b>${n?pill('crit',n+' out','alert'):pill('ok','In range','check')}</span><span class="small">${x.panel} · received ${x.received}</span></button>`;}).join('')}</div>
+<div class="card" style="gap:20px"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><div class="eyebrow">${r.lab} · sample ${r.sample}</div><h2 class="sec" style="margin-top:4px">${r.panel} · ${p.name}</h2></div><button class="btn ghost" data-act="record" data-id="${p.id}">Open record ${ic('arrow',14)}</button></div>
+${revTable(r)}
+<div class="field"><label for="rev-comment">Comment for the patient</label><textarea class="input" id="rev-comment" placeholder="Written in plain English. The patient sees this with their results."></textarea></div>
+<div class="chips">${["In range, no action needed.","Repeat in 3 months.","Let's discuss this at your follow-up.","Please book a follow-up appointment."].map(t=>`<button type="button" class="chip" data-act="phrase" data-v="${esc(t)}">${t}</button>`).join('')}</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="release">Release to patient</button><button class="btn outline" data-act="reviewed">Mark reviewed</button><button class="btn bronze" data-act="toast" data-msg="Follow-up task sent to GoHighLevel">Create follow-up task</button></div></div></div>`;}
+
+function cImports(){const list=S.imports;if(!list.find(i=>i.id===S.impSel))S.impSel=list[0].id;const it=list.find(i=>i.id===S.impSel);const p=it.pid?pById(it.pid):null;
+ const pending=it.items.filter(x=>!x.st).length;
+ return `<div class="page-head"><div><div class="eyebrow">Patients</div><h1 class="title">Import <em>queue</em></h1><p class="lede">Check results that arrived by upload or email before they are added to a record.</p></div></div>
+<div class="split"><div class="stack" style="gap:10px">${list.map(x=>`<button class="qitem" data-act="impsel" data-id="${x.id}" aria-current="${x.id===S.impSel}"><span style="display:flex;justify-content:space-between;gap:8px;width:100%"><b style="font-weight:600;word-break:break-all">${esc(x.file)}</b></span><span style="display:flex;gap:6px;flex-wrap:wrap">${x.done?pill('ok','Done','check'):x.pid?pill('info','Matched','check'):pill('warn','Needs match','alert')}${pill('',x.source)}</span><span class="small">Received ${x.received}</span></button>`).join('')}</div>
+<div class="grid g2" style="align-items:start"><div class="docprev" aria-label="Document preview"><div class="eyebrow">Preview</div><p style="margin:10px 0 4px;color:var(--content);font-weight:600;word-break:break-all">${esc(it.file)}</p>${Array.from({length:14},(_,i)=>`<div class="ln" style="width:${[92,70,84,60,88,76,50,90,66,80,58,86,72,40][i]}%"></div>`).join('')}</div>
+<div class="card" style="gap:16px"><div class="field"><label for="imp-patient">Patient</label><select class="input" id="imp-patient" data-act="impmatch">${!it.pid?`<option value="">Choose a patient${it.guess?' · suggested: '+pById(it.guess).name:''}</option>`:''}${patients.map(x=>`<option value="${x.id}" ${x.id===it.pid?'selected':''}>${x.name} · ${x.dob}</option>`).join('')}</select></div>
+${it.dup?`<div class="alert warn">${ic('alert')}<div class="t">These results look the same as a TDL panel already in the review queue.</div></div>`:''}
+<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span class="eyebrow">Extracted values</span><button class="btn bronze sm" data-act="confirmhigh" ${!it.pid||!pending?'disabled':''}>Confirm all high confidence</button></div>
+${it.items.map((x,i)=>`<div style="border-top:1px solid var(--surface-border);padding-top:12px;display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap"><div><b style="font-weight:500">${x.k}</b> <span class="val num">${x.v}</span> <span class="small">${x.u} · range ${x.r}</span><div style="margin-top:4px">${pill(x.c==='HIGH'?'ok':x.c==='MEDIUM'?'warn':'crit',x.c+' confidence')}</div></div>${x.st?pill(x.st==='ok'?'dark':'',x.st==='ok'?'Confirmed':'Rejected'):`<span style="display:flex;gap:6px"><button class="btn accent sm" data-act="impitem" data-i="${i}" data-v="ok" ${!it.pid?'disabled':''}>Confirm</button><button class="btn danger sm" data-act="impitem" data-i="${i}" data-v="no">Reject</button></span>`}</div>`).join('')}
+${!it.pid?`<p class="small" style="margin:0">Choose the patient before confirming values.</p>`:''}</div></div></div>`;}
+
+function cOrders(){const os=S.orders.map(o=>o.id==='LO-2026-014'?{...o,stage:S.labPaid?1:0}:o);
+ return `<div class="page-head"><div><div class="eyebrow">Patients</div><h1 class="title">Lab <em>orders</em></h1><p class="lede">Every order from request to review. Chasers for unpaid orders and missing samples run in GoHighLevel.</p></div><button class="btn" data-act="neworder">${ic('plus',15)}New order</button></div>
+<div class="pipeline">${STAGES.map((s,i)=>{const col=os.filter(o=>o.stage===i);return `<div class="col"><div class="col-head"><span class="eyebrow">${s}</span><span class="small num">${col.length}</span></div>${col.map(o=>`<div class="mini" style="${o.risk?'border-left:3px solid var(--status-danger)':''}"><b>${pById(o.pid).name}</b><span>${o.panel}</span><span class="small num">${o.id} · £${o.price}.00</span><span class="small">Due by ${o.due} · appt ${o.appt}</span>${o.risk?`<span>${pill('crit','At risk','alert')}</span>`:''}</div>`).join('')||'<div class="small" style="padding:12px 0">Nothing here.</div>'}</div>`;}).join('')}</div>`;}
+
+function newOrderDialog(pid){const today='2026-11-18';openOv(`<form class="dialog wide" id="order-form" role="dialog" aria-modal="true" aria-label="New lab order">${ovHead('New lab order','Order <em>bloods</em>')}
+<div class="grid g2" style="gap:16px"><div class="field"><label for="no-patient">Patient</label><select class="input" id="no-patient">${patients.map(p=>`<option value="${p.id}" ${p.id===(pid||'eh')?'selected':''}>${p.name}</option>`).join('')}</select></div>
+<div class="field"><label for="no-panel">Panel</label><select class="input" id="no-panel">${catalogue.map((c,i)=>`<option value="${i}">${c.n} · ${c.tests} tests</option>`).join('')}</select></div>
+<div class="field"><label for="no-lab">Lab</label><select class="input" id="no-lab"><option>TDL Pathology</option><option>The Doctors Laboratory</option><option>Patient's own lab</option></select></div>
+<div class="field"><label for="no-appt">For appointment on</label><input class="input" id="no-appt" type="date" value="${today}"></div></div>
+<label class="toggle"><input type="checkbox" id="no-fasting" checked>Fasting sample required</label>
+<div class="field"><label for="no-notes">Preparation notes for the patient</label><textarea class="input" id="no-notes" style="min-height:80px">Morning sample before 10:00. Take your usual hormones after the sample.</textarea></div>
+<div class="prep" style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><span>Results due by <b id="no-due">4 Nov 2026</b> <span class="small">(appointment minus 14 days)</span></span><span>Price <b class="num" id="no-price">£${catalogue[0].price}.00</b></span></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" type="submit">Send to patient</button><button class="btn outline" type="button" data-act="close">Cancel</button></div></form>`,'dialog');}
+
+function cSafeguarding(){return `<div class="page-head"><div><div class="eyebrow">Clinical</div><h1 class="title">Safeguarding <em>alerts</em></h1><p class="lede">Warnings shown on a patient's record. ${ic('lock',14)} Visible to clinicians only, never to patients or reception.</p></div><button class="btn outline" data-act="toast" data-msg="New alert form opened (demo)">${ic('plus',15)}Add alert</button></div>
+<div class="stack" style="gap:12px">${safeguarding.map(a=>`<div class="card"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><h3>${pById(a.pid).name}</h3>${pill('',a.type)}${pill(a.sev==='MODERATE'?'warn':'info',a.sev)}</div>${a.overdue?pill('crit','Review overdue','alert'):''}</div><p style="margin:0">${a.note}</p><div class="meta-row"><span>Added by ${a.by} · ${a.added}</span><span>Review due ${a.review}</span></div><div class="actions"><button class="btn outline sm" data-act="toast" data-msg="Alert marked as reviewed">Mark reviewed</button><button class="btn ghost" data-act="record" data-id="${a.pid}">Open record</button></div></div>`).join('')}</div>`;}
+
+function cTeam(){const t=S.teamTab;let body='';
+ if(t==='team')body=`<div class="tablewrap"><table><thead><tr><th>Name</th><th>Role</th><th>Locations</th><th>Last active</th></tr></thead><tbody>${team.map(m=>`<tr><td><span style="display:inline-flex;align-items:center;gap:10px"><span class="avatar" style="width:30px;height:30px;font-size:11px">${ini(m.n)}</span><b style="font-weight:500">${m.n}</b></span></td><td>${pill(m.role==='DOCTOR'?'dark':'',m.role)}</td><td class="small">${m.loc}</td><td class="small">${m.last}</td></tr>`).join('')}</tbody></table></div>`;
+ else if(t==='audit')body=`<div class="tablewrap"><table><thead><tr><th>Time</th><th>User</th><th>Action</th><th>Record</th></tr></thead><tbody>${audit.map(a=>`<tr><td class="small num">${a[0]}</td><td>${a[1]}</td><td>${a[2]}</td><td class="small">${a[3]}</td></tr>`).join('')}</tbody></table></div><p class="small">The audit log cannot be edited or deleted.</p>`;
+ else if(t==='cat')body=`<div class="tablewrap"><table><thead><tr><th>Panel</th><th>Lab</th><th class="r">Tests</th><th class="r">Price</th></tr></thead><tbody>${catalogue.map(c=>`<tr><td>${c.n}</td><td class="small">${c.lab}</td><td class="r num">${c.tests}</td><td class="r num">£${c.price}.00</td></tr>`).join('')}</tbody></table></div>`;
+ else body=`<div class="grid g3">${[['GoHighLevel','Messages, reminders, tasks and appointments','ok','Connected'],['Stripe','Lab and repeat prescription payments','ok','Connected'],['Resend','Sign-in links and system emails','ok','Connected'],['TDL Pathology','Automatic results feed','warn','Coming soon'],['Semble','Diary, notes and prescribing sync','warn','Coming soon'],['Fathom','Consultation transcripts and letters','warn','Coming soon']].map(x=>`<div class="card"><div style="display:flex;justify-content:space-between;gap:8px"><h3>${x[0]}</h3>${pill(x[2],x[3],x[2]==='ok'?'check':'clock')}</div><p class="small" style="margin:0">${x[1]}</p></div>`).join('')}</div>`;
+ return `<div class="page-head"><div><div class="eyebrow">Clinic</div><h1 class="title">Team and <em>settings</em></h1></div></div><div class="stack"><div class="tabs" role="tablist">${[['team','Team'],['audit','Audit log'],['cat','Catalogue'],['int','Integrations']].map(([id,l])=>`<button role="tab" data-act="teamtab" data-v="${id}" aria-selected="${t===id}">${l}</button>`).join('')}</div>${body}</div>`;}
+
+/* ---------- Render ---------- */
+const VIEWS={'p-home':[pHome,'Home'],'p-orders':[pOrders,'My care / Lab orders'],'p-results':[pResults,'Health / My results'],'p-upload':[pUpload,'Health / Upload results'],'p-prescriptions':[pPrescriptions,'My care / Prescriptions'],'p-appointments':[pAppointments,'My care / Appointments'],'p-ask':[pAsk,'My care / Ask the clinic'],'p-letters':[pLetters,'My care / Letters and documents'],'p-privacy':[pPrivacy,'Account / Privacy and consent'],
+ 'c-dashboard':[cDashboard,'Today / Dashboard'],'c-patients':[cPatients,'Patients / Patient list'],'c-record':[cRecord,'Patients / Patient record'],'c-review':[cReview,'Patients / Results review'],'c-imports':[cImports,'Patients / Import queue'],'c-orders':[cOrders,'Patients / Lab orders'],'c-safeguarding':[cSafeguarding,'Clinical / Safeguarding alerts'],'c-team':[cTeam,'Clinic / Team and settings']};
+function render(){let r=route();if(r!=='p-signin'&&!VIEWS[r])r='p-home';const root=document.getElementById('root');
+ document.getElementById('view-patient').setAttribute('aria-pressed',r[0]==='p');document.getElementById('view-clinic').setAttribute('aria-pressed',r[0]==='c');
+ root.innerHTML=r==='p-signin'?pSignin():shell(r,VIEWS[r][0](),VIEWS[r][1]);window.scrollTo(0,0);}
+
+/* ---------- Events ---------- */
+document.addEventListener('click',e=>{const el=e.target.closest('[data-act]');if(!el)return;const a=el.dataset.act,id=el.dataset.id,v=el.dataset.v;
+ if(el.tagName==='INPUT'||el.tagName==='SELECT')return;
+ if(a!=='scroll'&&el.tagName==='A'&&!el.dataset.act)return;
+ switch(a){
+ case 'view':S.navOpen=false;go(v==='p'?'p-home':'c-dashboard');break;
+ case 'menu':S.navOpen=!S.navOpen;document.getElementById('sidebar').classList.toggle('open',S.navOpen);break;
+ case 'signout':go(route()[0]==='p'?'p-signin':'p-signin');break;
+ case 'enter':go('p-home');break;
+ case 'notify':toast(route()[0]==='p'?'No new notifications':'2 results arrived overnight');break;
+ case 'close':closeOv();break;
+ case 'toast':toast(el.dataset.msg);break;
+ case 'marker':markerSheet(id);break;
+ case 'letter':letterSheet(id);break;
+ case 'repeat':repeatDialog(id);break;
+ case 'checkout':checkoutSheet();break;
+ case 'paynow':S.labPaid=true;closeOv();render();toast('Paid. Your barcode form is ready.');break;
+ case 'resfilter':S.resFilter=v;render();break;
+ case 'rxtab':S.rxTab=v;render();break;
+ case 'appttab':S.apptTab=v;render();break;
+ case 'reschedule':openOv(`<div class="dialog" role="dialog" aria-modal="true" aria-label="Reschedule">${ovHead('Reschedule','Choose a <em>new time</em>')}<p class="small" style="margin:0">Dr Gina Schoeman · Harley Street · 30 minutes</p>${['Thu 19 Nov 2026, 11:00','Fri 20 Nov 2026, 09:30','Tue 24 Nov 2026, 14:00'].map(s=>`<button class="qitem" data-act="pickslot" data-v="${s}">${ic('calendar',16)} ${s}</button>`).join('')}<p class="small" style="margin:0">Your bloods due date moves with your appointment.</p></div>`,'dialog');break;
+ case 'pickslot':closeOv();toast('Request sent for '+v+'. The team will confirm.');break;
+ case 'cancelappt':openOv(`<div class="dialog" role="dialog" aria-modal="true" aria-label="Cancel appointment">${ovHead('Cancel appointment','Cancel this <em>appointment</em>?')}<p style="margin:0">Follow-up consultation on Wed 18 Nov 2026 at 10:30.</p><div class="alert warn">${ic('alert')}<div class="t">Cancellations within 48 hours of the appointment may be charged in full.</div></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn danger" data-act="cancelok">Cancel appointment</button><button class="btn outline" data-act="close">Keep appointment</button></div></div>`,'dialog');break;
+ case 'cancelok':closeOv();toast('Cancellation request sent to the clinic.');break;
+ case 'urg':document.querySelectorAll('[data-act="urg"]').forEach(b=>b.setAttribute('aria-pressed',b===el));break;
+ case 'diaryloc':S.diaryLoc=v;render();setTimeout(()=>document.getElementById('diary')?.scrollIntoView(),0);break;
+ case 'scroll':e.preventDefault();document.getElementById(v)?.scrollIntoView({behavior:'smooth'});break;
+ case 'record':S.recordId=id;S.recTab='overview';go('c-record');break;
+ case 'rectab':S.recTab=v;render();break;
+ case 'cohort':S.cohort=!S.cohort;render();break;
+ case 'export':openOv(`<div class="dialog" role="dialog" aria-modal="true" aria-label="Export">${ovHead('Export','Export <em>anonymised</em> data?')}<p style="margin:0">Names, dates of birth, contact details and IDs are removed. Ages are grouped into 5-year bands.</p><p class="small" style="margin:0">The export is recorded in the audit log.</p><div style="display:flex;gap:8px"><button class="btn" data-act="exportok">Export CSV</button><button class="btn outline" data-act="close">Cancel</button></div></div>`,'dialog');break;
+ case 'exportok':closeOv();toast('Anonymised export prepared (demo)');break;
+ case 'openrev':S.revSel=id;go('c-review');break;
+ case 'revsel':S.revSel=id;render();break;
+ case 'phrase':{const t=document.getElementById('rev-comment');t.value=(t.value?t.value.trim()+' ':'')+v;t.focus();break;}
+ case 'release':{const r=S.review.find(x=>x.id===S.revSel);const n=pById(r.pid).name;S.review=S.review.filter(x=>x.id!==r.id);render();toast('Released to '+n+'. A notification will be sent.');break;}
+ case 'reviewed':{const r=S.review.find(x=>x.id===S.revSel);S.review=S.review.filter(x=>x.id!==r.id);render();toast('Marked as reviewed. Not yet released to the patient.');break;}
+ case 'impsel':S.impSel=id;render();break;
+ case 'impitem':{const it=S.imports.find(x=>x.id===S.impSel);it.items[+el.dataset.i].st=v;if(it.items.every(x=>x.st))it.done=true;render();break;}
+ case 'confirmhigh':{const it=S.imports.find(x=>x.id===S.impSel);it.items.forEach(x=>{if(!x.st&&x.c==='HIGH')x.st='ok'});if(it.items.every(x=>x.st))it.done=true;render();toast('High confidence values confirmed');break;}
+ case 'gotoimp':go('c-imports');break;
+ case 'neworder':newOrderDialog(id);break;
+ case 'teamtab':S.teamTab=v;render();break;
+ }
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!document.getElementById('ov').hidden)closeOv();
+ if((e.key==='Enter'||e.key===' ')&&e.target.matches('tr.row[data-act]')){e.preventDefault();e.target.click();}});
+document.getElementById('ov').addEventListener('click',e=>{if(e.target.id==='ov')closeOv();});
+document.addEventListener('change',e=>{const t=e.target;
+ if(t.id==='out-only'){S.outOnly=t.checked;render();}
+ else if(t.dataset.act==='consent'){S.consents[t.dataset.v]=t.checked;render();toast(t.checked?'Consent given':'Consent withdrawn');}
+ else if(t.id==='imp-patient'){const it=S.imports.find(x=>x.id===S.impSel);it.pid=t.value||null;render();}
+ else if(t.id==='upload-file'&&t.files[0]){S.uploads.unshift({f:t.files[0].name,d:'29 Oct 2026',st:'team',note:null});render();toast('Uploaded. Our team will check it within 2 working days.');}
+ else if(t.id==='no-appt'||t.id==='no-panel'){updOrder();}
+});
+document.addEventListener('input',e=>{const t=e.target;
+ if(t.id==='pt-search'||t.id==='global-search'){S.pq=t.value;if(route()!=='c-patients'){go('c-patients');}else{const pos=t.selectionStart;render();const n=document.getElementById('pt-search');n.focus();n.setSelectionRange(pos,pos);}}
+ if(t.id==='ask-body'){document.getElementById('ask-count').textContent=t.value.length.toLocaleString('en-GB')+' / 1,000';}
+});
+function updOrder(){const a=document.getElementById('no-appt'),pn=document.getElementById('no-panel');if(!a)return;const d=new Date(a.value+'T12:00:00');if(!isNaN(d)){d.setDate(d.getDate()-14);document.getElementById('no-due').textContent=d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}document.getElementById('no-price').textContent='£'+catalogue[+pn.value].price+'.00';}
+document.addEventListener('submit',e=>{e.preventDefault();const f=e.target;
+ if(f.id==='signin-form'){document.getElementById('signin-sent').hidden=false;}
+ else if(f.id==='checkout-form'){S.labPaid=true;closeOv();render();toast('Paid. Your barcode form is ready.');}
+ else if(f.id==='repeat-form'){const m=meds.find(x=>x.id===f.dataset.id);S.repeats.unshift({med:m.name,d:'29 Oct 2026',st:'REQUESTED'});closeOv();S.rxTab='req';if(route()==='p-prescriptions')render();toast('Request sent. The team will confirm within 2 working days.');}
+ else if(f.id==='ask-form'){S.questions.unshift({s:document.getElementById('ask-subject').value,d:'29 Oct 2026',st:'AWAITING',a:null});render();toast('Question sent. We reply within 2 working days.');}
+ else if(f.id==='order-form'){const pid=document.getElementById('no-patient').value;const c=catalogue[+document.getElementById('no-panel').value];const due=document.getElementById('no-due').textContent.replace(/ \d{4}$/,'');const ad=new Date(document.getElementById('no-appt').value+'T12:00:00');
+  S.orders.unshift({id:'LO-2026-0'+(17+S.orders.length-7),pid,panel:c.n,price:c.price,ordered:'29 Oct',due,appt:isNaN(ad)?'—':ad.toLocaleDateString('en-GB',{day:'numeric',month:'short'}),stage:0,risk:false});closeOv();if(route()==='c-orders')render();toast('Order sent to '+pById(pid).name+'. Payment reminders will run in GoHighLevel.');}
+});
+const dz=()=>document.getElementById('dropzone');
+document.addEventListener('dragover',e=>{if(e.target.closest&&e.target.closest('#dropzone')){e.preventDefault();dz().classList.add('over');}});
+document.addEventListener('dragleave',e=>{if(e.target.closest&&e.target.closest('#dropzone'))dz().classList.remove('over');});
+document.addEventListener('drop',e=>{const z=e.target.closest&&e.target.closest('#dropzone');if(!z)return;e.preventDefault();const f=e.dataTransfer.files[0];if(f){S.uploads.unshift({f:f.name,d:'29 Oct 2026',st:'team',note:null});render();toast('Uploaded. Our team will check it within 2 working days.');}});
+window.addEventListener('hashchange',()=>{S.navOpen=false;closeOv();render();});
+render();
+})();
+</script>

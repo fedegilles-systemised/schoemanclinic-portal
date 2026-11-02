@@ -1,0 +1,33 @@
+<!-- @dsCard group="Status" height=260 -->
+<!doctype html>
+<html lang="en-GB">
+<head><meta charset="utf-8"><title>AlertBar</title>
+<style>
+html,body{margin:0}body{background:var(--surface);color:var(--content);font-family:var(--font-sans);font-size:15px;line-height:24px;padding:20px 24px;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.stack{display:flex;flex-direction:column;gap:12px}
+.eb{font-size:11px;line-height:16px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--content-muted)}
+.small{font-size:13px;line-height:20px;color:var(--content-muted)}.num{font-variant-numeric:tabular-nums}
+.disp{font-family:var(--font-display);font-weight:300;letter-spacing:-.015em}.disp em{font-style:italic;color:var(--secondary)}
+:focus-visible{outline:2px solid var(--secondary-border);outline-offset:2px}
+.pill{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 8px;border-radius:2px;font-size:10.5px;line-height:1;font-weight:500;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;background:var(--surface-sunken);color:var(--content-muted)}
+.pill svg{width:12px;height:12px}.ok{background:var(--status-success-bg);color:var(--status-success)}.warn{background:var(--status-warning-bg);color:var(--status-warning)}.crit{background:var(--status-danger-bg);color:var(--status-danger)}.info{background:var(--status-info-bg);color:var(--status-info)}.dark{background:var(--content);color:var(--content-inverse)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 20px;border:2px solid var(--primary);background:var(--primary);color:var(--primary-content);border-radius:0;font:500 11px/1 var(--font-sans);letter-spacing:.16em;text-transform:uppercase;cursor:pointer;white-space:nowrap;transition:background .15s ease-out,color .15s ease-out,border-color .15s ease-out}
+.btn:hover{background:var(--primary-hover);border-color:var(--primary-hover)}.btn.sm{height:36px;padding:0 14px}
+.btn.accent{background:var(--secondary);border-color:var(--secondary)}
+.btn.outline{background:transparent;color:var(--content)}.btn.outline:hover{background:var(--content);color:var(--content-inverse)}
+.btn.bronze{background:transparent;color:var(--secondary);border-color:var(--secondary-border)}.btn.bronze:hover{background:var(--secondary);border-color:var(--secondary);color:var(--content-inverse)}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--content);padding:0 4px;height:auto;letter-spacing:.12em}.btn.ghost:hover{text-decoration:underline}
+.btn.danger{background:transparent;color:var(--status-danger);border-color:var(--status-danger)}.btn.danger:hover{background:var(--status-danger);color:var(--content-inverse)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.card{background:var(--surface-raised);border:1px solid var(--surface-border);border-radius:4px;padding:24px;display:flex;flex-direction:column;gap:12px;min-width:0}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.alert{display:flex;align-items:center;gap:14px;border:1px solid var(--surface-border);border-left-width:3px;padding:14px 18px;background:var(--surface-raised);flex-wrap:wrap}.alert .t{flex:1;min-width:200px}.alert b{font-weight:600}.alert svg{flex:none}.alert.warn{border-color:var(--status-warning);background:var(--status-warning-bg);color:var(--content)}.alert.crit{border-color:var(--status-danger);background:var(--status-danger-bg);color:var(--content)}.alert.info{border-color:var(--status-info);background:var(--status-info-bg);color:var(--content)}.alert.warn svg{color:var(--status-warning)}.alert.crit svg{color:var(--status-danger)}.alert.info svg{color:var(--status-info)}
+</style></head>
+<body>
+<div class="stack">
+<div class="alert warn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 2.5 20h19z"/><path d="M12 10v4.5M12 17.2v.3"/></svg><div class="t"><b>Oestrogel 0.06% gel</b> — 8 days left</div><button class="btn accent sm">Request repeat</button></div>
+<div class="alert crit"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 2.5 20h19z"/><path d="M12 10v4.5M12 17.2v.3"/></svg><div class="t"><b>Anything urgent?</b> Call the clinic on 020 7946 0000 or dial 999. Messages here are not monitored in real time.</div></div>
+<div class="alert info"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><div class="t">2 new results are with your doctor for review. You'll see them here once they're released.</div></div>
+<div class="alert warn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="1"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><div class="t"><b>Clinical warning.</b> Anxiety around blood tests. <span class="small">· Visible to clinicians only</span></div></div></div>
+</body>
+</html>

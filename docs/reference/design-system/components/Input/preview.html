@@ -1,0 +1,32 @@
+<!-- @dsCard group="Forms" height=260 -->
+<!doctype html>
+<html lang="en-GB">
+<head><meta charset="utf-8"><title>Input</title>
+<style>
+html,body{margin:0}body{background:var(--surface);color:var(--content);font-family:var(--font-sans);font-size:15px;line-height:24px;padding:20px 24px;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.stack{display:flex;flex-direction:column;gap:12px}
+.eb{font-size:11px;line-height:16px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--content-muted)}
+.small{font-size:13px;line-height:20px;color:var(--content-muted)}.num{font-variant-numeric:tabular-nums}
+.disp{font-family:var(--font-display);font-weight:300;letter-spacing:-.015em}.disp em{font-style:italic;color:var(--secondary)}
+:focus-visible{outline:2px solid var(--secondary-border);outline-offset:2px}
+.pill{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 8px;border-radius:2px;font-size:10.5px;line-height:1;font-weight:500;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;background:var(--surface-sunken);color:var(--content-muted)}
+.pill svg{width:12px;height:12px}.ok{background:var(--status-success-bg);color:var(--status-success)}.warn{background:var(--status-warning-bg);color:var(--status-warning)}.crit{background:var(--status-danger-bg);color:var(--status-danger)}.info{background:var(--status-info-bg);color:var(--status-info)}.dark{background:var(--content);color:var(--content-inverse)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 20px;border:2px solid var(--primary);background:var(--primary);color:var(--primary-content);border-radius:0;font:500 11px/1 var(--font-sans);letter-spacing:.16em;text-transform:uppercase;cursor:pointer;white-space:nowrap;transition:background .15s ease-out,color .15s ease-out,border-color .15s ease-out}
+.btn:hover{background:var(--primary-hover);border-color:var(--primary-hover)}.btn.sm{height:36px;padding:0 14px}
+.btn.accent{background:var(--secondary);border-color:var(--secondary)}
+.btn.outline{background:transparent;color:var(--content)}.btn.outline:hover{background:var(--content);color:var(--content-inverse)}
+.btn.bronze{background:transparent;color:var(--secondary);border-color:var(--secondary-border)}.btn.bronze:hover{background:var(--secondary);border-color:var(--secondary);color:var(--content-inverse)}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--content);padding:0 4px;height:auto;letter-spacing:.12em}.btn.ghost:hover{text-decoration:underline}
+.btn.danger{background:transparent;color:var(--status-danger);border-color:var(--status-danger)}.btn.danger:hover{background:var(--status-danger);color:var(--content-inverse)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.card{background:var(--surface-raised);border:1px solid var(--surface-border);border-radius:4px;padding:24px;display:flex;flex-direction:column;gap:12px;min-width:0}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}@media(max-width:600px){.grid{grid-template-columns:1fr}}.field{display:flex;flex-direction:column;gap:6px;min-width:0}.field label{font-size:11px;line-height:16px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--content-muted)}.input{height:44px;border:1px solid var(--surface-border);background:var(--surface-raised);border-radius:0;padding:0 14px;width:100%;font:inherit;color:inherit;transition:border-color .15s ease-out}textarea.input{height:auto;min-height:96px;padding:12px 14px;line-height:22px;resize:vertical}.input:focus{outline:0;border-color:var(--secondary-border)}.input::placeholder{color:var(--content-muted)}
+</style></head>
+<body>
+<div class="grid">
+<div class="field"><label for="a">Email address</label><input id="a" class="input" value="eleanor.hart@example.com"></div>
+<div class="field"><label for="b">Panel</label><select id="b" class="input"><option>Female Hormone &amp; Metabolic Panel (GS5)</option></select></div>
+<div class="field" style="grid-column:1/-1"><label for="c">Your question</label><textarea id="c" class="input" placeholder="Include any symptoms, readings or dates that will help us answer."></textarea><span class="small">0 / 1,000</span></div></div>
+</body>
+</html>
