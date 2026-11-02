@@ -33,7 +33,7 @@ type AppShellProps = {
 function AppShell({ kind, crumb, user, notifications, counts, locations, switchTo, sessionKind, children }: AppShellProps) {
   const demo = getPublicEnv().NEXT_PUBLIC_DEMO === "true";
   const currentHref = kind === "patient" ? "/portal" : "/clinic";
-  const sidebar = <SidebarContent kind={kind} currentHref={currentHref} counts={counts} user={user} />;
+  const sidebar = <SidebarContent kind={kind} currentHref={currentHref} counts={counts} />;
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -58,7 +58,7 @@ function AppShell({ kind, crumb, user, notifications, counts, locations, switchT
               </Suspense>
             ) : null}
             <NotificationsBell notifications={notifications} />
-            <UserMenu name={user.name} switchTo={switchTo} />
+            <UserMenu name={user.name} roleLabel={user.roleLabel} switchTo={switchTo} />
           </header>
           <main className="max-w-content">{children}</main>
         </div>

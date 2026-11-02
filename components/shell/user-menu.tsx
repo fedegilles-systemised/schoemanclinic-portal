@@ -15,7 +15,15 @@ import {
 import { signOut } from "@/lib/auth/actions";
 import { initials } from "@/lib/format";
 
-function UserMenu({ name, switchTo }: { name: string; switchTo?: { href: string; label: string } }) {
+function UserMenu({
+  name,
+  roleLabel,
+  switchTo,
+}: {
+  name: string;
+  roleLabel: string;
+  switchTo?: { href: string; label: string };
+}) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger aria-label="Account menu" className="rounded-round">
@@ -24,7 +32,10 @@ function UserMenu({ name, switchTo }: { name: string; switchTo?: { href: string;
         </Avatar>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuLabel>{name}</DropdownMenuLabel>
+        <DropdownMenuLabel>
+          {name}
+          <span className="block">{roleLabel}</span>
+        </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem disabled>
           <User aria-hidden />
