@@ -16,13 +16,15 @@ Clinic Hub is the patient and clinic portal pair for The Schoeman Clinic (hormon
 | 4. Database (schema, row-level security, audit, storage, tests, seed) | Done, committed |
 | 5. Authentication (sign-in, password reset, role routing) | Done, committed |
 | 6. App shells and dashboards (patient `/portal`, clinic `/clinic`) | Done, committed |
-| Session limits and attempt limits (`private.auth_throttle`, `lib/auth/throttle.ts`, `lib/supabase/session-cookies.ts`, `/login?error=expired`, no browser client) | Built, **uncommitted** in the working tree. The new migration is not on the hosted project yet |
+| Session limits and attempt limits (`private.auth_throttle`, `lib/auth/throttle.ts`, `lib/supabase/session-cookies.ts`, `/login?error=expired`, no browser Supabase client), signed session cookies and `SessionGuard`, a per-request Content-Security-Policy with a nonce, and the scope and audit-actor migration | Built, **uncommitted** in the working tree. The two new migrations are not on the hosted project yet |
 | Every screen behind the nav (results, orders, prescriptions, patient list, review queue, import queue and so on) | Not built; shown disabled with a "Coming soon" tooltip |
 | Stripe, lab feeds, GoHighLevel and Semble sync, invitation sending, result release and import confirmation | Not built. The schema is ready for them; no server code writes to those tables yet |
 
 The default branch is `main`, and the working tree above is on it. The home page (`app/page.tsx`) redirects: signed-out to `/login`, staff to `/clinic`, patients and guardians to `/portal`.
 
-**Waiting on a human:** `20261102143000_auth_throttle.sql` must be pushed to the hosted project. Until then `public.auth_throttle_hit` does not exist there, so `lib/auth/throttle.ts` fails open and logs an error on every attempt: sign-in and reset work, with no attempt limits. See section 7 for the environments.
+**Waiting on a human:**
+- `20261102143000_auth_throttle.sql` and `20261102150000_scope_and_audit_actor.sql` must be pushed to the hosted project. Until the first, `public.auth_throttle_hit` does not exist there, so `lib/auth/throttle.ts` fails open and logs an error on every attempt: sign-in and reset work, with no attempt limits. See section 7 for the environments.
+- `SESSION_COOKIE_SECRET` must be set in Vercel and in `.env.local`. Without it the proxy cannot read or sign the `ch_` cookies and fails closed (section 5), so no signed-in page loads.
 
 ## 3. Stack and versions
 
@@ -49,7 +51,7 @@ Checked against `package.json` and `pnpm-lock.yaml` [2026-11].
 
 ## 4. Database
 
-15 migrations in `supabase/migrations/`: 14 committed and `20261102143000_auth_throttle.sql` uncommitted. Postgres 17 (`major_version = 17`). 32 tables in `public`, plus `private.auth_throttle` (see 4.15); `auth.users` is managed by Supabase Auth and only referenced. Every table has `created_at` [2026-11]. Types are generated into `lib/database.types.ts` with `pnpm db:types`.
+16 migrations in `supabase/migrations/`: 14 committed, and `20261102143000_auth_throttle.sql` and `20261102150000_scope_and_audit_actor.sql` uncommitted. Postgres 17 (`major_version = 17`). 32 tables in `public`, plus `private.auth_throttle` (see 4.15); `auth.users` is managed by Supabase Auth and only referenced. Every table has `created_at` [2026-11]. Types are generated into `lib/database.types.ts` with `pnpm db:types`.
 
 ### 4.1 Principles
 
@@ -185,7 +187,7 @@ All are `stable`, `SECURITY DEFINER` and `search_path = ''` unless noted; execut
 | `my_patient_ids()` | Own unarchived patient record plus patients of verified guardian links with `can_view` |
 | `is_own_patient(uuid)` | The record is the caller's own |
 | `can_act_for(uuid)` | Own record, or verified guardian with `can_act` |
-| `in_scope(uuid)` | May this staff member open this patient. **Open question**: returns true for any clinical staff member until the clinic decides whether staff see all patients or only their care team; limit it through `care_team` when decided |
+| `in_scope(uuid)` | May this staff member open this patient. **Open question** (PRD open question 1): returns true for any clinical staff member until the clinic decides whether staff see all patients or only their care team. Since `20261102150000` the care team, patient profile, guardian link, safeguarding alert, repeat request, result import and import item policies all call it, so narrowing it is a change to this one function and needs no policy change [2026-11] |
 | `my_staff_id()` | Caller's `staff_profiles.id`, so a write cannot be attributed to someone else |
 | `report_is_released(uuid)`, `document_gate_open(uuid, doc_kind)` | The release gate |
 | `storage_object_is_mine(text)` | The caller has already uploaded the file at that path. The documents insert policy requires it of a patient or guardian, so they cannot claim someone else's file or register a row before the file exists [2026-11] |
@@ -216,7 +218,7 @@ RLS filters rows, not columns, so patients get hidden-column data through functi
 
 Audited tables: every table except `notification_preferences`, `notifications`, `webhook_events`, `integration_sync_log` and `audit_log`.
 
-**Audit rules** [2026-11]: for an update, `metadata` is `{"changed": [column names]}` and **never values**, because the table can never be erased and must not hold clinical data. The actor is `auth.uid()`; server code that acts for a person names them with `set_config('app.actor_id', '<profile id>', true)` in the same transaction. `actor_role` is the person's most specific role (staff over patient). Select-only "viewed" events are not written by triggers.
+**Audit rules** [2026-11]: for an update, `metadata` is `{"changed": [column names]}` and **never values**, because the table can never be erased and must not hold clinical data. The actor is `auth.uid()`; server code that acts for a person names them with `set_config('app.actor_id', '<profile id>', true)` in the same transaction. `actor_role` is the person's most specific role (staff over patient). Select-only "viewed" events are not written by triggers. Since `20261102150000` [2026-11, uncommitted], `private.write_audit_log` refuses a write made as the service role that names neither an actor (`app.actor_id`) nor a background job (`app.system_actor`, recorded in `metadata` as `system`). SQL run by the database owner (migrations, seed) is unaffected.
 
 ### 4.9 Storage
 
@@ -252,6 +254,7 @@ Audited tables: every table except `notification_preferences`, `notifications`, 
 | `20261102111728_storage.sql` | Buckets and storage policies |
 | `20261102111731_grants_hardening.sql` | Revokes, table and column grants, service role limits |
 | `20261102143000_auth_throttle.sql` | `private.auth_throttle`, `private.auth_throttle_hit`, service-role-only wrapper `public.auth_throttle_hit`. Uncommitted |
+| `20261102150000_scope_and_audit_actor.sql` | Adds `private.in_scope()` to the care team, patient profile, guardian link, safeguarding alert, repeat request, result import and import item policies (behaviour unchanged for now); `write_audit_log` refuses a service-role write with no `app.actor_id` or `app.system_actor`. Uncommitted |
 
 Create a new one with `supabase migration new <name> </dev/null`: the command hangs when stdin is not a terminal [2026-11].
 
@@ -260,6 +263,8 @@ Create a new one with `supabase migration new <name> </dev/null`: the command ha
 - `supabase/tests/00_schema_checks.test.sql` (pgTAP): table count, forced RLS, no `FOR ALL`, no cascades, no anon grants, delete grants, `search_path` on every function, no definer in `public`, and more.
 - `supabase/tests/01_role_matrix.test.sql` (pgTAP): runs SQL as each seeded user the way PostgREST does and checks what each role can read and write.
 - `supabase/tests/02_auth_throttle.test.sql` (pgTAP) [2026-11]: anon and authenticated cannot call the throttle or read the counters, the service role reaches the counters only through the function, a full bucket refuses, a refused attempt counts nowhere, an expired window restarts. Uncommitted.
+- `supabase/tests/03_scope_and_audit_actor.test.sql` (pgTAP) [2026-11]: the scoped policies still admit clinical staff, and the audit trigger refuses a service-role write with no actor or system job, accepts one that names either, and leaves database-owner SQL alone. Uncommitted. `01_role_matrix` now sets `app.system_actor` for its service-role writes.
+- Four files, 188 tests in all (`pnpm db:test`).
 - `supabase/seed.sql`: fictional data only, loaded by `db:reset`. **Local logins, their shared password and the account list are documented at the top of that file; refer to it, not here.** Seed dates are relative to the day of `db:reset` [2026-11], so the diary always has a today; reset again if it looks empty. Seed ids are fixed (users `a0...`, staff `b0...`, locations `c0...`, patients `d0...`). Never run the seed on the hosted project.
 - `package.json` scripts: `db:start`, `db:stop`, `db:reset`, `db:lint`, `db:test`, `db:types`, `db:advisors`.
 
@@ -267,7 +272,7 @@ Create a new one with `supabase migration new <name> </dev/null`: the command ha
 
 - `[auth] enable_signup = false`: public sign-up is off [2026-11].
 - `[auth.email] enable_signup = true` **must stay true**: if it is false, email sign-in is disabled altogether [2026-11].
-- Minimum password 12 characters, with lower case, upper case and digits; refresh-token rotation on; email confirmations off locally; anonymous sign-ins off; MFA off; the recovery email uses `supabase/templates/recovery.html`.
+- Minimum password 12 characters, with lower case, upper case and digits; refresh-token rotation on; email confirmations off locally; anonymous sign-ins off; MFA off (deferred, see section 8); the recovery email uses `supabase/templates/recovery.html`.
 - Site URL `http://localhost:3000`; redirects allowed on port 3000 only (see Findings on `web-local`).
 - `[auth.sessions]` stays commented out: Supabase's time-box and inactivity settings need the Pro plan, so the proxy enforces the limits instead (section 5).
 - These settings describe the local stack. The hosted project is configured by hand: public sign-up off, minimum password 12, and leaked password protection off because it needs the Pro plan [2026-11].
@@ -299,7 +304,7 @@ Create a new one with `supabase migration new <name> </dev/null`: the command ha
 
 | Path | State |
 |---|---|
-| `app/layout.tsx` | Built. `en-GB`, fonts, `TooltipProvider`, `Toaster`, `noindex`, favicon and Apple icon from `public/brand/` |
+| `app/layout.tsx` | Built. `en-GB`, fonts, `TooltipProvider`, `Toaster`, `noindex`, favicon and Apple icon from `public/brand/`. Calls `await connection()`, so every page renders per request and can carry its own CSP nonce [2026-11, uncommitted] |
 | `app/globals.css` | Built. Every design token and type utility |
 | `app/dev/ui/` | Built. Component gallery |
 | `app/fonts/` | Cormorant Garamond and Inter, self-hosted woff2 |
@@ -309,20 +314,21 @@ Create a new one with `supabase migration new <name> </dev/null`: the command ha
 | `app/clinic/` | Built [2026-11]. Same four files; home reads `?location=` |
 | `components/ui/` | Built. Restyled shadcn primitives and design-system components (alert-bar, status-pill, stat-card, sparkline, page-header, empty-state, demo-banner, wordmark and others; `order-steps` added in phase 6) |
 | `components/auth/` | Built. `form-parts`, `password-input`, for the sign-in forms |
-| `components/shell/` | Built [2026-11]: `app-shell`, `sidebar-content`, `nav` (unbuilt screens disabled via `coming-soon`), `mobile-nav`, `location-switcher`, `notifications-bell`, `user-menu` |
-| `lib/supabase/` | `server.ts`, `proxy.ts` (session refresh and session limits), `session-cookies.ts` (limits and cookie options), `admin.ts` (service role, server only). `client.ts` was deleted [2026-11]: **there is no browser Supabase client**, and every Supabase call runs on the server |
-| `lib/env.ts` | Lazy Zod validation of public, Supabase server and email variables |
+| `components/shell/` | Built [2026-11]: `session-guard` (uncommitted), `app-shell`, `sidebar-content`, `nav` (unbuilt screens disabled via `coming-soon`), `mobile-nav`, `location-switcher`, `notifications-bell`, `user-menu` |
+| `lib/supabase/` | `server.ts`, `proxy.ts` (session refresh and session limits), `session-cookies.ts` (limits, cookie options, HMAC signing), `admin.ts` (service role, server only). `client.ts` was deleted [2026-11]: **there is no browser Supabase client**, and every Supabase call runs on the server |
+| `lib/env.ts` | Lazy Zod validation of public, Supabase server, email and session (`getSessionEnv`) variables |
+| `lib/csp.ts` | `createNonce()` and `contentSecurityPolicy(nonce)`. Uncommitted [2026-11] |
 | `lib/email/send.ts` | Resend wrapper |
 | `lib/fonts.ts`, `lib/utils.ts` | Fonts; `cn` helper |
-| `lib/auth/` | `session.ts` (`getCurrentUser`, `homePathFor`), `actions.ts` (server actions), `throttle.ts` (`allowAuthAttempt`; uses the service role) |
+| `lib/auth/` | `session.ts` (`getCurrentUser`, `homePathFor`), `actions.ts` (server actions), `throttle.ts` (`allowAuthAttempt`; uses the service role), `session-start.ts` (`startSessionCookies`: server only, sets the signed `ch_` cookies; uncommitted) |
 | `lib/data/` | Built [2026-11]. `portal.ts` (`getPortalHome`), `clinic.ts` (`getClinicHome`, `getClinicNavCounts`), `shell.ts` (notifications, locations). All read through the signed-in session |
 | `lib/format.ts`, `lib/results.ts` | Built [2026-11]. London-time date and money formatting, 14-day arithmetic; maps `result_flag` to the in_range, borderline, out_of_range pills |
 | `lib/database.types.ts` | Generated by `pnpm db:types` |
-| `proxy.ts` | Calls `updateSession`: refreshes the session with `getClaims()`, ends a session past its limits, and redirects signed-out visitors away from `/portal` and `/clinic` to `/login`. Row-level security is the real authorisation |
-| `next.config.ts` | Security headers (HSTS, nosniff, referrer policy, frame denial, permissions policy) and a starter Content-Security-Policy |
-| `supabase/` | `config.toml`, `migrations/` (15), `tests/` (3 pgTAP files), `seed.sql`, `templates/recovery.html`. See section 4 |
+| `proxy.ts` | Calls `updateSession`: refreshes the session with `getClaims()`, ends a session past its limits, sets the Content-Security-Policy and redirects signed-out visitors away from `/portal` and `/clinic` to `/login`. Row-level security is the real authorisation |
+| `next.config.ts` | Static security headers (HSTS, nosniff, referrer policy, frame denial, permissions policy). The Content-Security-Policy was removed from here [2026-11, uncommitted]: it is set per request in `lib/supabase/proxy.ts` |
+| `supabase/` | `config.toml`, `migrations/` (16), `tests/` (4 pgTAP files, 188 tests), `seed.sql`, `templates/recovery.html`. See section 4 |
 | `public/brand/` | `schoemanClinic-logo.png` and `favicon.png`. `app/favicon.ico` was removed [2026-11] |
-| `.claude/launch.json` | Dev server configurations: `web` (port 3000, reads `.env.local`, so the hosted project) and `web-local` (port 3130, takes its URL and keys from `supabase status`, so the local stack) [2026-11] |
+| `.claude/launch.json` | Dev server configurations: `web` (port 3000, reads `.env.local`, so the hosted project) and `web-local` (port 3130, takes its URL and keys from `supabase status`, so the local stack, and sets a fixed local `SESSION_COOKIE_SECRET`) [2026-11] |
 | `docs/reference/` | Schema draft, design system, prototype. Read only |
 
 **Session limits** (`lib/supabase/session-cookies.ts`, enforced in `lib/supabase/proxy.ts`) [2026-11, uncommitted]:
@@ -332,12 +338,17 @@ Create a new one with `supabase migration new <name> </dev/null`: the command ha
 | Staff | 12 hours | 30 minutes |
 | Patient (and guardian) | 7 days | 2 hours |
 
-- `ch_session_kind` holds the kind. `signIn` and `updatePassword` set it; staff limits win for someone who is also a patient, and a missing or unknown value gets the staff limits. Paths under `/clinic` always use the staff limits, whatever the cookie says.
-- `ch_last_seen` holds the last request time, written at most once a minute. Sign-in and password change set it. A missing value, or one more than a minute in the future, counts as expired, so the visitor is signed out.
+- `ch_session_kind` holds the kind and `ch_last_seen` the last request time; both are **signed** [2026-11, uncommitted]. The value is `value.signature`, where the signature is HMAC-SHA256 (Web Crypto, key `SESSION_COOKIE_SECRET`) over `cookie name|user id|value`, so a cookie cannot be edited, moved to another cookie or used by another account. A missing, unsigned, edited or foreign cookie reads as missing: a missing last-seen counts as expired and a missing kind gets the staff limits. If `SESSION_COOKIE_SECRET` is missing or under 32 characters, `getSessionEnv` throws and the proxy fails closed. Server code sets them through `startSessionCookies` in `lib/auth/session-start.ts`.
+- `signIn` and `updatePassword` set it; staff limits win for someone who is also a patient, and a missing or unknown value gets the staff limits. Paths under `/clinic` always use the staff limits, whatever the cookie says.
+- `ch_last_seen` is written at most once a minute. Sign-in and password change set it. A missing value, or one more than a minute in the future, counts as expired, so the visitor is signed out.
 - The total runs from the latest sign-in time in the token's `amr` claim, which a refresh does not change, with `iat` as the fallback.
 - A session past a limit is signed out locally, its `sb-*` and `ch_*` cookies are removed, and the visitor goes to `/login?error=expired`.
-- `/auth/confirm` is exempt in the proxy, which leaves both `ch_` cookies alone there. The route itself sets `ch_last_seen` to now and deletes `ch_session_kind` only after `verifyOtp` or `exchangeCodeForSession` succeeds, because a verified link starts a new session (staff limits apply until the kind is known). A bad link changes nothing.
+- `/auth/confirm` is exempt in the proxy, which leaves both `ch_` cookies alone there. The route itself calls `startSessionCookies(user id, null)`, which signs `ch_last_seen` as now and deletes `ch_session_kind`, only after `verifyOtp` or `exchangeCodeForSession` succeeds, because a verified link starts a new session (staff limits apply until the kind is known). A bad link changes nothing.
 - Auth cookies and both `ch_` cookies are `HttpOnly`, `Secure` in production, `SameSite=Lax`, with a 7-day `maxAge`. `@supabase/ssr` overwrites `maxAge` with its 400-day default, so `withSessionMaxAge` sets it again on each write.
+
+**Session guard** (`components/shell/session-guard.tsx`) [2026-11, uncommitted]. A Client Component rendered by `AppShell`, which has a new required prop `sessionKind` (`staff` or `patient`): the clinic layout passes `staff`, the portal layout passes `staff` for anyone with a staff role and `patient` otherwise. While the person is active (pointer, key, scroll, touch) it calls `router.refresh()` at most every 5 minutes, which keeps the idle clock moving; once the person stops for the session's idle limit, an idle timer calls `router.refresh()` so the proxy ends the session and sends them to `/login?error=expired`. Without it an abandoned screen stays readable. It renders nothing and makes no Supabase call.
+
+**Content-Security-Policy** (`lib/csp.ts`, set in `lib/supabase/proxy.ts`) [2026-11, uncommitted]. The proxy makes a nonce for each request (`createNonce`), builds the policy with `contentSecurityPolicy(nonce)`, and sets it on every response (including redirects) and, with `x-nonce`, on the forwarded request headers so Next.js adds the nonce to its scripts. `script-src` is `'self' 'nonce-...' 'strict-dynamic'`, with `'unsafe-eval'` in development only. `style-src` still allows `'unsafe-inline'`, because React and Radix write style attributes a nonce cannot cover (`docs/SECURITY.md` S-12). Other directives: `default-src 'self'`, images from self, `data:`, `blob:` and the Supabase origin, `connect-src` self plus Supabase (and local websockets in development), `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`, `frame-ancestors 'none'`. A nonce needs a fresh render, so `app/layout.tsx` awaits `connection()` and no page is statically rendered.
 
 ## 6. Routes, server actions and API routes
 
@@ -381,6 +392,7 @@ From `.env.example` and `lib/env.ts`. `.env*.local` is ignored.
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Public | Publishable (anon) key |
 | `NEXT_PUBLIC_DEMO` | Public, optional | `true` shows the demo banner |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server only | Used only from `lib/supabase/admin.ts`. Sign-in and reset now use it for the attempt limits; without it they fail open |
+| `SESSION_COOKIE_SECRET` | Server only | Signs the `ch_last_seen` and `ch_session_kind` cookies; 32 characters or more (`openssl rand -base64 48`). Read by `getSessionEnv` in `lib/env.ts`. Required: the proxy fails closed without it. Set it in Vercel and `.env.local`; `web-local` sets a fixed local value. Changing it signs everyone out |
 | `RESEND_API_KEY` | Server only | Used only from `lib/email/send.ts`. Deferred; nothing calls the wrapper yet |
 | `EMAIL_FROM` | Server only | Verified sender address. Deferred |
 
@@ -412,6 +424,10 @@ From `.env.example` and `lib/env.ts`. `.env*.local` is ignored.
 - [2026-11] No browser Supabase client, so the auth cookies can be `HttpOnly`. A Client Component that needs data must go through the server.
 - [2026-11] Session limits live in the proxy, because Supabase's time-box and inactivity settings need the Pro plan. It applies only to requests through the proxy, so it cannot stop a token copied out of the browser and used directly against Supabase.
 - [2026-11] Attempt limits live in Postgres behind the service role, so they hold across server instances. They fail open, because an outage must not stop people signing in. The address limit is well above the account limits because a clinic shares one address.
+- [2026-11] The Content-Security-Policy is built per request in the proxy with a nonce and `strict-dynamic`, so injected script cannot run; styles keep `'unsafe-inline'`. It left `next.config.ts` and costs static rendering of every page.
+- [2026-11] The `ch_` session cookies are HMAC-signed and bound to the user and the cookie name; the secret is `SESSION_COOKIE_SECRET` and the check fails closed.
+- [2026-11] Service-role writes must name an actor or a system job, so the audit log always says who or what acted.
+- [2026-11] Owner decisions: MFA for staff (S-11) and a CAPTCHA (S-32) are deferred until the clinic has accounts to enrol; neither is built. S-13 was verified by the owner.
 - [2026-11] A separate `web-local` configuration on port 3130 rather than changing `.env.local`, so the local stack is available while `.env.local` stays on the hosted project.
 
 ## 9. Code conventions
@@ -447,7 +463,7 @@ Messaging, reminders, tasks, calendar, invoices and marketing (GoHighLevel); con
 16. [2026-11] Local environment: Docker was absent, so Colima was installed with Homebrew. `pnpm db:start` needs it running.
 17. [2026-11] The schema draft says "PA, admin create" invitations; the build creates them in server code only, because the token must not be chosen by the inviter.
 18. [2026-11] The build departs from the schema draft in several places (view to function, extra enums, nullable `documents.patient_id` and others); the full list is in 4.14.
-19. [2026-11] `private.in_scope()` is an open question: it admits any clinical staff member, so `care_team` does not yet limit access. `docs/SECURITY.md` S-10 tracks it.
+19. [2026-11] `private.in_scope()` is an open question: it admits any clinical staff member, so `care_team` does not yet limit access. `docs/SECURITY.md` S-10 tracks it. Since `20261102150000` the policies on the care team, patient profile, guardian link, safeguarding alert, repeat request and result import tables call it, so deciding the question is a change to the function alone.
 20. [2026-11] Resolved: Phase 6 was committed in `c831ccf`. Sections 4 to 8 now describe the working tree, and what is uncommitted is marked.
 21. [2026-11] Resolved: `docs/SECURITY.md` was updated in its third review (S-31 to S-56). It now tracks the unsigned `ch_` cookies (S-31), the account bucket that can block a named person (S-49) and the easily rotated address limits (S-51) and the deferred leaked-password and SMTP decisions in its checklist. The `/auth/confirm` and reset-reply behaviour above follows its S-46 and S-47 fixes; whether S-46 and S-47 are marked resolved there is for `security-reviewer`.
 22. [2026-11] Resolved: see 21.
@@ -456,3 +472,5 @@ Messaging, reminders, tasks, calendar, invoices and marketing (GoHighLevel); con
 25. [2026-11] `web-local` runs on port 3130, but `supabase/config.toml` has `site_url` and `additional_redirect_urls` on port 3000 only, and `supabase/templates/recovery.html` builds its link from `{{ .SiteURL }}`. A local password reset email started on 3130 therefore links to port 3000, where only the `web` configuration (hosted) can be listening.
 26. [2026-11] `proxy.ts` still excludes `favicon.ico` from its matcher, though `app/favicon.ico` is gone. Harmless: `.png` is excluded too.
 27. [2026-11] Resolved: `docs/PRD.md` and `docs/DESIGN-SYSTEM.md` no longer call Phase 6 uncommitted.
+28. [2026-11] `SESSION_COOKIE_SECRET` is a new required variable. Until it is set in Vercel and `.env.local`, every signed-in request fails closed. A hosted deploy of the uncommitted work without it would lock everyone out.
+29. [2026-11] `docs/SECURITY.md` is being edited by another agent in this pass; whether S-07, S-10, S-11, S-12, S-13, S-31 and S-32 are marked as the owner decided is for `security-reviewer`. This document states the decisions as given.

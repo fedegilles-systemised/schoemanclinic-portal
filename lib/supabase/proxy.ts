@@ -1,17 +1,19 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+import { contentSecurityPolicy, createNonce } from "@/lib/csp";
 import type { Database } from "@/lib/database.types";
 import { getPublicEnv } from "@/lib/env";
 import {
   AUTH_COOKIE_OPTIONS,
-  isSessionExpired,
   LAST_SEEN_COOKIE,
-  parseSessionKind,
+  readSessionValue,
   SESSION_COOKIE_OPTIONS,
   SESSION_KIND_COOKIE,
+  signSessionValue,
   withSessionMaxAge,
 } from "@/lib/supabase/session-cookies";
+import { isSessionExpired, parseSessionKind } from "@/lib/supabase/session-limits";
 
 const PROTECTED_PREFIXES = ["/portal", "/clinic"];
 // An emailed link starts a new session, so an old session must not stop it. The route
@@ -37,12 +39,27 @@ function authenticatedAt(claims: { amr?: unknown; iat?: number }, now: number): 
 }
 
 /**
- * Refreshes the session, ends one past its limits and redirects signed-out visitors.
- * It does nothing else: authorisation lives in the server layouts and, above all,
- * in row-level security.
+ * Refreshes the session, ends one past its limits, redirects signed-out visitors and
+ * sets the page's Content-Security-Policy with a fresh nonce. It does nothing else:
+ * authorisation lives in the server layouts and, above all, in row-level security.
  */
 export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request });
+  const nonce = createNonce();
+  const csp = contentSecurityPolicy(nonce);
+
+  // Built when needed, so it carries the cookies the refresh has just set.
+  const forwardedHeaders = () => {
+    const headers = new Headers(request.headers);
+    headers.set("x-nonce", nonce);
+    headers.set("Content-Security-Policy", csp);
+    return headers;
+  };
+  const withCsp = <T extends NextResponse>(response: T): T => {
+    response.headers.set("Content-Security-Policy", csp);
+    return response;
+  };
+
+  let supabaseResponse = NextResponse.next({ request: { headers: forwardedHeaders() } });
   const env = getPublicEnv();
 
   const supabase = createServerClient<Database>(
@@ -58,7 +75,7 @@ export async function updateSession(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value),
           );
-          supabaseResponse = NextResponse.next({ request });
+          supabaseResponse = NextResponse.next({ request: { headers: forwardedHeaders() } });
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, withSessionMaxAge(options)),
           );
@@ -72,29 +89,29 @@ export async function updateSession(request: NextRequest) {
   const { data } = await supabase.auth.getClaims();
   const claims = data?.claims;
   const pathname = request.nextUrl.pathname;
-  const lastSeenCookie = request.cookies.get(LAST_SEEN_COOKIE)?.value;
 
   if (!claims) {
     if (isProtected(pathname)) {
       const url = request.nextUrl.clone();
       url.pathname = "/login";
       url.search = "";
-      return NextResponse.redirect(url);
+      return withCsp(NextResponse.redirect(url));
     }
-    return supabaseResponse;
+    return withCsp(supabaseResponse);
   }
 
-  if (pathname === NEW_SESSION_PATH) return supabaseResponse;
+  if (pathname === NEW_SESSION_PATH) return withCsp(supabaseResponse);
 
   const now = Math.floor(Date.now() / 1000);
-  const parsedLastSeen = Number(lastSeenCookie);
-  const lastSeen = lastSeenCookie && Number.isFinite(parsedLastSeen) ? parsedLastSeen : null;
+  // Unsigned or edited values read as missing, and a missing last-seen is an expired session.
+  const lastSeenValue = await readSessionValue(LAST_SEEN_COOKIE, request.cookies.get(LAST_SEEN_COOKIE)?.value, claims.sub);
+  const kindValue = await readSessionValue(SESSION_KIND_COOKIE, request.cookies.get(SESSION_KIND_COOKIE)?.value, claims.sub);
+  const parsedLastSeen = lastSeenValue === null ? Number.NaN : Number(lastSeenValue);
+  const lastSeen = Number.isFinite(parsedLastSeen) ? parsedLastSeen : null;
 
   const expired = isSessionExpired({
     // The clinic area always has staff limits, whatever the cookie says.
-    kind: pathname === "/clinic" || pathname.startsWith("/clinic/")
-      ? "staff"
-      : parseSessionKind(request.cookies.get(SESSION_KIND_COOKIE)?.value),
+    kind: pathname === "/clinic" || pathname.startsWith("/clinic/") ? "staff" : parseSessionKind(kindValue),
     authenticatedAt: authenticatedAt(claims, now),
     lastSeen,
     now,
@@ -113,13 +130,17 @@ export async function updateSession(request: NextRequest) {
       .forEach(({ name }) => redirect.cookies.delete(name));
     redirect.cookies.delete(LAST_SEEN_COOKIE);
     redirect.cookies.delete(SESSION_KIND_COOKIE);
-    return redirect;
+    return withCsp(redirect);
   }
 
   if (lastSeen === null || now - lastSeen >= LAST_SEEN_RESOLUTION_SECONDS) {
-    supabaseResponse.cookies.set(LAST_SEEN_COOKIE, String(now), SESSION_COOKIE_OPTIONS);
+    supabaseResponse.cookies.set(
+      LAST_SEEN_COOKIE,
+      await signSessionValue(LAST_SEEN_COOKIE, String(now), claims.sub),
+      SESSION_COOKIE_OPTIONS,
+    );
   }
 
   // Return this exact response object so the refreshed cookies reach the browser.
-  return supabaseResponse;
+  return withCsp(supabaseResponse);
 }

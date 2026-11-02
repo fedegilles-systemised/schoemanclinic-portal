@@ -5,12 +5,14 @@ import { Button } from "@/components/ui/button";
 import { DemoBanner } from "@/components/ui/demo-banner";
 import type { ShellLocation, ShellNotification } from "@/lib/data/shell";
 import { getPublicEnv } from "@/lib/env";
+import type { SessionKind } from "@/lib/supabase/session-limits";
 
 import { LocationSwitcher } from "./location-switcher";
 import { MobileNav } from "./mobile-nav";
 import type { NavCounts, PortalKind } from "./nav";
 import { NotificationsBell } from "./notifications-bell";
 import { SidebarContent, type ShellUser } from "./sidebar-content";
+import { SessionGuard } from "./session-guard";
 import { UserMenu } from "./user-menu";
 
 type AppShellProps = {
@@ -23,16 +25,19 @@ type AppShellProps = {
   locations?: ShellLocation[];
   /** The other area, for a person with both a staff role and a patient view. */
   switchTo?: { href: string; label: string };
+  /** Which session limits apply: staff, or a patient or guardian with no staff role. */
+  sessionKind: SessionKind;
   children: React.ReactNode;
 };
 
-function AppShell({ kind, crumb, user, notifications, counts, locations, switchTo, children }: AppShellProps) {
+function AppShell({ kind, crumb, user, notifications, counts, locations, switchTo, sessionKind, children }: AppShellProps) {
   const demo = getPublicEnv().NEXT_PUBLIC_DEMO === "true";
   const currentHref = kind === "patient" ? "/portal" : "/clinic";
   const sidebar = <SidebarContent kind={kind} currentHref={currentHref} counts={counts} user={user} />;
 
   return (
     <div className="flex min-h-dvh flex-col">
+      <SessionGuard kind={sessionKind} />
       {demo ? <DemoBanner className="sticky top-0 z-40" /> : null}
       <div className="grid flex-1 grid-cols-1 shell:grid-cols-[var(--spacing-sidebar)_minmax(0,1fr)]">
         <aside className="sticky top-0 hidden h-dvh overflow-y-auto border-r border-surface-border shell:block">

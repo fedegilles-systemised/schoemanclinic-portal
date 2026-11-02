@@ -18,6 +18,7 @@ export default async function PortalLayout({ children }: { children: React.React
       crumb="Home"
       user={{ name: user.fullName, roleLabel: user.roles.includes("patient") ? "Patient" : "Guardian" }}
       notifications={notifications}
+      sessionKind={user.isStaff ? "staff" : "patient"}
       switchTo={user.isStaff ? { href: "/clinic", label: "Clinic view" } : undefined}
     >
       {children}

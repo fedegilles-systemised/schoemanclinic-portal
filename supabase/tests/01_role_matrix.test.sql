@@ -249,8 +249,10 @@ select throws_ok($$ select t.run(t.thomas(), $q$insert into public.questions (pa
 update public.patient_profiles set archived_at = null where id = 'd0000000-0000-4000-8000-000000000002';
 
 -- Server code can still do its job.
+select set_config('app.system_actor', 'role-matrix-test', true);
 select lives_ok($$ select t.as_service($q$update public.staff_profiles set job_title = 'PA' where user_id = 'a0000000-0000-4000-8000-000000000004'$q$) $$, 'server code can update staff profiles');
 select lives_ok($$ select t.as_service($q$update public.patient_profiles set stripe_customer_id = 'cus_x' where id = 'd0000000-0000-4000-8000-000000000001'$q$) $$, 'server code can write external ids');
+select set_config('app.system_actor', '', true);
 select set_config('app.actor_id', t.gina()::text, true);
 select lives_ok($$ select t.as_service($q$update public.lab_reports set patient_comment = 'x' where id = '14000000-0000-4000-8000-000000000004'$q$) $$, 'server code can update a report');
 select set_config('app.actor_id', '', true);

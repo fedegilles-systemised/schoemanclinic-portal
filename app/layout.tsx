@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { connection } from "next/server";
 
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,9 +14,12 @@ export const metadata: Metadata = {
   icons: { icon: "/brand/favicon.png", apple: "/brand/favicon.png" },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  // Every page is rendered per request, so each one can carry its own CSP nonce.
+  await connection();
+
   return (
     <html lang="en-GB" className={`${fontDisplay.variable} ${fontSans.variable}`}>
       <body>

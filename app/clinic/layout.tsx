@@ -27,6 +27,7 @@ export default async function ClinicLayout({ children }: { children: React.React
       user={{ name: user.fullName, roleLabel: ROLE_LABELS[staffRole] }}
       notifications={notifications}
       counts={counts}
+      sessionKind="staff"
       locations={locations}
       switchTo={user.hasPatientView ? { href: "/portal", label: "Patient view" } : undefined}
     >

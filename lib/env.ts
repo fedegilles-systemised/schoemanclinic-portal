@@ -21,6 +21,11 @@ const emailSchema = z.object({
   EMAIL_FROM: z.string().min(1),
 });
 
+const sessionSchema = z.object({
+  // Signs the session-limit cookies. Any random string of 32 characters or more.
+  SESSION_COOKIE_SECRET: z.string().min(32),
+});
+
 export type PublicEnv = z.infer<typeof publicSchema>;
 
 function assertServer(): void {
@@ -69,6 +74,18 @@ export function getEmailEnv(): z.infer<typeof emailSchema> {
   });
   if (!parsed.success) {
     throw new Error(`Invalid email environment: ${formatIssues(parsed.error)}`);
+  }
+  return parsed.data;
+}
+
+/** Server-only session variables, for lib/supabase/session-cookies.ts. */
+export function getSessionEnv(): z.infer<typeof sessionSchema> {
+  assertServer();
+  const parsed = sessionSchema.safeParse({
+    SESSION_COOKIE_SECRET: process.env.SESSION_COOKIE_SECRET,
+  });
+  if (!parsed.success) {
+    throw new Error(`Invalid session environment: ${formatIssues(parsed.error)}`);
   }
   return parsed.data;
 }

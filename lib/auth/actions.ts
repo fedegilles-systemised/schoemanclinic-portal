@@ -7,7 +7,8 @@ import { z } from "zod";
 import { getCurrentUser, homePathFor, type CurrentUser } from "@/lib/auth/session";
 import { allowAuthAttempt } from "@/lib/auth/throttle";
 import { createClient } from "@/lib/supabase/server";
-import { LAST_SEEN_COOKIE, SESSION_COOKIE_OPTIONS, SESSION_KIND_COOKIE } from "@/lib/supabase/session-cookies";
+import { LAST_SEEN_COOKIE, SESSION_KIND_COOKIE } from "@/lib/supabase/session-cookies";
+import { startSessionCookies } from "@/lib/auth/session-start";
 
 export type AuthFormState = { error?: string; sent?: boolean; email?: string };
 
@@ -33,9 +34,7 @@ const TRY_LATER = "Too many attempts. Please wait a few minutes and try again.";
 
 /** Sets which session limits apply. Staff limits win for someone who is also a patient. */
 async function recordSessionKind(user: CurrentUser): Promise<void> {
-  const cookieStore = await cookies();
-  cookieStore.set(LAST_SEEN_COOKIE, String(Math.floor(Date.now() / 1000)), SESSION_COOKIE_OPTIONS);
-  cookieStore.set(SESSION_KIND_COOKIE, user.isStaff ? "staff" : "patient", SESSION_COOKIE_OPTIONS);
+  await startSessionCookies(user.id, user.isStaff ? "staff" : "patient");
 }
 
 export async function signIn(_state: AuthFormState, formData: FormData): Promise<AuthFormState> {

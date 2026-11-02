@@ -63,7 +63,7 @@ Status is "done" only where the screen and data path exist in code. Current stat
 
 ## 6. Open questions for the clinic
 
-1. **Access scope.** Do staff see all patients, or only those on their care team? `in_scope` currently returns true for any clinical staff member.
+1. **Access scope.** Do staff see all patients, or only those on their care team? `in_scope` currently returns true for any clinical staff member. The policies on the care team, patient profiles, guardian links, safeguarding alerts, repeat requests and result imports already go through it, so the answer is one change in the database, not a rewrite. It stays permissive until the clinic decides.
 2. **Admins and clinical records.** May admins read clinical records? Currently no (least privilege); the draft distinguishes "clinical team" from "team".
 3. **Health coach.** May the health coach read team-only tables? Currently no.
 4. **Guardians.** What age and consent rules apply (for example under-18s, transition to adult access)?
@@ -79,8 +79,12 @@ Status is "done" only where the screen and data path exist in code. Current stat
 - [2026-11] MVP centres on the bloods loop; messaging, reminders, calendar, invoices and marketing stay in GoHighLevel, notes and prescribing in Semble.
 - [2026-11] Least privilege by default: admins and the health coach have no clinical access until the clinic decides otherwise.
 - [2026-11] Patients see results only after doctor release; safeguarding alerts are doctors only.
+- [2026-11] Owner decision: multi-factor sign-in for staff and a CAPTCHA on sign-in are deferred until the clinic has accounts to enrol. Neither is built, and neither is in the MVP scope above.
+- [2026-11] Sessions end on their own: staff after 12 hours or 30 minutes idle, patients and guardians after 7 days or 2 hours idle. A signed-out person sees "You were signed out to protect your account. Please sign in again." An open screen asks the server to check every few minutes while the person is active, so an abandoned screen does not stay readable.
+- [2026-11] Every change to records made by the system rather than a person is attributed to the person it acts for or to a named background job in the audit log.
 
 ## Findings
 
 - [2026-11] Earlier finding that sign-in and dashboard routes do not exist no longer holds: `/login`, `/forgot-password`, `/update-password`, `/auth/confirm`, `/portal` and `/clinic` exist (committed in `c831ccf`).
 - [2026-11] Sign-in method differs between prototype (magic link) and brief (email and password); `CLAUDE.md` lists forgot and update password routes, which implies passwords. The code implements email and password, so the question is effectively settled unless the clinic wants magic link.
+- [2026-11] Sign-in hardening (attempt limits, session limits, signed session cookies, content security policy, scoped audit actor) is built but uncommitted and not yet on the hosted project. It adds no screen and changes no scope.
