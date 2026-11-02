@@ -1,12 +1,33 @@
+import Image from "next/image";
+
 import { cn } from "@/lib/utils";
 
-/** "The" in eyebrow style above "Schoeman Clinic" in display. No logo file yet. */
+/** The clinic logo. `inverse` paints its shape in the inverse token for dark grounds. */
 function Wordmark({ className, inverse = false }: { className?: string; inverse?: boolean }) {
+  if (inverse) {
+    return (
+      <div
+        data-slot="wordmark"
+        role="img"
+        aria-label="The Schoeman Clinic"
+        className={cn(
+          "aspect-[869/371] w-[148px] bg-content-inverse mask-[url(/brand/schoemanClinic-logo.png)] mask-contain mask-no-repeat",
+          className,
+        )}
+      />
+    );
+  }
+
   return (
-    <div data-slot="wordmark" className={cn(inverse ? "text-content-inverse" : "text-content", className)}>
-      <div className={cn("type-eyebrow", !inverse && "text-content-muted")}>The</div>
-      <div className="mt-1 font-display text-[26px] leading-[1.05] font-light tracking-[-0.01em]">Schoeman Clinic</div>
-    </div>
+    <Image
+      data-slot="wordmark"
+      src="/brand/schoemanClinic-logo.png"
+      alt="The Schoeman Clinic"
+      width={148}
+      height={63}
+      preload
+      className={cn("h-auto w-[148px]", className)}
+    />
   );
 }
 

@@ -10,6 +10,7 @@ export const metadata: Metadata = {
   title: "Clinic Hub · The Schoeman Clinic",
   description: "Patient and clinic portals for The Schoeman Clinic.",
   robots: { index: false, follow: false },
+  icons: { icon: "/brand/favicon.png", apple: "/brand/favicon.png" },
 };
 
 export default function RootLayout({
