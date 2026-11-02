@@ -210,8 +210,9 @@ as $$
 $$;
 comment on function private.document_gate_open(uuid, public.doc_kind) is 'The release gate for files. Definer rights, because a patient cannot see the unreleased report it must check. A patient''s own upload is always theirs to see.';
 
--- Stops a patient claiming a file in their folder that someone else put there.
-create function private.storage_object_held_by_other(_path text)
+-- A patient registers only a file they uploaded themselves. Without this they could claim
+-- someone else's file, or create a row first and read whatever lands at that path later.
+create function private.storage_object_is_mine(_path text)
 returns boolean
 language sql
 stable
@@ -222,10 +223,10 @@ as $$
     select 1 from storage.objects o
     where o.bucket_id = 'documents'
       and o.name = _path
-      and o.owner_id is distinct from (select auth.uid())::text
+      and o.owner_id = (select auth.uid())::text
   );
 $$;
-comment on function private.storage_object_held_by_other(text) is 'Is there already a file at this path uploaded by someone else?';
+comment on function private.storage_object_is_mine(text) is 'Has the signed-in person already uploaded the file at this path?';
 
 -- Casts a storage path segment to a uuid without raising on junk.
 create function private.try_uuid(_value text)

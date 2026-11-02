@@ -22,7 +22,7 @@ grant execute on function
   private.my_staff_id(),
   private.report_is_released(uuid),
   private.document_gate_open(uuid, public.doc_kind),
-  private.storage_object_held_by_other(text),
+  private.storage_object_is_mine(text),
   private.try_uuid(text),
   private.get_my_patient_record(),
   private.get_staff_directory()

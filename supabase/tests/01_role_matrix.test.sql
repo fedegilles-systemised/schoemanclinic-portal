@@ -124,6 +124,9 @@ select throws_ok($$ select t.run(t.eleanor(), $q$insert into public.documents (p
 select throws_ok($$ select t.run(t.eleanor(), $q$insert into public.documents (patient_id, kind, title, storage_path, source, uploaded_by, shared_with_patient) values ('d0000000-0000-4000-8000-000000000001', 'patient_upload', 'Lab result from TDL', 'd0000000-0000-4000-8000-000000000001/claim.pdf', 'tdl', 'a0000000-0000-4000-8000-000000000011', true)$q$) $$, '42501', null, 'a patient upload cannot claim to come from a lab');
 insert into storage.objects (bucket_id, name) values ('documents', 'd0000000-0000-4000-8000-000000000001/orphan.pdf');
 select throws_ok($$ select t.run(t.eleanor(), $q$insert into public.documents (patient_id, kind, title, storage_path, source, uploaded_by, shared_with_patient) values ('d0000000-0000-4000-8000-000000000001', 'patient_upload', 'Mine now', 'd0000000-0000-4000-8000-000000000001/orphan.pdf', 'patient_upload', 'a0000000-0000-4000-8000-000000000011', true)$q$) $$, '42501', null, 'a patient cannot claim a file someone else put in their folder');
+select throws_ok($$ select t.run(t.eleanor(), $q$insert into public.documents (patient_id, kind, title, storage_path, source, uploaded_by, shared_with_patient) values ('d0000000-0000-4000-8000-000000000001', 'patient_upload', 'Row first', 'd0000000-0000-4000-8000-000000000001/not-there-yet.pdf', 'patient_upload', 'a0000000-0000-4000-8000-000000000011', true)$q$) $$, '42501', null, 'a patient cannot create a row before their file exists');
+insert into storage.objects (bucket_id, name, owner_id) values ('documents', 'd0000000-0000-4000-8000-000000000001/my-upload.pdf', t.eleanor()::text);
+select lives_ok($$ select t.run(t.eleanor(), $q$insert into public.documents (patient_id, kind, title, storage_path, source, uploaded_by, shared_with_patient) values ('d0000000-0000-4000-8000-000000000001', 'patient_upload', 'My upload', 'd0000000-0000-4000-8000-000000000001/my-upload.pdf', 'patient_upload', 'a0000000-0000-4000-8000-000000000011', true)$q$) $$, 'a patient can register a file they uploaded');
 select throws_ok($$ select t.run(t.thomas(), $q$delete from public.questions$q$) $$, '42501', null, 'nobody signed in can delete a clinical row');
 
 -- guardian ---------------------------------------------------------------------------
@@ -289,9 +292,9 @@ insert into storage.objects (bucket_id, name) values
   ('avatars', 'a0000000-0000-4000-8000-000000000001/photo.png'),
   ('avatars', 'a0000000-0000-4000-8000-000000000012/photo.png');
 
-select is(t.n(t.eleanor(), $q$select * from storage.objects where bucket_id = 'documents'$q$), 1, 'a patient reads only the released file of their own');
+select is(t.n(t.eleanor(), $q$select * from storage.objects where bucket_id = 'documents' and name not like '%/my-upload.pdf'$q$), 1, 'a patient reads only the released file of their own');
 select is(t.n(t.thomas(), $q$select * from storage.objects where bucket_id = 'documents'$q$), 0, 'another patient reads none of those files');
-select is(t.n(t.gina(), $q$select * from storage.objects where bucket_id = 'documents'$q$), 4, 'a doctor reads the files');
+select is(t.n(t.gina(), $q$select * from storage.objects where bucket_id = 'documents' and name not like '%/my-upload.pdf'$q$), 4, 'a doctor reads the files');
 select is(t.n(t.eleanor(), $q$select * from storage.objects where bucket_id = 'avatars'$q$), 1, 'a patient sees staff photos but not another patient''s');
 select throws_ok($$ select t.run(t.eleanor(), $q$insert into storage.objects (bucket_id, name) values ('documents', 'd0000000-0000-4000-8000-000000000002/x.pdf')$q$) $$, '42501', null, 'a patient cannot upload to another patient''s folder');
 select lives_ok($$ select t.run(t.eleanor(), $q$insert into storage.objects (bucket_id, name) values ('documents', 'd0000000-0000-4000-8000-000000000001/mine.pdf')$q$) $$, 'a patient can upload to their own folder');

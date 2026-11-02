@@ -291,7 +291,7 @@ create policy "Patients and guardians upload their own and doctors and PAs add a
         and source = 'patient_upload'
         and shared_with_patient
         and private.can_act_for(patient_id)
-        and not private.storage_object_held_by_other(storage_path)
+        and private.storage_object_is_mine(storage_path)
       )
       or (
         ((select private.has_role('doctor')) or (select private.has_role('pa')))
