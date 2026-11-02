@@ -1,10 +1,10 @@
 # Design system
 
-How the Clinic Hub looks and is built. This describes the code as it stands in `app/globals.css`, `components/ui/` and `app/dev/ui/`. The source design system is `docs/reference/design-system/` (read only); where the two clash, the tokens win over the shadcn mapping (see Findings).
+How the Clinic Hub looks and is built. This describes the code as it stands in `app/globals.css`, `components/ui/`, `components/shell/`, `components/auth/` and the screens in `app/`, including uncommitted Phase 6 files. The source design system is `docs/reference/design-system/` (read only); where the two clash, the tokens win over the shadcn mapping (see Findings).
 
 Last updated: [2026-11]. Owned by the `design-system-keeper` subagent.
 
-**State of the build [2026-11].** Tokens, type utilities and 26 files in `components/ui/` exist, plus the dev gallery at `/dev/ui`. The app shell, sign-in and dashboards are **not built yet** (`components/shell/` does not exist; `app/` holds only the root layout, a placeholder page and `dev/ui`). Section 6 describes those screens as they appear in the prototype and the reference design system. None of it is implemented.
+**State of the build [2026-11].** Tokens, type utilities and 27 files in `components/ui/` exist, plus the dev gallery at `/dev/ui`. The app shell (`components/shell/`), the sign-in screens (`app/(auth)/`, with `components/auth/`), the portal home (`app/portal/`) and the clinic home (`app/clinic/`) are built. Buttons that lead to unbuilt screens are disabled and wrapped in `ComingSoon`. Results, orders, prescriptions, appointments, messages and settings screens are **not built**. Part of the Phase 6 files are still uncommitted.
 
 ## 1. Principles
 
@@ -61,15 +61,15 @@ shadcn aliases exist in `:root` and `@theme inline` so CLI-added components reso
 | `control-height` | 44px | `h-control`, `size-control` | Buttons, inputs |
 | `control-height-sm` | 36px | `h-control-sm`, `size-control-sm` | Small buttons, icon buttons |
 | `pill-height` | 22px | `h-pill` | Status pills |
-| `nav-row` | 40px | `h-nav-row` | Sidebar rows (not yet used) |
+| `nav-row` | 40px | `h-nav-row` | Sidebar rows (`components/shell/nav.tsx`) |
 | `table-row` | 52px | `h-table-row` | Minimum table row (used in `TableCell`) |
-| `topbar-height` | 64px | `h-topbar` | Top bar (not yet used) |
-| `sidebar-width` | 264px | `w-sidebar` | Desktop sidebar (not yet used) |
-| `content-max` | 1200px | `max-w-content` | Content width (not yet used) |
+| `topbar-height` | 64px | `h-topbar` | Top bar (`app-shell.tsx`) |
+| `sidebar-width` | 264px | `w-sidebar` | Desktop sidebar (`app-shell.tsx`, as `var(--spacing-sidebar)`) |
+| `content-max` | 1200px | `max-w-content` | Content width (`<main>` in `app-shell.tsx`) |
 | `icon-size` | 18px | `size-icon` | Default icon; `.lucide` is set to this in the base layer |
 | `stroke-hairline` | 1px | `border` | Cards, tables, inputs, dividers |
 | `stroke-control` | 2px | `border-2` | Every button border |
-| `stroke-accent` | 3px | `border-l-3` | Left edge of `AlertBar` (and at-risk order cards, not built) |
+| `stroke-accent` | 3px | `border-l-3` | Left edge of `AlertBar`; also the 2px current-row bar in the sidebar uses `border-l-2` with `secondary-border` |
 | `stroke-icon` | 1.5 | automatic | `.lucide` stroke width in the base layer |
 | Breakpoints | 900px / 560px | `shell:` / `phone:` | Sidebar to sheet / title size drop |
 
@@ -132,7 +132,7 @@ All in `components/ui/`, restyled with CVA and the `data-slot` attribute. Shown 
 | `destructive` | Danger outline, fills on hover; reversible-with-care actions |
 | `link` | Underlined bronze text |
 
-Sizes: `default` (`h-control`, 44px), `sm` (`h-control-sm`, 36px, inside cards and table rows), `icon` (36px square, muted, needs an accessible name). Props: `asChild`, `loading`. Ghost and link collapse their height.
+Sizes: `default` (`h-control`, 44px), `sm` (`h-control-sm`, 36px, inside cards and table rows), `icon` (36px square, muted, needs an accessible name). A button for a screen that is not built is `disabled` and wrapped in `ComingSoon`. Props: `asChild`, `loading`. Ghost and link collapse their height.
 
 ### Status and feedback
 
@@ -144,6 +144,8 @@ Sizes: `default` (`h-control`, 44px), `sm` (`h-control-sm`, 36px, inside cards a
 - **Toaster** (`sonner.tsx`). Bottom-centre, `surface-inverse`, lucide icons. Confirms success in the past tense ("Released to Amira Haddad."). Sign-in errors never use toasts.
 - **Tooltip** (`tooltip.tsx`). `surface-inverse`, `type-small`. For supporting hints only.
 - **Skeleton**, **EmptyState**. See section 4.
+- **OrderSteps** (`order-steps.tsx`) [2026-11]. A thin four-part progress line for a lab order, an `<ol>` of `steps` with `doneThrough` (index of the last done step, -1 for none). Done steps fill `secondary`, the current step is half filled and has `aria-current="step"`, steps ahead stay `surface-border`. Labels are `text-xs`; done and current labels are `content`, the rest `content-muted`. Use inside a `Card` for one order only. The status is told by line colour and label weight alone (see Known debt).
+- **ComingSoon** (`components/shell/coming-soon.tsx`) [2026-11]. Not a `ui/` primitive: a client wrapper for anything that leads to an unbuilt screen. It renders a focusable `<span tabIndex={0} aria-disabled="true">` as a `Tooltip` trigger reading "Coming soon", because a disabled control cannot take focus or show a tooltip. Pass `className` to change the wrapper from `inline-flex w-fit` (the sidebar uses `block`). Remove the wrapper and the `disabled` when the screen ships. Needs the `TooltipProvider` already in `app/layout.tsx`.
 
 ### Layout and data
 
@@ -167,33 +169,39 @@ Sizes: `default` (`h-control`, 44px), `sm` (`h-control-sm`, 36px, inside cards a
 
 ### Documented in the reference system, not built
 
-`FilterChips`, `OrderSteps`, `ResultChart`, `ResultsTable` (as a composed pattern; `Table` and `Sparkline` exist), `SidebarNav`, `Cover`.
+`FilterChips`, `ResultChart`, `ResultsTable` (as a composed pattern; `Table` and `Sparkline` exist), `Cover`. `SidebarNav` exists as `components/shell/nav.tsx` and `sidebar-content.tsx`, not as a `ui/` component.
 
 ## 6. Screen patterns
 
-**None of these screens are built.** The patterns below come from `docs/reference/portal-prototype.html` and the reference component READMEs, and are the intent, not the code.
+Built [2026-11]: app shell, three sign-in screens, portal home, clinic home, with `loading.tsx` and `error.tsx` for each area. The results screen is not built.
 
-- **App shell.** Sidebar (`sidebar-width`, 264px) on the left with wordmark, portal label, rows of `nav-row` height and the signed-in user; `topbar-height` (64px) top bar; content to `content-max`. The current row has `surface-selected` and a 2px `secondary-border` bar. The clinic portal groups rows under eyebrows and shows counts. Below 900px the sidebar becomes a left `Sheet`. Not built; `components/shell/` does not exist.
-- **Sign-in.** Photography behind a `surface-inverse` overlay with the accent word in `accent`, form beside it. Errors in an `Alert` above the button, never a toast. Not built.
-- **Patient dashboard.** Page header with an accent word ("Good morning, *Eleanor*"), stat cards, then what needs attention (`AlertBar`), then lists. Not built.
-- **Clinic dashboard.** Same shape, denser, with counts that link to lists. Not built.
-- **Results.** Table of marker, latest value, unit, range, status pill, sparkline and date; a detail view with a full chart and an `accent-subtle` range band. Patients see only released results. Safeguarding alerts carry a lock icon and "Visible to clinicians only". Not built.
+- **App shell** (`components/shell/app-shell.tsx`). Desktop: sticky `sidebar-width` aside with a right hairline, and a content column with `px-10` (`px-5` below 900px). Top bar is `h-topbar` with a bottom hairline and holds, left to right: the mobile menu button, the crumb in `type-eyebrow`, an optional ghost link to the other area (from `phone:`), the clinic's location switcher, the notifications bell and the account menu. `<main>` is `max-w-content`. `DemoBanner` is sticky above everything when `NEXT_PUBLIC_DEMO=true`. Below 900px the sidebar moves into a left `Sheet` (`mobile-nav.tsx`, button hidden from `shell:`).
+- **Sidebar** (`sidebar-content.tsx`, `nav.tsx`). Wordmark, portal label in eyebrow ("Patient portal" or "Clinic portal"), then `nav` rows, then the signed-in person (avatar, name, role) under a hairline. Rows are `h-nav-row`, `type-table`, muted. The current row is a link with `aria-current="page"`, `surface-selected` fill and a 2px `secondary-border` left bar. Rows without an `href` are `ComingSoon`, 45% opacity. The patient menu is one ungrouped list; the clinic menu is grouped under eyebrows (Today, Patients, Clinical, Clinic) with `Badge` counts for results to review and imports.
+- **Account menu, bell, location switcher.** `DropdownMenu` throughout. The bell is an `icon` button with a count `Badge` and an `aria-label` that includes the unread count. The location switcher is an `outline` `sm` button (name hidden below `phone:`) that writes `?location=` into the URL; the check marks the chosen item. The account menu is an avatar trigger with the person's name, a disabled Profile item, the other-area link and Sign out (a form action).
+- **Sign-in** (`app/(auth)/layout.tsx`, `login`, `forgot-password`, `update-password`). Two columns from 900px (55 / 45): a flat `surface-inverse` panel with the inverse wordmark, an eyebrow and a `type-hero-title` with one `accent` italic phrase; and a single `Card` (max 420px) holding the form. On phones the panel collapses to a band with the wordmark only. No photography and no gradient. Each form is an `AuthHeading` (`type-page-title`), `Field`s (visible `Label` above each control), `PasswordInput` (show and hide button with `aria-pressed`), then `FormError` (an `Alert` above the button, never a toast), then one primary `Button` with `loading`, then a bronze underlined text link. The reset confirmation is an `info` `Alert` with a check icon and does not say whether the address has an account.
+- **Page header.** Every screen opens with `PageHeader`: eyebrow of the long date (and the location on the clinic home, or "Viewing" a named person for a guardian), then `Good morning, *Name*` with the first name as the accent word.
+- **Portal home** (`app/portal/page.tsx`). Page header; an optional warning `AlertBar` when bloods are due; a three-up `Card` row (next appointment, bloods order with `OrderSteps`, new results); "Your markers *at a glance*" as a 1, 2 or 4 column grid of marker cards (eyebrow, big number with unit, `Sparkline`, range, `ResultStatusPill`); "From your *clinic*" with the latest letter and a running-low prescription. Each slot falls back to an `EmptyState` sentence. Card actions are disabled `ComingSoon` buttons. A guardian reads about the person they look after ("Results need to reach us two weeks before Amira's appointment").
+- **Clinic home** (`app/clinic/page.tsx`). Page header; four `StatCard`s (today's appointments, results to review with `urgent` when anything is out of range, imports waiting, open tasks shown as "—"); "Needs your *attention*" as a `Table` of out-of-range results (value, range, change with arrow, `ResultStatusPill`, date, disabled Review button); "Today's *diary*" as a header-less `Table` with time, patient, type pill, duration, location icon and flag pills; "Bloods *at risk*" as `Card`s with a due `StatusPill`, a `dl` and two disabled actions. Empty slots use `EmptyState`.
+- **Loading and error.** `loading.tsx` is a `Skeleton` outline of the page header, three cards and a section (`aria-busy`, `aria-label="Loading"`), identical for both areas. `error.tsx` is a `danger` `AlertBar` with a triangle icon, "This page did not load.", one line and a "Try again" outline button.
+- **Results.** Not built. Intent from the reference: table of marker, latest value, unit, range, status pill, sparkline and date; a detail view with a full chart and an `accent-subtle` range band. Patients see only released results. Safeguarding alerts carry a lock icon and "Visible to clinicians only".
 
 ## 7. Known debt
 
-Audit of `components/ui/` [2026-11], against raw colours, stray radii, shadows, gradients, focus and voice.
+Audit of `components/ui/` [2026-11], and of the Phase 6 screens (`components/shell/`, `components/auth/`, `app/(auth)/`, `app/portal/`, `app/clinic/`, `components/ui/order-steps.tsx`) [2026-11], against raw colours, stray radii, shadows, gradients, focus, colour-only status and voice.
 
-**Clean.** No raw colour values, hex, rgb or hsl, no Tailwind palette classes, no shadows, no gradients and no radius outside the token set. Every `rounded-*` is `none`, `pill`, `card`, `round` or `full`, and `full` appears only on the switch. No exclamation marks or emoji in the components or the gallery.
+**Clean.** No raw colour values, hex, rgb or hsl, no Tailwind palette classes, no shadows, no gradients and no radius outside the token set, in `components/ui/` and in the Phase 6 files. Every `rounded-*` is `none`, `pill`, `card`, `round` or `full`, and `full` appears only on the switch (`rounded-round` on the account-menu trigger is an avatar). No exclamation marks, emoji, American spellings or medical promises in the components, gallery or screens. Copy is verb-first on buttons, past tense where it confirms, and "we" and "you" in the right places. Focus relies on the global `:focus-visible` rule and every interactive element in the new screens is reachable by it. Dialog and Sheet close buttons are now `size-control-sm` (36px) [2026-11]; that debt is removed.
 
 **Findings**
 
-1. `components/ui/dialog.tsx:57` and `components/ui/sheet.tsx:48`. The close button is `size-8` (32px), under the 36px minimum tap target (`control-height-sm`). Use `size-control-sm`.
-2. `components/ui/dropdown-menu.tsx:45`. Items use `outline-none` and rely on `data-highlighted` background. The design system asks for a focus ring on every interactive element; the background change is the only visible state.
-3. `components/ui/page-header.tsx:41`. Description is capped at `62ch`; the design system says near 65 characters.
-4. `components/ui/button.tsx:22`. The ghost variant sets `tracking-[0.12em]`, which differs from the `button-label` 0.16em. Not in the reference README.
-5. `components/ui/alert.tsx:7`. `Alert` has no icon requirement, so its status relies on colour plus text only; the reference says status carries an icon and a word. It is also not in the reference system.
-6. `components/ui/stat-card.tsx:40`. The link variant repeats the `Card` class string instead of reusing it, so a change to `Card` will not reach linked stat cards.
-7. `components/ui/avatar.tsx:29`. `text-xs` is Tailwind's size, not a type utility, and `font-semibold` is a raw weight. No avatar initials style exists in the type scale.
+1. `components/ui/page-header.tsx:41`. Description is capped at `62ch`; the design system says near 65 characters.
+2. `components/ui/button.tsx:22`. The ghost variant sets `tracking-[0.12em]`, which differs from the `button-label` 0.16em. Not in the reference README.
+3. `components/ui/alert.tsx:7`. `Alert` has no icon requirement, so its status relies on colour plus text only; the reference says status carries an icon and a word. It is also not in the reference system.
+4. `components/ui/stat-card.tsx:40`. The link variant repeats the `Card` class string instead of reusing it, so a change to `Card` will not reach linked stat cards.
+5. `components/ui/avatar.tsx:29`. `text-xs` is Tailwind's size, not a type utility, and `font-semibold` is a raw weight. No avatar initials style exists in the type scale.
+6. `components/ui/order-steps.tsx:21`. Labels use raw `text-xs` instead of a type utility. Step state now has a screen-reader word per step ("done", "current step", "not started") [2026-11]; sighted users still see state by colour alone.
+7. `components/shell/user-menu.tsx:31`. "Profile (coming soon)" is a disabled menu item with the status in its label, not `ComingSoon`, because a menu item cannot host the tooltip. Accepted; it differs from every other unbuilt control.
+8. `app/clinic/page.tsx:120-124`. On the "Results to review" stat card the `urgent` red number is the only cue, but the context line "N with out-of-range values" is beside it, so status is not colour alone. Listed so it is not changed to rely on the number.
+9. `components/shell/sidebar-content.tsx:35`, `components/shell/notifications-bell.tsx:41`. Raw `font-semibold` on the user name and on unread notification titles instead of a type utility. Sidebar sub-lines and the clinic page now use `type-small`; unread items now also carry a screen-reader "(unread)" [2026-11].
 
 **Arbitrary pixel values not backed by a design-system value**
 
@@ -209,11 +217,18 @@ Backed and therefore not listed: switch 40 by 22 and 18px thumb (FilterChips REA
 | `alert-bar.tsx:8` | `gap-3.5`, `px-4.5`, `py-3.5`, `min-w-50` | 14px and 18px steps are off the listed `space-*` scale |
 | `alert.tsx:7`, `input.tsx:11`, `textarea.tsx:10` | `px-3.5`, `py-3`, `min-h-30` | Same: off-scale padding; textarea minimum height 120px not specified |
 | `sparkline.tsx` | dot `r="3"`, inset 2px and 3px | Not specified beyond "last point emphasised" |
+| `components/shell/notifications-bell.tsx:29`, `app/(auth)/layout.tsx:24` | bell `size-5` (20px); auth card `max-w-[420px]`, `p-8` | Icon is a fourth size; 420px and 32px padding not in the reference |
+| `components/shell/sidebar-content.tsx:22,25`, `nav.tsx:81`, `app-shell.tsx:42` | `pt-7`, `pb-5`, `mt-2.5`, `pt-4.5`, `mb-9` | Off the listed `space-*` steps |
+| `components/shell/location-switcher.tsx:29,31,36,41`, `app/portal/page.tsx:180`, `app/clinic/page.tsx:133,230,232` | icons `size-3.5` (14px); spacer `size-4` | Fifth icon size; spacer width matches the 16px menu icons |
+| `app/(auth)/layout.tsx:14,18` | `p-7`, `shell:p-12`, `max-w-[12ch]` | 28px and 48px padding; 12ch hero width not specified |
+| `app/clinic/page.tsx:214` | `w-18` | Fixed time column, 72px |
 
 ## Findings (inconsistencies between code and reference)
 
-- `docs/CONTEXT.md` is not present yet, so the token-over-shadcn rule cited by the design-system-keeper brief could not be read. This document follows the comment in `app/globals.css` (lines 50 to 53): `--secondary` stays bronze and shadcn's role is `--secondary-role`.
+- `docs/CONTEXT.md` Findings 3 and 5 settle two points: the token wins over the shadcn mapping (`--secondary` stays bronze, shadcn's role is `--secondary-role`), and the prototype's sign-in gradient is replaced by a flat `surface-inverse` panel. This document follows both. [2026-11]
 - The reference README lists a wordmark at "22–26px"; `Wordmark` fixes it at 26px.
 - Reference `radius-full` and `radius-none` are Tailwind's built-in static utilities; they work because only the `--radius-*` theme values are cleared.
 - `--spacing-*` entries for `control`, `pill`, `nav-row`, `table-row`, `topbar`, `sidebar` and `icon` are exposed as spacing so that `h-`, `w-` and `size-` utilities work; this also generates `p-control` and similar, which should not be used.
-- Sidebar, top bar, `content-max` and `nav-row` tokens are defined but unused until the shell is built.
+- Sidebar, top bar, `content-max` and `nav-row` tokens are now used by the shell. [2026-11]
+- The reference describes sign-in as photography behind an overlay; the built screen is a flat `surface-inverse` panel with no image. [2026-11]
+- Every unbuilt destination is a disabled control inside `ComingSoon`; nothing links to a page that does not exist.

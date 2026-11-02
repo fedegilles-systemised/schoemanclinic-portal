@@ -36,14 +36,16 @@ The MVP is built around the bloods loop: order, Stripe payment and barcode, resu
 
 ## 5. Features
 
-Status is "done" only where the screen and data path exist in code. Current state: foundations only (scaffold, design system, Supabase config). No routes beyond the landing page and dev gallery exist yet; there are no migrations.
+Status is "done" only where the screen and data path exist in code. Current state [2026-11]: foundations, database migrations, sign-in, role routing, the app shell and both home screens are built with real data. Every action button on those screens is disabled; navigation to unbuilt screens shows "Coming soon".
 
 | Area | Feature | Status |
 |---|---|---|
 | Foundation | Next.js and Supabase scaffold, design tokens, restyled components | done [2026-11] |
-| Both | Sign-in | in progress |
-| Patient | Home dashboard | in progress |
-| Clinic | Dashboard | in progress |
+| Both | Sign-in (email and password, forgot and update password, no sign-up) | done [2026-11] |
+| Both | Role routing (patient and guardian to `/portal`, clinic staff to `/clinic`) | done [2026-11] |
+| Both | App shell (navigation, user menu, notifications bell) | done [2026-11]; unbuilt nav items disabled |
+| Patient | Home dashboard `/portal` | done [2026-11]; real data, all action buttons disabled |
+| Clinic | Dashboard `/clinic` | done [2026-11]; real data, all action buttons disabled |
 | Patient | Lab orders | planned |
 | Patient | My results | planned |
 | Patient | Upload results | planned |
@@ -68,6 +70,9 @@ Status is "done" only where the screen and data path exist in code. Current stat
 5. **Retention.** What retention periods apply to clinical records, uploads and audit logs?
 6. **Sign-in method.** The prototype shows magic link; the brief says email and password. Which one?
 7. **AI extraction provider** for PDF imports: which provider, and what data-processing terms?
+8. **Guardian links.** May PAs create verified guardian links alone, or is a second approver needed before a link gets `can_act`?
+9. **Doctors who are patients.** May a doctor see their own unreleased results and safeguarding alerts?
+10. **Several patients.** Do guardians of more than one patient need a patient switcher?
 
 ## 7. Decisions
 
@@ -77,7 +82,5 @@ Status is "done" only where the screen and data path exist in code. Current stat
 
 ## Findings
 
-- [2026-11] No `supabase/migrations/` yet, so every data path is unbuilt; `in_scope` and role rules exist only in the schema draft.
-- [2026-11] `docs/CONTEXT.md` does not exist yet, so status could not be cross-checked against it.
-- [2026-11] No sign-in or dashboard routes are present in `app/` despite "in progress" status; that status reflects intent, not code.
-- [2026-11] Sign-in method differs between prototype (magic link) and brief (email and password); `CLAUDE.md` lists forgot and update password routes, which implies passwords.
+- [2026-11] Earlier finding that sign-in and dashboard routes do not exist no longer holds: `/login`, `/forgot-password`, `/update-password`, `/auth/confirm`, `/portal` and `/clinic` exist (Phase 6 files are uncommitted).
+- [2026-11] Sign-in method differs between prototype (magic link) and brief (email and password); `CLAUDE.md` lists forgot and update password routes, which implies passwords. The code implements email and password, so the question is effectively settled unless the clinic wants magic link.

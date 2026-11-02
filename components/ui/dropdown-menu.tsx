@@ -42,7 +42,7 @@ function DropdownMenuRadioGroup(props: React.ComponentProps<typeof DropdownMenuP
 }
 
 const itemClass =
-  "type-table flex cursor-pointer items-center gap-2.5 rounded-none px-3 py-2 outline-none select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-45 data-[highlighted]:bg-surface-sunken [&_svg]:size-4 [&_svg]:text-content-muted";
+  "type-table flex cursor-pointer items-center gap-2.5 rounded-none px-3 py-2 select-none focus-visible:-outline-offset-2 data-[disabled]:pointer-events-none data-[disabled]:opacity-45 data-[highlighted]:bg-surface-sunken [&_svg]:size-4 [&_svg]:text-content-muted";
 
 function DropdownMenuItem({ className, ...props }: React.ComponentProps<typeof DropdownMenuPrimitive.Item>) {
   return (

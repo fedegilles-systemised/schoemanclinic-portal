@@ -1,0 +1,65 @@
+import { Suspense } from "react";
+import Link from "next/link";
+
+import { Button } from "@/components/ui/button";
+import { DemoBanner } from "@/components/ui/demo-banner";
+import type { ShellLocation, ShellNotification } from "@/lib/data/shell";
+import { getPublicEnv } from "@/lib/env";
+
+import { LocationSwitcher } from "./location-switcher";
+import { MobileNav } from "./mobile-nav";
+import type { NavCounts, PortalKind } from "./nav";
+import { NotificationsBell } from "./notifications-bell";
+import { SidebarContent, type ShellUser } from "./sidebar-content";
+import { UserMenu } from "./user-menu";
+
+type AppShellProps = {
+  kind: PortalKind;
+  crumb: string;
+  user: ShellUser;
+  notifications: ShellNotification[];
+  counts?: NavCounts;
+  /** Clinic only. */
+  locations?: ShellLocation[];
+  /** The other area, for a person with both a staff role and a patient view. */
+  switchTo?: { href: string; label: string };
+  children: React.ReactNode;
+};
+
+function AppShell({ kind, crumb, user, notifications, counts, locations, switchTo, children }: AppShellProps) {
+  const demo = getPublicEnv().NEXT_PUBLIC_DEMO === "true";
+  const currentHref = kind === "patient" ? "/portal" : "/clinic";
+  const sidebar = <SidebarContent kind={kind} currentHref={currentHref} counts={counts} user={user} />;
+
+  return (
+    <div className="flex min-h-dvh flex-col">
+      {demo ? <DemoBanner className="sticky top-0 z-40" /> : null}
+      <div className="grid flex-1 grid-cols-1 shell:grid-cols-[var(--spacing-sidebar)_minmax(0,1fr)]">
+        <aside className="sticky top-0 hidden h-dvh overflow-y-auto border-r border-surface-border shell:block">
+          {sidebar}
+        </aside>
+        <div className="min-w-0 px-5 pb-16 shell:px-10">
+          <header className="mb-9 flex h-topbar items-center gap-3 border-b border-surface-border">
+            <MobileNav>{sidebar}</MobileNav>
+            <div className="type-eyebrow min-w-0 flex-1 truncate text-content-muted">{crumb}</div>
+            {switchTo ? (
+              <Button asChild variant="ghost" className="hidden phone:inline-flex">
+                <Link href={switchTo.href}>{switchTo.label}</Link>
+              </Button>
+            ) : null}
+            {locations ? (
+              <Suspense>
+                <LocationSwitcher locations={locations} />
+              </Suspense>
+            ) : null}
+            <NotificationsBell notifications={notifications} />
+            <UserMenu name={user.name} switchTo={switchTo} />
+          </header>
+          <main className="max-w-content">{children}</main>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export { AppShell };
