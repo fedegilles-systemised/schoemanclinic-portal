@@ -40,6 +40,7 @@ pnpm typecheck    # tsc --noEmit
 pnpm db:start     # start the local Supabase stack (needs Docker)
 pnpm db:reset     # rebuild the local database from migrations and seed
 pnpm db:lint      # lint the database, fail on warnings
+pnpm db:advisors  # Supabase security and performance advisors, fail on warnings
 pnpm db:test      # run the pgTAP tests
 pnpm db:types     # regenerate lib/database.types.ts from the local database
 ```

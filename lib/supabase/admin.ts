@@ -2,6 +2,7 @@ import "server-only";
 
 import { createClient } from "@supabase/supabase-js";
 
+import type { Database } from "@/lib/database.types";
 import { getPublicEnv, getSupabaseServerEnv } from "@/lib/env";
 
 /**
@@ -12,7 +13,7 @@ import { getPublicEnv, getSupabaseServerEnv } from "@/lib/env";
  * Component.
  */
 export function createAdminClient() {
-  return createClient(
+  return createClient<Database>(
     getPublicEnv().NEXT_PUBLIC_SUPABASE_URL,
     getSupabaseServerEnv().SUPABASE_SERVICE_ROLE_KEY,
     { auth: { autoRefreshToken: false, persistSession: false } },
