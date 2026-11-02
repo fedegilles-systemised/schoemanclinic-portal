@@ -45,7 +45,7 @@ function SheetContent({
         {children}
         <SheetPrimitive.Close
           aria-label="Close"
-          className="absolute top-5 right-5 grid size-8 place-items-center text-content-muted transition-colors duration-150 ease-out hover:text-content"
+          className="absolute top-4 right-4 grid size-control-sm place-items-center text-content-muted transition-colors duration-150 ease-out hover:text-content"
         >
           <X aria-hidden />
         </SheetPrimitive.Close>
