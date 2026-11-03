@@ -16,6 +16,8 @@ export type CurrentUser = {
   avatarPath: string | null;
   roles: AppRole[];
   isStaff: boolean;
+  /** Holds the admin role. */
+  isAdmin: boolean;
   /** Holds the patient role, or is a verified guardian of a patient. */
   hasPatientView: boolean;
   isSuspended: boolean;
@@ -47,6 +49,7 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
     avatarPath: profile.data?.avatar_path ?? null,
     roles: roleList,
     isStaff: roleList.some((role) => STAFF_ROLES.includes(role)),
+    isAdmin: roleList.includes("admin"),
     hasPatientView: (records.data ?? []).length > 0,
     isSuspended: profile.data?.status === "suspended",
   };

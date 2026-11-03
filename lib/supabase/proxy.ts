@@ -13,9 +13,10 @@ import {
   signSessionValue,
   withSessionMaxAge,
 } from "@/lib/supabase/session-cookies";
+import { parseReturnPath } from "@/lib/auth/next-path";
 import { isSessionExpired, parseSessionKind } from "@/lib/supabase/session-limits";
 
-const PROTECTED_PREFIXES = ["/portal", "/clinic"];
+const PROTECTED_PREFIXES = ["/portal", "/clinic", "/knowledge-base"];
 // An emailed link starts a new session, so an old session must not stop it. The route
 // resets the session cookies once the link verifies; a bad link changes nothing here.
 const NEW_SESSION_PATH = "/auth/confirm";
@@ -94,7 +95,8 @@ export async function updateSession(request: NextRequest) {
     if (isProtected(pathname)) {
       const url = request.nextUrl.clone();
       url.pathname = "/login";
-      url.search = "";
+      // A page on the return list brings the person back to it after they sign in.
+      url.search = parseReturnPath(pathname) ? `?next=${encodeURIComponent(pathname)}` : "";
       return withCsp(NextResponse.redirect(url));
     }
     return withCsp(supabaseResponse);
@@ -111,7 +113,7 @@ export async function updateSession(request: NextRequest) {
 
   const expired = isSessionExpired({
     // The clinic area always has staff limits, whatever the cookie says.
-    kind: pathname === "/clinic" || pathname.startsWith("/clinic/") ? "staff" : parseSessionKind(kindValue),
+    kind: pathname === "/clinic" || pathname.startsWith("/clinic/") || pathname === "/knowledge-base" || pathname.startsWith("/knowledge-base/") ? "staff" : parseSessionKind(kindValue),
     authenticatedAt: authenticatedAt(claims, now),
     lastSeen,
     now,

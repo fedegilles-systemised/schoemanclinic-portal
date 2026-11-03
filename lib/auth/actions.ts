@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { getCurrentUser, homePathFor, type CurrentUser } from "@/lib/auth/session";
+import { parseReturnPath } from "@/lib/auth/next-path";
 import { allowAuthAttempt } from "@/lib/auth/throttle";
 import { createClient } from "@/lib/supabase/server";
 import { LAST_SEEN_COOKIE, SESSION_KIND_COOKIE } from "@/lib/supabase/session-cookies";
@@ -58,7 +59,8 @@ export async function signIn(_state: AuthFormState, formData: FormData): Promise
     return { error: NO_ACCESS, email };
   }
   await recordSessionKind(user);
-  redirect(home);
+  const returnPath = parseReturnPath(formData.get("next"));
+  redirect(returnPath && user.isAdmin ? returnPath : home);
 }
 
 export async function requestPasswordReset(_state: AuthFormState, formData: FormData): Promise<AuthFormState> {

@@ -60,6 +60,7 @@ Status is "done" only where the screen and data path exist in code. Current stat
 | Clinic | Lab orders | planned |
 | Clinic | Safeguarding alerts | planned |
 | Clinic | Team and settings | planned |
+| Both | Staff Knowledge base `/knowledge-base`: admins only, unlisted page for the clinic to validate roles, access, flows and open questions; sign-in brings an admin back to it (other roles go to their own home) | done [2026-11], uncommitted; not a patient feature |
 
 ## 6. Open questions for the clinic
 
@@ -74,6 +75,9 @@ Status is "done" only where the screen and data path exist in code. Current stat
 9. **Doctors who are patients.** May a doctor see their own unreleased results and safeguarding alerts?
 10. **Several patients.** Do guardians of more than one patient need a patient switcher?
 
+11. **Knowledge base visibility.** ANSWERED [2026-11]: admins only (see Decisions). Left here so the numbering holds.
+12. **Who else may read the knowledge base.** The page is admins only, but the clinic's owner is a doctor, and the doctors who need it cannot open it. Should those doctors also be given the admin role (which widens their power), or should another role (for example doctors) be allowed to read the page? Needs the owner's decision.
+
 ## 7. Decisions
 
 - [2026-11] MVP centres on the bloods loop; messaging, reminders, calendar, invoices and marketing stay in GoHighLevel, notes and prescribing in Semble.
@@ -82,9 +86,12 @@ Status is "done" only where the screen and data path exist in code. Current stat
 - [2026-11] Owner decision: multi-factor sign-in for staff and a CAPTCHA on sign-in are deferred until the clinic has accounts to enrol. Neither is built, and neither is in the MVP scope above.
 - [2026-11] Sessions end on their own: staff after 12 hours or 30 minutes idle, patients and guardians after 7 days or 2 hours idle. A signed-out person sees "You were signed out to protect your account. Please sign in again." An open screen asks the server to check every few minutes while the person is active, so an abandoned screen does not stay readable.
 - [2026-11] Every change to records made by the system rather than a person is attributed to the person it acts for or to a named background job in the audit log.
+- [2026-11] The knowledge base is for admins only (the owner first chose signed-in staff, then narrowed it to the admin role; answers open question 11). Doctors, PAs, the health coach, patients and guardians are sent to their own area; signed-out visitors go to sign in and an admin returns to the page. Open question 12 asks whether doctors should get access.
+- [2026-11] The knowledge base (`content/knowledge-base.md`, shown at `/knowledge-base`) is a stakeholder deliverable: the owner shares it with the clinic so they can confirm the roles, access, flows and the 21 open questions (it overlaps with section 6, which stays the shorter list). Its access table is derived from the row-level security policies, so it must be re-checked whenever policies change.
 
 ## Findings
 
 - [2026-11] Earlier finding that sign-in and dashboard routes do not exist no longer holds: `/login`, `/forgot-password`, `/update-password`, `/auth/confirm`, `/portal` and `/clinic` exist (committed in `c831ccf`).
 - [2026-11] Sign-in method differs between prototype (magic link) and brief (email and password); `CLAUDE.md` lists forgot and update password routes, which implies passwords. The code implements email and password, so the question is effectively settled unless the clinic wants magic link.
 - [2026-11] Sign-in hardening (attempt limits, session limits, signed session cookies, content security policy, scoped audit actor) is built but uncommitted and not yet on the hosted project. It adds no screen and changes no scope.
+- [2026-11] The knowledge base lists 21 open questions and this document 10 (plus question 11 above). They are not reconciled yet; after the clinic answers, update both. It adds no scope and no role.

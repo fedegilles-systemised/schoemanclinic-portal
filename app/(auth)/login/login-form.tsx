@@ -11,13 +11,14 @@ import { signIn, type AuthFormState } from "@/lib/auth/actions";
 
 const initialState: AuthFormState = {};
 
-export function LoginForm({ initialError }: { initialError?: string }) {
+export function LoginForm({ initialError, returnPath }: { initialError?: string; returnPath?: string }) {
   const [state, action, pending] = useActionState(signIn, initialState);
 
   return (
     <>
       <AuthHeading title="Sign in" description="Accounts are by invitation from the clinic." />
       <form action={action} className="flex flex-col gap-4">
+        {returnPath ? <input type="hidden" name="next" value={returnPath} /> : null}
         <Field id="email" label="Email address">
           <Input id="email" name="email" type="email" autoComplete="email" defaultValue={state.email} key={state.email} required autoFocus />
         </Field>

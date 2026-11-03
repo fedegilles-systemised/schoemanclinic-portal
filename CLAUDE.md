@@ -15,6 +15,8 @@ Work in British English everywhere: code comments, docs, UI copy, commit message
 | `app/portal/` | Patient and guardian area |
 | `app/clinic/` | Staff area |
 | `app/dev/ui/` | Dev-only component gallery (404 in production) |
+| `app/knowledge-base/` | Knowledge base for signed-in admins only (roles, access, flows); renders `content/knowledge-base.md`. Sign-in returns to it through a fixed list in `lib/auth/next-path.ts` |
+| `content/` | Markdown that pages render. `knowledge-base.md` is client-facing: keep it free of secrets and internal detail |
 | `app/globals.css` | Every design token and type utility |
 | `components/ui/` | shadcn primitives (restyled) and design-system components |
 | `components/shell/` | App shell: sidebar, top bar, navigation |

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
+import { parseReturnPath } from "@/lib/auth/next-path";
 import { getCurrentUser, homePathFor } from "@/lib/auth/session";
 
 import { LoginForm } from "./login-form";
@@ -16,12 +17,19 @@ const ERRORS: Record<string, string> = {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; next?: string }>;
 }) {
+  const { error, next } = await searchParams;
+  const returnPath = parseReturnPath(next);
+
   const user = await getCurrentUser();
   const home = user ? homePathFor(user) : null;
-  if (home) redirect(home);
+  if (home) redirect(returnPath && user?.isAdmin ? returnPath : home);
 
-  const { error } = await searchParams;
-  return <LoginForm initialError={error && Object.hasOwn(ERRORS, error) ? ERRORS[error] : undefined} />;
+  return (
+    <LoginForm
+      initialError={error && Object.hasOwn(ERRORS, error) ? ERRORS[error] : undefined}
+      returnPath={returnPath ?? undefined}
+    />
+  );
 }

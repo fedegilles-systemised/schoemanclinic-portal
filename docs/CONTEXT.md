@@ -1,6 +1,6 @@
 # Clinic Hub: technical context
 
-Owned by the `context-keeper` subagent. The code is the truth; this document describes it. Last updated [2026-11]. Latest change: Vercel Analytics and Speed Insights, and the sign-in photograph (both uncommitted).
+Owned by the `context-keeper` subagent. The code is the truth; this document describes it. Last updated [2026-11]. Latest change: the knowledge base at `/knowledge-base`, now for admins only with a sign-in return path (uncommitted), after Vercel Analytics and Speed Insights and the sign-in photograph (also uncommitted).
 
 ## 1. Product summary
 
@@ -46,6 +46,7 @@ Checked against `package.json` and `pnpm-lock.yaml` [2026-11].
 | `@supabase/ssr` | 0.12.7 |
 | `@supabase/supabase-js` | 2.118.0 |
 | `@vercel/analytics`, `@vercel/speed-insights` | 2.0.1, 2.0.0 (uncommitted) [2026-11] |
+| `react-markdown`, `remark-gfm` | 10.1.0, 4.0.1 (uncommitted). Raw HTML is not enabled [2026-11] |
 | Supabase CLI | 2.122.0 |
 | Resend | 6.37.x |
 | Zod | 4.6.7 |
@@ -308,6 +309,10 @@ Create a new one with `supabase migration new <name> </dev/null`: the command ha
 | `app/layout.tsx` | Built. `en-GB`, fonts, `TooltipProvider`, `Toaster`, `VercelInsights` (uncommitted), `noindex`, favicon and Apple icon from `public/brand/`. Calls `await connection()`, so every page renders per request and can carry its own CSP nonce [2026-11, uncommitted] |
 | `app/globals.css` | Built. Every design token and type utility |
 | `app/dev/ui/` | Built. Component gallery |
+| `app/knowledge-base/page.tsx` | Built, uncommitted [2026-11]. **Admins only**: `getCurrentUser()`; no user redirects to `/login?next=/knowledge-base`; anyone who is not `isAdmin`, or is suspended, goes to `homePathFor` (doctors to `/clinic`, patients to `/portal`); renders `SessionGuard kind="staff"` and a "Back to the clinic" link. The proxy also protects the prefix. `robots: { index: false, follow: false }`. A Server Component that reads `content/knowledge-base.md` with `fs/promises` (`process.cwd()`) at request time, which works because the root layout's `connection()` makes every page dynamic; it relies on Vercel file tracing to ship the file. Builds the contents list from the `##` headings and passes it to `Contents`. Tracked in `docs/SECURITY.md` S-64 |
+| `components/knowledge-base/contents.tsx` | Built, uncommitted [2026-11]. Client Component: the section list as a sticky sidebar on wide screens and a sticky bar with a menu on narrow ones; the current section comes from a scroll listener (last `h2` whose top is within 140px) |
+| `components/knowledge-base/markdown.tsx` | Built, uncommitted [2026-11]. `Markdown` (`react-markdown` with `remark-gfm`, no raw HTML) maps elements to design-system type utilities and tokens; `slugify` makes heading anchors shared with the page's contents list |
+| `content/knowledge-base.md` | Single source of truth for the knowledge base [2026-11]. Client-facing: written so the owner can share it with the clinic to validate the product (roles, access matrix, pages, sign-in rules, 13 flows, integrations, emails, 21 open questions and decisions). It mirrors a claude.ai document owned by the user. **Edit this file, not the page**; keep it free of secrets and internal detail. Its access table is derived from the policies, so re-check it whenever policies change |
 | `app/fonts/` | Cormorant Garamond and Inter, self-hosted woff2 |
 | `app/(auth)/` | Built. `login`, `forgot-password`, `update-password` (each a page plus a client form), shared layout |
 | `app/auth/confirm/route.ts` | Built. Verifies emailed links (`token_hash` or `code`); `next` is checked against an allow-list |
@@ -322,11 +327,11 @@ Create a new one with `supabase migration new <name> </dev/null`: the command ha
 | `lib/csp.ts` | `createNonce()` and `contentSecurityPolicy(nonce)`. Uncommitted [2026-11] |
 | `lib/email/send.ts` | Resend wrapper |
 | `lib/fonts.ts`, `lib/utils.ts` | Fonts; `cn` helper |
-| `lib/auth/` | `session.ts` (`getCurrentUser`, `homePathFor`), `actions.ts` (server actions), `throttle.ts` (`allowAuthAttempt`; uses the service role), `session-start.ts` (`startSessionCookies`: server only, sets the signed `ch_` cookies; uncommitted) |
+| `lib/auth/` | `session.ts` (`getCurrentUser`, which returns `isAdmin`: true if `user_roles` holds `admin`, not checking the active staff profile; `homePathFor`), `actions.ts` (server actions), `throttle.ts` (`allowAuthAttempt`; uses the service role), `session-start.ts` (`startSessionCookies`: server only, sets the signed `ch_` cookies; uncommitted), `next-path.ts` (`parseReturnPath`: fixed allow-list, only `/knowledge-base`, so sign-in can return a person to a page without an open redirect; `signIn` and the login page use it only if `isAdmin`; uncommitted) |
 | `lib/data/` | Built [2026-11]. `portal.ts` (`getPortalHome`), `clinic.ts` (`getClinicHome`, `getClinicNavCounts`), `shell.ts` (notifications, locations). All read through the signed-in session |
 | `lib/format.ts`, `lib/results.ts` | Built [2026-11]. London-time date and money formatting, 14-day arithmetic; maps `result_flag` to the in_range, borderline, out_of_range pills |
 | `lib/database.types.ts` | Generated by `pnpm db:types` |
-| `proxy.ts` | Calls `updateSession`: refreshes the session with `getClaims()`, ends a session past its limits, sets the Content-Security-Policy and redirects signed-out visitors away from `/portal` and `/clinic` to `/login`. Row-level security is the real authorisation |
+| `proxy.ts` | Calls `updateSession`: refreshes the session with `getClaims()`, ends a session past its limits, sets the Content-Security-Policy and redirects signed-out visitors away from `/portal`, `/clinic` and `/knowledge-base` (the protected prefixes) to `/login`; for `/knowledge-base` it adds `?next=%2Fknowledge-base` (via `parseReturnPath`) and applies the staff session limits to that exact path. Row-level security is the real authorisation |
 | `next.config.ts` | Static security headers (HSTS, nosniff, referrer policy, frame denial, permissions policy). The Content-Security-Policy was removed from here [2026-11, uncommitted]: it is set per request in `lib/supabase/proxy.ts` |
 | `supabase/` | `config.toml`, `migrations/` (16), `tests/` (4 pgTAP files, 188 tests), `seed.sql`, `templates/recovery.html`. See section 4 |
 | `public/pics/` | `about-clinic-door.png`, the sign-in panel photograph, uncommitted [2026-11]. The source is 7.5 MB; `next/image` serves it as WebP, about 400 KB at 1920 px. Compress the source (`docs/DESIGN-SYSTEM.md`) |
@@ -363,10 +368,11 @@ Create a new one with `supabase migration new <name> </dev/null`: the command ha
 | `/portal` | Built. Patient home |
 | `/clinic` | Built. Clinic dashboard; optional `?location=<id>` |
 | `/dev/ui` | Component gallery; `notFound()` when `NODE_ENV` is production |
+| `/knowledge-base` | Built, uncommitted [2026-11]. Admins only, `noindex`; renders `content/knowledge-base.md`. Signed out: proxy 307 to `/login?next=%2Fknowledge-base`. Everyone else, and suspended people, go to their own home |
 
 Every other nav entry (patient: Lab orders, My results, Upload results, Prescriptions, Appointments, Ask the clinic, Letters and documents, Privacy and consent; clinic: Patient list, Results review, Import queue, Lab orders, Safeguarding alerts, Team and settings) is shown disabled with a "Coming soon" tooltip.
 
-**Server actions** (`lib/auth/actions.ts`): `signIn` (email and password, Zod-checked, attempt limits first, one message for every failure, signs out and shows "no access" if the account has no area, sets `ch_session_kind` and `ch_last_seen`), `requestPasswordReset` (attempt limits first; the screen always says "sent", whether or not the account exists, and adds "If nothing arrives in a few minutes, try again later or contact the clinic."; a Supabase 429 is logged on the server, not shown; the email link goes to `/auth/confirm?next=/update-password`), `updatePassword` (12+ characters, lower, upper, digit; sets `ch_session_kind` and `ch_last_seen`), `signOut` (also clears both `ch_` cookies).
+**Server actions** (`lib/auth/actions.ts`): `signIn` (email and password, Zod-checked, attempt limits first, one message for every failure, signs out and shows "no access" if the account has no area, sets `ch_session_kind` and `ch_last_seen`), `requestPasswordReset` (attempt limits first; the screen always says "sent", whether or not the account exists, and adds "If nothing arrives in a few minutes, try again later or contact the clinic."; a Supabase 429 is logged on the server, not shown; the email link goes to `/auth/confirm?next=/update-password`), `updatePassword` (12+ characters, lower, upper, digit; sets `ch_session_kind` and `ch_last_seen`), `signOut` (also clears both `ch_` cookies). `signIn` also reads a hidden `next` field: after the usual checks it redirects to it only if `parseReturnPath` accepts it and the person is staff, otherwise to their home. `/login?next=...` does the same for an already signed-in person; the login form passes `returnPath` as the hidden field.
 
 **Attempt limits** (`lib/auth/throttle.ts`, `allowAuthAttempt`) [2026-11, uncommitted]. Sign-in and reset reach Supabase from this server, so Supabase's own limits cannot tell one visitor from another.
 
@@ -478,3 +484,4 @@ Messaging, reminders, tasks, calendar, invoices and marketing (GoHighLevel); con
 28. [2026-11] `SESSION_COOKIE_SECRET` is a new required variable. Until it is set in Vercel and `.env.local`, every signed-in request fails closed. A hosted deploy of the uncommitted work without it would lock everyone out.
 29. [2026-11] `docs/SECURITY.md` is being edited by another agent in this pass; whether S-07, S-10, S-11, S-12, S-13, S-31 and S-32 are marked as the owner decided is for `security-reviewer`. This document states the decisions as given.
 30. [2026-11] The two Vercel scripts are new third-party-operated code on a clinical portal. `docs/SECURITY.md` S-63 tracks the data processing terms, PECR and the privacy notice, which are for the owner. `public/pics/about-clinic-door.png` is 7.5 MB in the repository; compress it.
+31. [2026-11] `/knowledge-base` is for admins only (PRD open question 11 answered, question 12 asks whether doctors should get access); `docs/SECURITY.md` S-64 tracks what remains. `isAdmin` does not check the active staff profile, and the access table drifts when policies change. The page reads its Markdown with `fs`, which depends on Vercel including `content/` in the deployment; confirm on the first deploy. The file mirrors a claude.ai document, so the two can drift: this repository's copy is the one the page shows. Not yet tested: a foreign `next` through the form, a production build of this change, a suspended or inactive admin signing in.
