@@ -17,8 +17,9 @@ export type SendEmailResult =
   | { ok: false; error: string };
 
 /**
- * Sends one email through Resend. Not wired to any flow yet. Emails must never
- * carry clinical values: link to the portal instead.
+ * Sends one email through Resend. Not wired to any flow yet. Build the content with the
+ * templates in lib/email/templates/app.ts: `sendEmail({ to, ...invitationEmail({ ... }) })`.
+ * Emails must never carry clinical values: link to the portal instead.
  */
 export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult> {
   const env = getEmailEnv();
@@ -30,7 +31,7 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
     subject: input.subject,
     html: input.html,
     text: input.text,
-    replyTo: input.replyTo,
+    replyTo: input.replyTo ?? env.EMAIL_REPLY_TO,
   });
 
   if (error || !data) {

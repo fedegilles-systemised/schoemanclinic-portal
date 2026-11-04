@@ -17,6 +17,7 @@ Clinic Hub is the patient and clinic portal pair for The Schoeman Clinic (hormon
 | 5. Authentication (sign-in, password reset, role routing) | Done, committed |
 | 6. App shells and dashboards (patient `/portal`, clinic `/clinic`) | Done, committed |
 | Session limits and attempt limits (`private.auth_throttle`, `lib/auth/throttle.ts`, `lib/supabase/session-cookies.ts`, `/login?error=expired`, no browser Supabase client), signed session cookies and `SessionGuard`, a per-request Content-Security-Policy with a nonce, and the scope and audit-actor migration | Built, **uncommitted** in the working tree. The two new migrations are not on the hosted project yet |
+| Email templates in the design system's look (four sign-in service emails built to `supabase/templates/`, three Resend emails in `lib/email/templates/app.ts`), `SITE_URL`, and the `email:*` scripts | Built, **uncommitted**. The Resend emails are not wired to any flow. Verified locally only: the four sign-in emails through the local Auth service and Mailpit. Not verified: any real Resend send, Outlook, Gmail or Apple Mail rendering, the hosted Auth set-up |
 | Every screen behind the nav (results, orders, prescriptions, patient list, review queue, import queue and so on) | Not built; shown disabled with a "Coming soon" tooltip |
 | Stripe, lab feeds, GoHighLevel and Semble sync, invitation sending, result release and import confirmation | Not built. The schema is ready for them; no server code writes to those tables yet |
 
@@ -25,6 +26,7 @@ The default branch is `main`, and the working tree above is on it. The home page
 **Waiting on a human:**
 - `20261102143000_auth_throttle.sql` and `20261102150000_scope_and_audit_actor.sql` must be pushed to the hosted project. Until the first, `public.auth_throttle_hit` does not exist there, so `lib/auth/throttle.ts` fails open and logs an error on every attempt: sign-in and reset work, with no attempt limits. See section 7 for the environments.
 - `SESSION_COOKIE_SECRET` must be set in Vercel and in `.env.local`. Without it the proxy cannot read or sign the `ch_` cookies and fails closed (section 5), so no signed-in page loads.
+- Email set-up, all manual and none done [2026-11]: confirm the sending domain's spelling (`.env.example` uses `schoemanclinic.systemizedtoscale.com`; the owner's own domain is spelled `systemisedtoscale` with an s, so the owner must confirm which one DNS uses); add and verify the domain in Resend (SPF, DKIM, DMARC records); create a Resend API key limited to sending on that domain; set `RESEND_API_KEY`, `EMAIL_FROM`, `SITE_URL` and optionally `EMAIL_REPLY_TO` in Vercel as server-only variables; in the Supabase dashboard set custom SMTP (Resend), the Site URL and redirect allow-list to the domain, and paste the four templates and subjects from `supabase/templates/` (recovery, email change, reauthentication, password changed, with the notification on); run `pnpm email:test` to the owner's own address; check the logo URL `${SITE_URL}/brand/schoemanClinic-logo.png` loads in production.
 
 ## 3. Stack and versions
 
@@ -274,8 +276,9 @@ Create a new one with `supabase migration new <name> </dev/null`: the command ha
 
 - `[auth] enable_signup = false`: public sign-up is off [2026-11].
 - `[auth.email] enable_signup = true` **must stay true**: if it is false, email sign-in is disabled altogether [2026-11].
-- Minimum password 12 characters, with lower case, upper case and digits; refresh-token rotation on; email confirmations off locally; anonymous sign-ins off; MFA off (deferred, see section 8); the recovery email uses `supabase/templates/recovery.html`.
+- Minimum password 12 characters, with lower case, upper case and digits; refresh-token rotation on; email confirmations off locally; anonymous sign-ins off; MFA off (deferred, see section 8); the recovery, email-change and reauthentication emails and the password-changed notification use the branded files in `supabase/templates/` (built by `pnpm email:build`, section 5), with the password-changed notification enabled [2026-11].
 - Site URL `http://localhost:3000`; redirects allowed on port 3000 only (see Findings on `web-local`).
+- Resend SMTP (`smtp.resend.com`, port 465, user `resend`, the API key as password) is present as **commented** settings for hosted use; locally, mail goes to Mailpit. The hosted project is set by hand (section 2) [2026-11].
 - `[auth.sessions]` stays commented out: Supabase's time-box and inactivity settings need the Pro plan, so the proxy enforces the limits instead (section 5).
 - These settings describe the local stack. The hosted project is configured by hand: public sign-up off, minimum password 12, and leaked password protection off because it needs the Pro plan [2026-11].
 
@@ -326,6 +329,11 @@ Create a new one with `supabase migration new <name> </dev/null`: the command ha
 | `lib/env.ts` | Lazy Zod validation of public, Supabase server, email and session (`getSessionEnv`) variables |
 | `lib/csp.ts` | `createNonce()` and `contentSecurityPolicy(nonce)`. Uncommitted [2026-11] |
 | `lib/email/send.ts` | Resend wrapper |
+| `lib/email/theme.ts` | Uncommitted [2026-11]. Token colours as sRGB hex, converted from `docs/reference/design-system/tokens.json`, and the font stacks. The only raw colours outside the stylesheet, because email clients lack CSS variables and oklch |
+| `lib/email/layout.ts` | Uncommitted. Table layout with inline styles shared by every email: logo, eyebrow, title with one italic phrase, button, link fallback, code block, detail rows, fine print, footer, hidden preheader. Light colour scheme only |
+| `lib/email/templates/auth.ts` | Uncommitted. The four sign-in service emails (recovery, email change, reauthentication, password changed) with Supabase placeholders (`{{ .SiteURL }}`, `{{ .TokenHash }}`, `{{ .Token }}`, `{{ .Email }}`, `{{ .NewEmail }}`). Built into `supabase/templates/*.html` |
+| `lib/email/templates/app.ts` | Uncommitted. `invitationEmail`, `guardianAccessEmail`, `resultReadyEmail`, each returning `{ subject, html, text }` for `sendEmail({ to, ...template })`. **Not wired to any flow yet.** No clinical values; links built from `SITE_URL`, never from a request header |
+| `scripts/` | Uncommitted. `build-auth-emails.ts` (`pnpm email:build`: writes `supabase/templates/*.html`), `preview-emails.ts` (`pnpm email:preview`: writes `.email-preview/`, git-ignored, with a copy of the logo), `send-test-email.ts` (`pnpm email:test <invitation\|guardian\|result> <to>`: **sends a real email through Resend** using `.env.local`, for the owner to run). Dev dependency `tsx` added |
 | `lib/fonts.ts`, `lib/utils.ts` | Fonts; `cn` helper |
 | `lib/auth/` | `session.ts` (`getCurrentUser`, which returns `isAdmin`: true if `user_roles` holds `admin`, not checking the active staff profile; `homePathFor`), `actions.ts` (server actions), `throttle.ts` (`allowAuthAttempt`; uses the service role), `session-start.ts` (`startSessionCookies`: server only, sets the signed `ch_` cookies; uncommitted), `next-path.ts` (`parseReturnPath`: fixed allow-list, only `/knowledge-base`, so sign-in can return a person to a page without an open redirect; `signIn` and the login page use it only if `isAdmin`; uncommitted) |
 | `lib/data/` | Built [2026-11]. `portal.ts` (`getPortalHome`), `clinic.ts` (`getClinicHome`, `getClinicNavCounts`), `shell.ts` (notifications, locations). All read through the signed-in session |
@@ -402,8 +410,10 @@ From `.env.example` and `lib/env.ts`. `.env*.local` is ignored.
 | `NEXT_PUBLIC_DEMO` | Public, optional | `true` shows the demo banner |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server only | Used only from `lib/supabase/admin.ts`. Sign-in and reset now use it for the attempt limits; without it they fail open |
 | `SESSION_COOKIE_SECRET` | Server only | Signs the `ch_last_seen` and `ch_session_kind` cookies; 32 characters or more (`openssl rand -base64 48`). Read by `getSessionEnv` in `lib/env.ts`. Required: the proxy fails closed without it. Set it in Vercel and `.env.local`; `web-local` sets a fixed local value. Changing it signs everyone out |
-| `RESEND_API_KEY` | Server only | Used only from `lib/email/send.ts`. Deferred; nothing calls the wrapper yet |
-| `EMAIL_FROM` | Server only | Verified sender address. Deferred |
+| `RESEND_API_KEY` | Server only | Used only from `lib/email/send.ts` and `pnpm email:test`. Nothing in the app calls the wrapper yet. Restrict the key to sending on the one domain |
+| `EMAIL_FROM` | Server only | Sender address on the domain verified in Resend |
+| `SITE_URL` | Server only | Required with the email variables (`z.url`, no trailing slash). Links and the logo in emails are built from it, never from a request. Set it per environment [2026-11] |
+| `EMAIL_REPLY_TO` | Server only, optional | Where replies go; `send.ts` falls back to it. Open question: which address (PRD) |
 
 **Environments** [2026-11]. One hosted Supabase project for now, with the local stack as development. `.env.local` points at the hosted project, so `pnpm dev` and the `web` configuration use hosted data. Use `web-local` (port 3130) for the local stack. Agents never connect to the hosted project; a human links and pushes. Password reset on the hosted project is unproven until SMTP is set up.
 
@@ -428,7 +438,8 @@ From `.env.example` and `lib/env.ts`. `.env*.local` is ignored.
 - [2026-11] `supabase migration new` hangs without a terminal; use `</dev/null`.
 - [2026-11] The default branch is `main`.
 - [2026-11] One hosted Supabase environment for now, with the local stack as development, decided by the owner.
-- [2026-11] Resend and custom SMTP, and with them the hosted recovery email template, are deferred until there is a domain.
+- [2026-11] Email templates are built (section 5) in the design system's look with hex colours, inline styles and system-font fallbacks, because email clients lack CSS variables, oklch and web fonts. Resend, custom SMTP and the hosted Auth templates are still **manual and not done**, waiting on the domain being verified.
+- [2026-11] Email links come from `SITE_URL`, not a request header, and no email carries a clinical value.
 - [2026-11] Leaked password protection is off, because it needs the Pro plan.
 - [2026-11] No browser Supabase client, so the auth cookies can be `HttpOnly`. A Client Component that needs data must go through the server.
 - [2026-11] Session limits live in the proxy, because Supabase's time-box and inactivity settings need the Pro plan. It applies only to requests through the proxy, so it cannot stop a token copied out of the browser and used directly against Supabase.
@@ -485,3 +496,7 @@ Messaging, reminders, tasks, calendar, invoices and marketing (GoHighLevel); con
 29. [2026-11] `docs/SECURITY.md` is being edited by another agent in this pass; whether S-07, S-10, S-11, S-12, S-13, S-31 and S-32 are marked as the owner decided is for `security-reviewer`. This document states the decisions as given.
 30. [2026-11] The two Vercel scripts are new third-party-operated code on a clinical portal. `docs/SECURITY.md` S-63 tracks the data processing terms, PECR and the privacy notice, which are for the owner. `public/pics/about-clinic-door.png` is 7.5 MB in the repository; compress it.
 31. [2026-11] `/knowledge-base` is for admins only (PRD open question 11 answered, question 12 asks whether doctors should get access); `docs/SECURITY.md` S-64 tracks what remains. `isAdmin` does not check the active staff profile, and the access table drifts when policies change. The page reads its Markdown with `fs`, which depends on Vercel including `content/` in the deployment; confirm on the first deploy. The file mirrors a claude.ai document, so the two can drift: this repository's copy is the one the page shows. Not yet tested: a foreign `next` through the form, a production build of this change, a suspended or inactive admin signing in.
+32. [2026-11] The email domain is spelled `schoemanclinic.systemizedtoscale.com` (with a z) in `.env.example` and `supabase/config.toml` comments, while the owner's own domain is `systemisedtoscale` (with an s). The owner must confirm which spelling DNS uses before the Resend domain is added; a wrong one breaks the sender and every link.
+33. [2026-11] `supabase/templates/*.html` are generated from `lib/email/templates/auth.ts` by `pnpm email:build`. Edit the TypeScript and rebuild; the generated HTML drifts if edited by hand. The hosted dashboard holds its own pasted copy, which also drifts.
+34. [2026-11] The result-ready email is not decided: sent from Clinic Hub (`resultReadyEmail`) or left to GoHighLevel reminders (PRD). Until then it is unused code. Nothing is wired to `invitationEmail` or `guardianAccessEmail` either, because invitation sending is not built.
+35. [2026-11] Not verified: a real Resend send, rendering in Outlook, Gmail and Apple Mail, dark mode in mail clients, SPF, DKIM and DMARC, the hosted Auth templates and SMTP, and that the logo URL is reachable on the production domain. On the local stack the first email-change link completed the change although `double_confirm_changes` is true; the copy says to confirm a second email if one arrives.

@@ -227,6 +227,27 @@ Backed and therefore not listed: switch 40 by 22 and 18px thumb (FilterChips REA
 
 **Knowledge base page** (`app/knowledge-base/page.tsx`, `components/knowledge-base/contents.tsx`, `components/knowledge-base/markdown.tsx`) [2026-11, uncommitted; checked in the browser on a local copy: sidebar stays at `top: 32px` while scrolling and the current section updates, the narrow bar sticks at the top, no horizontal overflow at 375px]. For admins only, outside the app shell. A "Back to the clinic" link (`type-table`, `text-secondary` underlined) sits top right, then a centred header: `Wordmark`, `type-eyebrow` "Knowledge base", `AccentTitle` ("How Clinic Hub " with "works" as the accent) in `type-page-title`, and an intro. Below, a two-column grid at the 900px `shell` breakpoint (`shell:grid-cols-[220px_minmax(0,1fr)]`, `gap-12`) inside `max-w-[1160px]`: the Contents sidebar and the content. **Contents:** on wide screens a `sticky top-8` nav (`max-h-[calc(100dvh-4rem)]`, scrolls inside itself) with a `type-eyebrow` "Contents" label and one row per `##` heading in `type-table`; the current row uses `border-l-2 border-secondary-border bg-surface-selected text-content` like the app sidebar, others `text-content-muted` with a transparent border. On narrow screens a bar sticks to the top (`sticky top-0 z-30`, `border-b border-surface-border bg-surface`, bleeding to the edges with `-mx-5 px-5`) showing the current section and a "Sections"/"Close" `type-eyebrow` toggle that opens the list. The body is Markdown mapped to existing utilities: `type-section-title` for `h2` (with an id, `scroll-mt-20`, `shell:scroll-mt-8` so headings clear the narrow bar), `type-card-display` for `h3`, `type-body` for paragraphs and lists, `text-secondary` underlined links, and tables in a `border-surface-border` wrapper with `overflow-x-auto`, `type-eyebrow` headers on `bg-surface-sunken` and `type-table` cells. No new tokens. Debt: the pixel values in section 7; the link style (`text-secondary` underlined) is not a documented link pattern; no print or dark-mode check; keyboard focus styles rely on the browser default for the in-page anchors; the sidebar and bar have not been checked at tablet widths between 375px and 900px, nor in dark mode.
 
+## 8. Emails [2026-11, uncommitted]
+
+Emails follow the same look but cannot use the stylesheet: clients lack CSS variables, oklch and web fonts. `lib/email/theme.ts` holds the token colours as sRGB hex, converted from `docs/reference/design-system/tokens.json`; change a token, change it there too.
+
+| Role | Token | Hex |
+|---|---|---|
+| Ground | `surface` | #FAF7F3 |
+| Card | `surface-raised` | #FCFAF6 |
+| Sunken (code, detail rows) | `surface-sunken` | #EDEBE7 |
+| Hairline | `surface-border` | #DBD7D2 |
+| Text, button | `content`, `primary` | #171310 |
+| Muted text | `content-muted` | #5A544F |
+| Button text | `primary-content` | #FAF7F3 |
+| Italic phrase | `secondary` (bronze) | #745338 |
+
+**Fonts.** Titles Cormorant Garamond with Georgia fallback; text Inter with Helvetica Neue, Helvetica and Arial fallback. The web fonts are not loaded in email, so most clients show the fallbacks.
+
+**Layout** (`lib/email/layout.ts`). Table layout with inline styles; a 560px card on the `surface` ground; a `surface-raised` card with a `surface-border` hairline and a 4px radius (`radius-card`); the logo (`/brand/schoemanClinic-logo.png`, 148px); an eyebrow; a title in display type with one italic bronze phrase; a square charcoal button with an uppercase 11px label (`button-label`); a link fallback under the button; a code block for confirmation codes; detail rows; fine print; a footer giving the reason for the email; hidden preheader text. Light colour scheme only, with no dark mode.
+
+**Debt.** Raw hex values, by necessity, in `lib/email/theme.ts` (the only ones outside the stylesheet); `border-radius:4px`, the 560px width, the 34px title and the 148px logo are literal values in `layout.ts`, not tokens; `warningBg` and `warning` hex values are placeholders for status colours that no template uses. No shadows, gradients or emoji; no exclamation marks. Copy rules apply as elsewhere. Not checked in Outlook, Gmail or Apple Mail, nor in a mail client's dark mode.
+
 ## Findings (inconsistencies between code and reference)
 
 - `docs/CONTEXT.md` Findings 3 and 5 settle two points: the token wins over the shadcn mapping (`--secondary` stays bronze, shadcn's role is `--secondary-role`), and the prototype's sign-in gradient is replaced by a flat `surface-inverse` panel. This document follows both. [2026-11]
@@ -238,3 +259,4 @@ Backed and therefore not listed: switch 40 by 22 and 18px thumb (FilterChips REA
 - The reference describes sign-in as photography behind an overlay. The built screen now does this (`about-clinic-door.png` behind `bg-surface-inverse/80`), so the earlier gap is closed. The reference gives no overlay opacity; 80% was chosen for contrast (see section 6). [2026-11]
 - `public/pics/about-clinic-door.png` is 7.5 MB. Compress the source to about 500 KB at 1920 px. [2026-11]
 - Every unbuilt destination is a disabled control inside `ComingSoon`; nothing links to a page that does not exist.
+- [2026-11] Emails carry raw hex values, which the code rule "tokens only" forbids elsewhere. Accepted for `lib/email/theme.ts` alone, because email clients cannot read the tokens; the `warning` pair there is unused. `lib/email/layout.ts` must take every colour from the theme file.

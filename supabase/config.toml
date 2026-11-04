@@ -236,25 +236,36 @@ otp_length = 6
 otp_expiry = 3600
 
 # Use a production-ready SMTP server
+# Hosted: set the same values in the dashboard (Authentication, SMTP settings). Resend:
+# host smtp.resend.com, port 465, user "resend", password a Resend API key, sender
+# no-reply@schoemanclinic.systemizedtoscale.com. Locally, mail goes to Mailpit instead.
 # [auth.email.smtp]
 # enabled = true
-# host = "smtp.sendgrid.net"
-# port = 587
-# user = "apikey"
-# pass = "env(SENDGRID_API_KEY)"
-# admin_email = "admin@email.com"
-# sender_name = "Admin"
+# host = "smtp.resend.com"
+# port = 465
+# user = "resend"
+# pass = "env(RESEND_API_KEY)"
+# admin_email = "no-reply@schoemanclinic.systemizedtoscale.com"
+# sender_name = "The Schoeman Clinic"
 
 # Sends the reset link straight to our confirm route, so the session is set server side.
 [auth.email.template.recovery]
 subject = "Reset your password"
 content_path = "./supabase/templates/recovery.html"
 
-# Uncomment to customize notification email template
-# [auth.email.notification.password_changed]
-# enabled = true
-# subject = "Your password has been changed"
-# content_path = "./supabase/templates/password_changed_notification.html"
+[auth.email.template.email_change]
+subject = "Confirm the change of your email address"
+content_path = "./supabase/templates/email_change.html"
+
+[auth.email.template.reauthentication]
+subject = "Your confirmation code"
+content_path = "./supabase/templates/reauthentication.html"
+
+# Tells the person when their password changes, so a takeover is noticed.
+[auth.email.notification.password_changed]
+enabled = true
+subject = "Your password has been changed"
+content_path = "./supabase/templates/password_changed_notification.html"
 
 [auth.sms]
 # Allow/disallow new user signups via SMS to your project.

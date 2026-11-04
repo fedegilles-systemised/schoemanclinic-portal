@@ -44,3 +44,6 @@ next-env.d.ts
 # Supabase local state
 /supabase/.branches
 /supabase/.temp
+
+# email previews
+/.email-preview/

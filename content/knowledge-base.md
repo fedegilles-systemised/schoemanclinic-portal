@@ -392,18 +392,21 @@ Clinic Hub connects to nine systems. Only the first two are in place; the rest a
 
 ## Emails and notifications
 
-Only one message is built today, the password reset link. The rest are proposed, and each needs the clinic's approval of its wording and sender.
+Every message has a template in the clinic's look, and the password reset is the only one wired to a flow today. The sender will be an address on the clinic's own domain, once that domain is verified. Each message still needs the clinic's approval of its wording.
 
 | Message | Sent when | To | Sent through | Status |
 | --- | --- | --- | --- | --- |
-| Password reset link | The person asks for a reset | The person | Sign-in service, then Resend | Built; needs the sending domain |
-| Invitation | A PA or admin invites someone | The new person | Resend | Planned |
+| Password reset link | The person asks for a reset | The person | Sign-in service, sent through Resend | Template built; needs the sending domain to be verified |
+| Email address change | The person changes their sign-in email | The old and the new address | Sign-in service, sent through Resend | Template built |
+| Security code | A sensitive action asks the person to confirm it is them | The person | Sign-in service, sent through Resend | Template built |
+| Password changed notice | The password on an account changes | The person | Sign-in service, sent through Resend | Template built |
+| Invitation | A PA or admin invites someone | The new person | Resend | Template built; the invitation flow is planned |
 | Bloods ordered, and a reminder before the due date | An order is created; the due date nears | The patient | GoHighLevel (proposed) | Planned |
 | Payment receipt | Stripe confirms a payment | The payer | Stripe or GoHighLevel (proposed) | Planned |
-| A result is ready | A doctor releases a report | The patient, and a guardian who can view | GoHighLevel, by the person's choices | Planned |
+| A result is ready | A doctor releases a report | The patient, and a guardian who can view | GoHighLevel, by the person's choices (a Clinic Hub template exists if the clinic prefers to send it from here) | Planned |
 | Repeat request update | The request is approved, declined or sent | The patient | GoHighLevel (proposed) | Planned |
 | Question answered | The team replies | The patient | GoHighLevel | Planned |
-| Guardian link created | A PA verifies a guardian | The patient and the guardian | Resend (proposed) | Planned |
+| Guardian link created | A PA verifies a guardian | The guardian | Resend (proposed) | Template built; the flow is planned |
 | Results PDF received | A PDF is emailed to the clinic's inbox | The import queue, not a person | The clinic's mailbox | Planned (inbound) |
 
 **In the portal.** The bell in the top bar shows notifications on four topics: results, payments, appointments and messages. Each person chooses, per topic, whether they also want email, WhatsApp, SMS or the portal only. GoHighLevel reads those choices before it sends anything.

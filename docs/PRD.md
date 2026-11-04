@@ -60,6 +60,7 @@ Status is "done" only where the screen and data path exist in code. Current stat
 | Clinic | Lab orders | planned |
 | Clinic | Safeguarding alerts | planned |
 | Clinic | Team and settings | planned |
+| Both | Emails. Built [2026-11], uncommitted: four sign-in service emails (password reset, email change, confirmation code, password changed) and three clinic emails (invitation, guardian access, result ready), in the clinic's look, with no clinical values in any of them. Sent by the sign-in service for the first four (hosted set-up is manual and not done); the three clinic emails are written but wired to no flow | partly done; invitation sending, guardian access and result release flows unbuilt |
 | Both | Staff Knowledge base `/knowledge-base`: admins only, unlisted page for the clinic to validate roles, access, flows and open questions; sign-in brings an admin back to it (other roles go to their own home) | done [2026-11], uncommitted; not a patient feature |
 
 ## 6. Open questions for the clinic
@@ -77,6 +78,10 @@ Status is "done" only where the screen and data path exist in code. Current stat
 
 11. **Knowledge base visibility.** ANSWERED [2026-11]: admins only (see Decisions). Left here so the numbering holds.
 12. **Who else may read the knowledge base.** The page is admins only, but the clinic's owner is a doctor, and the doctors who need it cannot open it. Should those doctors also be given the admin role (which widens their power), or should another role (for example doctors) be allowed to read the page? Needs the owner's decision.
+13. **Email wording.** Who approves the wording of the seven emails (the owner, the clinic's doctors, or both)? The tone is calm, with no medical promises.
+14. **Reply-to address.** Which address receives replies to emails (`EMAIL_REPLY_TO`), or should replies be turned off?
+15. **Result-ready email.** Is it sent from Clinic Hub, or left to GoHighLevel's reminders, which already carry messaging? It says only that a result is ready and links to the portal; it never holds a value.
+16. **Sending domain.** Which domain sends the email, and how is it spelled (`systemizedtoscale` or `systemisedtoscale`)?
 
 ## 7. Decisions
 
@@ -89,9 +94,12 @@ Status is "done" only where the screen and data path exist in code. Current stat
 - [2026-11] The knowledge base is for admins only (the owner first chose signed-in staff, then narrowed it to the admin role; answers open question 11). Doctors, PAs, the health coach, patients and guardians are sent to their own area; signed-out visitors go to sign in and an admin returns to the page. Open question 12 asks whether doctors should get access.
 - [2026-11] The knowledge base (`content/knowledge-base.md`, shown at `/knowledge-base`) is a stakeholder deliverable: the owner shares it with the clinic so they can confirm the roles, access, flows and the 21 open questions (it overlaps with section 6, which stays the shorter list). Its access table is derived from the row-level security policies, so it must be re-checked whenever policies change.
 
+- [2026-11] No email carries a result, a value, a diagnosis or a medicine. It says that something is ready, or that an account is offered, and links to the portal.
+
 ## Findings
 
 - [2026-11] Earlier finding that sign-in and dashboard routes do not exist no longer holds: `/login`, `/forgot-password`, `/update-password`, `/auth/confirm`, `/portal` and `/clinic` exist (committed in `c831ccf`).
 - [2026-11] Sign-in method differs between prototype (magic link) and brief (email and password); `CLAUDE.md` lists forgot and update password routes, which implies passwords. The code implements email and password, so the question is effectively settled unless the clinic wants magic link.
 - [2026-11] Sign-in hardening (attempt limits, session limits, signed session cookies, content security policy, scoped audit actor) is built but uncommitted and not yet on the hosted project. It adds no screen and changes no scope.
 - [2026-11] The knowledge base lists 21 open questions and this document 10 (plus question 11 above). They are not reconciled yet; after the clinic answers, update both. It adds no scope and no role.
+- [2026-11] Emails are built but not wired: invitation sending, guardian access and result release do not exist yet, so `invitationEmail`, `guardianAccessEmail` and `resultReadyEmail` are unused. The knowledge base's email table was updated by the main session; its open-question count and this document's are still not reconciled.

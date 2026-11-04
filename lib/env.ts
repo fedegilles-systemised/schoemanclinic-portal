@@ -19,6 +19,10 @@ const supabaseServerSchema = z.object({
 const emailSchema = z.object({
   RESEND_API_KEY: z.string().min(1),
   EMAIL_FROM: z.string().min(1),
+  /** The site's public address, for links and the logo in emails. Never taken from a request. */
+  SITE_URL: z.url(),
+  /** Where replies go. Leave out if nobody reads replies. */
+  EMAIL_REPLY_TO: z.string().min(1).optional(),
 });
 
 const sessionSchema = z.object({
@@ -71,6 +75,8 @@ export function getEmailEnv(): z.infer<typeof emailSchema> {
   const parsed = emailSchema.safeParse({
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     EMAIL_FROM: process.env.EMAIL_FROM,
+    SITE_URL: process.env.SITE_URL,
+    EMAIL_REPLY_TO: process.env.EMAIL_REPLY_TO || undefined,
   });
   if (!parsed.success) {
     throw new Error(`Invalid email environment: ${formatIssues(parsed.error)}`);
