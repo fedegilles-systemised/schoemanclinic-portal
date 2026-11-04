@@ -30,8 +30,9 @@ for (const [name, template] of Object.entries(authTemplates)) {
   for (const [placeholder, value] of Object.entries(placeholders)) html = html.split(placeholder).join(value);
   samples[`auth-${name}`] = { subject: template.subject, html };
 }
-samples["app-invitation-patient"] = invitationEmail({ siteUrl: SITE, firstName: "Eleanor", inviterName: "Dr Gina Schoeman", audience: "patient", acceptUrl: `${SITE}/invite?token=example`, expiresInDays: 7 });
-samples["app-invitation-team"] = invitationEmail({ siteUrl: SITE, audience: "team", acceptUrl: `${SITE}/invite?token=example`, expiresInDays: 7 });
+samples["app-invitation-patient"] = invitationEmail({ siteUrl: SITE, firstName: "Eleanor", inviterName: "Dr Gina Schoeman", audience: "patient", acceptUrl: `${SITE}/invite?token=example`, expiresInDays: 3 });
+samples["app-invitation-guardian"] = invitationEmail({ siteUrl: SITE, firstName: "Mark", inviterName: "Priya Shah", audience: "guardian", acceptUrl: `${SITE}/invite?token=example`, expiresInDays: 3 });
+samples["app-invitation-team"] = invitationEmail({ siteUrl: SITE, audience: "team", acceptUrl: `${SITE}/invite?token=example`, expiresInDays: 3 });
 samples["app-guardian-access"] = guardianAccessEmail({ siteUrl: SITE, guardianFirstName: "Mark", patientFirstName: "Isla", canAct: true, signInUrl: `${SITE}/login` });
 samples["app-result-ready"] = resultReadyEmail({ siteUrl: SITE, firstName: "Eleanor", portalUrl: `${SITE}/portal` });
 

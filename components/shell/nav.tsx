@@ -21,6 +21,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
+import type { AppRole } from "@/lib/invitations/constants";
 import { cn } from "@/lib/utils";
 
 import { ComingSoon } from "./coming-soon";
@@ -31,6 +32,8 @@ type NavItem = {
   /** Set only for screens that exist. The rest show as disabled with "Coming soon". */
   href?: string;
   countKey?: "review" | "imports";
+  /** Shown only to people who hold one of these roles. Everyone sees an item with none set. */
+  roles?: readonly AppRole[];
 };
 
 type NavGroup = { eyebrow?: string; items: NavItem[] };
@@ -66,18 +69,22 @@ const NAV: Record<PortalKind, NavGroup[]> = {
       ],
     },
     { eyebrow: "Clinical", items: [{ label: "Safeguarding alerts", icon: Shield }] },
-    { eyebrow: "Clinic", items: [{ label: "Team and settings", icon: Settings }] },
+    { eyebrow: "Clinic", items: [{ label: "Team and settings", icon: Settings, href: "/clinic/team", roles: ["pa", "admin"] }] },
   ],
 };
 
 const rowClass =
   "type-table flex h-nav-row items-center gap-3 border-l-2 border-transparent px-3 text-content-muted no-underline";
 
-function NavRows({ kind, counts }: { kind: PortalKind; counts?: NavCounts }) {
+function NavRows({ kind, counts, roles }: { kind: PortalKind; counts?: NavCounts; roles: readonly AppRole[] }) {
   const pathname = usePathname();
+  // An item with a role list is hidden from everyone else, and a group left empty goes with it.
+  const groups = NAV[kind]
+    .map((group) => ({ ...group, items: group.items.filter((item) => !item.roles || item.roles.some((role) => roles.includes(role))) }))
+    .filter((group) => group.items.length > 0);
   return (
     <nav aria-label="Main" className="flex flex-col gap-0.5">
-      {NAV[kind].map((group, index) => (
+      {groups.map((group, index) => (
         <div key={group.eyebrow ?? index} className="flex flex-col gap-0.5">
           {group.eyebrow ? (
             <div className="type-eyebrow px-3 pt-4.5 pb-2 text-content-muted">{group.eyebrow}</div>

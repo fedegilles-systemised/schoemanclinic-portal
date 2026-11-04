@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { DemoBanner } from "@/components/ui/demo-banner";
 import type { ShellLocation, ShellNotification } from "@/lib/data/shell";
 import { getPublicEnv } from "@/lib/env";
+import type { AppRole } from "@/lib/invitations/constants";
 import type { SessionKind } from "@/lib/supabase/session-limits";
 
 import { LocationSwitcher } from "./location-switcher";
@@ -28,15 +29,17 @@ type AppShellProps = {
   switchTo?: { href: string; label: string };
   /** Which session limits apply: staff, or a patient or guardian with no staff role. */
   sessionKind: SessionKind;
+  /** The person's roles, for the menu: some items are for PAs and admins only. */
+  roles: readonly AppRole[];
   /** A short-lived address for the person's photo, if they have one. */
   avatarUrl?: string | null;
   children: React.ReactNode;
 };
 
-function AppShell({ kind, crumb, user, notifications, counts, locations, switchTo, sessionKind, avatarUrl, children }: AppShellProps) {
+function AppShell({ kind, crumb, user, notifications, counts, locations, switchTo, sessionKind, roles, avatarUrl, children }: AppShellProps) {
   const demo = getPublicEnv().NEXT_PUBLIC_DEMO === "true";
   const profileHref = kind === "patient" ? "/portal/profile" : "/clinic/profile";
-  const sidebar = <SidebarContent kind={kind} counts={counts} />;
+  const sidebar = <SidebarContent kind={kind} counts={counts} roles={roles} />;
 
   return (
     <div className="flex min-h-dvh flex-col">

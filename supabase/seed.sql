@@ -391,8 +391,10 @@ insert into public.notifications (user_id, topic, title, body, link, read_at, cr
   ('a0000000-0000-4000-8000-000000000001', 'results', 'New results to review', 'Thyroid panel for Amira Haddad.', '/clinic', null, now() - interval '1 day'),
   ('a0000000-0000-4000-8000-000000000003', 'results', 'Import waiting', 'A report arrived by email and needs matching.', '/clinic', null, now() - interval '2 days');
 
-insert into public.invitations (email, role, patient_id, invited_by, token_hash, expires_at) values
-  ('claire.benson@example.test', 'patient', 'd0000000-0000-4000-8000-000000000004', 'b0000000-0000-4000-8000-000000000003', 'demo-hash-not-a-real-token-0000000000', now() + interval '7 days');
+-- The hashes are not of any real link, so none of these can be accepted from an email.
+insert into public.invitations (email, kind, role, patient_id, job_title, invited_by, token_hash, created_at, sent_at, expires_at) values
+  ('claire.benson@example.test', 'patient', 'patient', 'd0000000-0000-4000-8000-000000000004', null, 'b0000000-0000-4000-8000-000000000003', 'demo-hash-not-a-real-token-0000000000', now() - interval '1 day', now() - interval '1 day', now() + interval '2 days'),
+  ('new.doctor@example.test', 'team', 'doctor', null, 'Doctor', 'b0000000-0000-4000-8000-000000000006', 'demo-hash-not-a-real-token-1111111111', now() - interval '6 days', now() - interval '6 days', now() - interval '3 days');
 
 insert into public.webhook_events (source, external_event_id, event_type, payload, status, processed_at) values
   ('stripe', 'evt_demo_1', 'checkout.session.completed', '{"demo": true}', 'processed', now() - interval '20 days');

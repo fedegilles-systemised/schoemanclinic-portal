@@ -31,6 +31,7 @@ export default async function ClinicLayout({ children }: { children: React.React
       avatarUrl={avatarUrl}
       counts={counts}
       sessionKind="staff"
+      roles={user.roles}
       locations={locations}
       switchTo={user.hasPatientView ? { href: "/portal", label: "Patient view" } : undefined}
     >

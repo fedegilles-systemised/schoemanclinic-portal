@@ -21,6 +21,7 @@ export default async function PortalLayout({ children }: { children: React.React
       notifications={notifications}
       avatarUrl={avatarUrl}
       sessionKind={user.isStaff ? "staff" : "patient"}
+      roles={user.roles}
       switchTo={user.isStaff ? { href: "/clinic", label: "Clinic view" } : undefined}
     >
       {children}
