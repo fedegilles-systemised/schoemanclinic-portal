@@ -30,9 +30,9 @@ The MVP is built around the bloods loop: order, Stripe payment and barcode, resu
 | Patient | Sees own record, released results, orders tests, uploads results, asks the clinic |
 | Guardian | Verified by the clinic; sees or manages a patient's account (for example a parent of an under-18) |
 | Doctor | Reviews and releases results; sees safeguarding alerts (doctors only) |
-| PA | Reviews imports, manages orders and invitations |
+| PA | Reviews imports, manages orders, invites patients and guardians |
 | Health coach | Sees released results only; no team-only tables (current position) |
-| Admin | Manages team, roles and settings; no clinical record access (current position) |
+| Admin | Manages team, roles and settings; invites anyone, including team members; no clinical record access (current position) |
 
 ## 5. Features
 
@@ -46,6 +46,10 @@ Status is "done" only where the screen and data path exist in code. Current stat
 | Both | App shell (navigation, user menu, notifications bell) | done [2026-11]; unbuilt nav items disabled |
 | Patient | Home dashboard `/portal` | done [2026-11]; real data, all action buttons disabled |
 | Clinic | Dashboard `/clinic` | done [2026-11]; real data, all action buttons disabled |
+| Both | Profile `/portal/profile` and `/clinic/profile`: tabs by role (see "What each role can configure" below). Photo, name and phone, notification choices, sign-in security, and the clinic's read-only record or work profile | done [2026-11], uncommitted; locally verified, tablet widths and dark mode not checked |
+| Both | Change password (current password asked; other devices signed out) and change sign-in email (current password asked; confirmation link sent to the new address) | done [2026-11], uncommitted |
+| Doctor | Signature for letters, stored privately; used when letters are built | done [2026-11], uncommitted (storing only; nothing uses it yet) |
+| Both | Notification choices: topics results, payments, appointments and messages, by email and in the portal | done [2026-11], uncommitted (stores the choice; GoHighLevel and the portal bell do not read it yet) |
 | Patient | Lab orders | planned |
 | Patient | My results | planned |
 | Patient | Upload results | planned |
@@ -59,9 +63,24 @@ Status is "done" only where the screen and data path exist in code. Current stat
 | Clinic | Import queue | planned |
 | Clinic | Lab orders | planned |
 | Clinic | Safeguarding alerts | planned |
-| Clinic | Team and settings | planned |
-| Both | Emails. Built [2026-11], uncommitted: four sign-in service emails (password reset, email change, confirmation code, password changed) and three clinic emails (invitation, guardian access, result ready), in the clinic's look, with no clinical values in any of them. Sent by the sign-in service for the first four (hosted set-up is manual and not done); the three clinic emails are written but wired to no flow | partly done; invitation sending, guardian access and result release flows unbuilt |
+| Clinic | Team and settings: team invitations (a list with status, who sent it and when, filters, resend and cancel, and an "Invite someone" form). The menu item shows only to PAs and admins | done [2026-11], uncommitted; locally verified at desktop width, tablet and mobile not checked. Managing existing team members (roles, deactivation) and the clinic's tests, prices, partners and locations are planned |
+| Both | Invitations: a PA or an admin invites a patient (for a record already held, or a new patient added with a name and date of birth), a guardian (relationship, and whether they may act) or, for admins only, a team member (doctor, PA, health coach or admin, with a job title). The person gets an email with a link that works once and for 3 days; they create an account with a password, or, if the address already has an account, sign in and add the access. A resend cancels the old link; a cancelled or expired link cannot be used. [2026-11] Checks added: a patient or guardian must enter a date of birth when accepting (the patient's own, or for a guardian the patient's); five wrong dates cancel the link and tell the sender. A patient invitation to an address different from the patient record's contact email needs the sender to confirm ("Send to this address anyway"). Notices in the portal bell, not approvals: other admins are told when a doctor or admin is invited, other PAs when a guardian who can act is invited | done [2026-11], uncommitted; locally verified, not tested with a real email |
+| Both | Emails. Built [2026-11], uncommitted : four sign-in service emails (password reset, email change, confirmation code, password changed) and three clinic emails (invitation, guardian access, result ready), in the clinic's look, with no clinical values in any of them. Sent by the sign-in service for the first four (hosted set-up is manual and not done); of the three clinic emails the invitation is sent by the invitations feature, and the guardian access and result ready emails are wired to no flow | partly done; the guardian access and result release flows are unbuilt |
 | Both | Staff Knowledge base `/knowledge-base`: admins only, unlisted page for the clinic to validate roles, access, flows and open questions; sign-in brings an admin back to it (other roles go to their own home) | done [2026-11], uncommitted; not a patient feature |
+
+### What each role can configure on the profile [2026-11]
+
+| | Patient | Guardian | Doctor | PA | Health coach | Admin |
+|---|---|---|---|---|---|---|
+| Photo, name, phone | Yes | Yes | Yes | Yes | Yes | Yes |
+| Sign-in email (confirmed by link), password, sign out other devices | Yes | Yes | Yes | Yes | Yes | Yes |
+| Notification choices (email, portal) | Yes | Yes | Yes | Yes | Yes | Yes |
+| Their patient record (name, date of birth, reference, contact details, doctor) | Read only; "contact the clinic" | No record unless also a patient | Only if also a patient | No | No | No |
+| People they look after | Not shown | Read only | No | No | No | No |
+| Work profile (job title, role, GMC number for doctors, locations, status) | No | No | Read only; an admin manages it | Read only | Read only | Read only, if they have a staff profile |
+| Signature | No | No | Yes | No | No | No |
+
+A doctor who is also a patient sees the patient tabs under `/portal/profile` and the work tabs under `/clinic/profile`. The roles shown are set by the clinic and cannot be changed here. Session lengths are shown, not editable.
 
 ## 6. Open questions for the clinic
 
@@ -82,6 +101,19 @@ Status is "done" only where the screen and data path exist in code. Current stat
 14. **Reply-to address.** Which address receives replies to emails (`EMAIL_REPLY_TO`), or should replies be turned off?
 15. **Result-ready email.** Is it sent from Clinic Hub, or left to GoHighLevel's reminders, which already carry messaging? It says only that a result is ready and links to the portal; it never holds a value.
 16. **Sending domain.** Which domain sends the email, and how is it spelled (`systemizedtoscale` or `systemisedtoscale`)?
+17. **Patient contact details.** May a patient edit their own phone and contact email on the record, or only through the clinic? Today the record is read-only and says "contact the clinic"; the account phone (Details tab) is the one they can edit and is separate from the record's contact phone. Which one does the clinic use to reach them?
+18. **WhatsApp and SMS.** When do they join the notification choices? Only email and the portal are offered until GoHighLevel is connected and the clinic has agreed consent wording for each channel.
+19. **Patient photos.** Who may see a patient's photo? Today the patient, and every doctor, PA and admin whatever their care team, but not the health coach or a guardian. Should it follow the care team, include the coach, or should patients not have photos at all?
+20. **Changing a sign-in email.** Is it right that anyone may do it themselves, with a confirmation link and their password, or should the clinic do it (for patients especially, because a changed email takes over the account)? The safer position is open until the clinic decides (`docs/SECURITY.md` S-68, S-69).
+21. **Notification choices that cannot be turned off.** Should some messages (a result is ready, a payment failed, safeguarding follow-up) ignore the choices?
+22. **Second approval for team invitations.** Admins can invite a doctor or another admin, and the link is the only check. Should that need a second admin's approval, or at least an email to the other admins when it is sent and when it is accepted? (`docs/SECURITY.md` S-43 note, S-74, S-75.)
+23. **Who may invite patients and guardians.** PAs and admins can today. Should admins invite patients and guardians at all, given that they have no clinical access and an invitation to a second address of their own would give it (see question 2; S-75)? Should a guardian invitation that lets the guardian act (`can_act`) need a second person, as in question 8?
+24. **Do doctors invite their own patients?** Today only PAs and admins can; a doctor has to ask a PA.
+25. **Proof that the right person has the link.** A mistyped or forwarded address gives a stranger a patient's portal. Should the invited person also enter their date of birth (and a guardian the patient's) before the account is made, and should an invitation go only to the contact email already on the patient's record? (S-74.)
+26. **Managing existing team members.** The Team and settings page lists invitations only. Who may change a member's role, deactivate them or restore them, and should that need a second approver?
+27. **Patient list for admins.** The invitation form loads every patient's name and reference for admins as well as PAs. Do admins need to see it, or should they search by name only? (S-83.)
+
+28. **Are notices enough?** [2026-11] When a doctor, an admin or a guardian who can act is invited, other admins or PAs get a notice in the portal bell only. Is that enough, or should the notice also go by email, or should a second person approve before the invitation is sent? Is the patient's date of birth enough proof that the right person opened the link, or does the clinic want more for guardians who can act? (Partly answers question 25 as built; extends 22 and 23. Same as question 28 in the knowledge base.)
 
 ## 7. Decisions
 
@@ -94,6 +126,10 @@ Status is "done" only where the screen and data path exist in code. Current stat
 - [2026-11] The knowledge base is for admins only (the owner first chose signed-in staff, then narrowed it to the admin role; answers open question 11). Doctors, PAs, the health coach, patients and guardians are sent to their own area; signed-out visitors go to sign in and an admin returns to the page. Open question 12 asks whether doctors should get access.
 - [2026-11] The knowledge base (`content/knowledge-base.md`, shown at `/knowledge-base`) is a stakeholder deliverable: the owner shares it with the clinic so they can confirm the roles, access, flows and the 21 open questions (it overlaps with section 6, which stays the shorter list). Its access table is derived from the row-level security policies, so it must be re-checked whenever policies change.
 
+- [2026-11] Invitations decisions, as built. Admins invite every kind (patient, guardian, team member); PAs invite patients and guardians; doctors, health coaches and patients invite nobody. A link works once and for 3 days; a resend cancels the old link and makes a new one. There is **no second approval** for any kind, including doctor and admin (questions 22 and 23). Sign-up is by invitation only. A person whose address already has an account signs in to accept and the access is added to that account (a doctor can also be a guardian or a patient); the signed-in address must equal the invited one. A new patient can be added from the invitation form with a name and date of birth; the clinic reference is made automatically. **Admins see every invitation and the list of patient names for the form, but no clinical record** (question 2 stays open). Acceptance is recorded under the person who invited. Cancelling does not tell the invited person; they see "no longer valid".
+- [2026-11] Invitation checks, as built. Patient and guardian invitations need a date of birth at acceptance; five wrong dates cancel the link and tell the sender. A patient invitation to an address other than the record's contact email needs the sender's confirmation. Other admins are told when a doctor or admin is invited, and other PAs when a guardian who can act is invited. These are notices, not approvals, so the "no second approval" decision above still stands; question 28 asks whether it should.
+- [2026-11] Profile decisions. Patient contact details on the record are read-only in the app: a patient who wants one changed contacts the clinic (open question 17 asks whether that should change). Notification choices offer email and the portal only for now; WhatsApp and SMS join when GoHighLevel is connected (question 18). Anyone may change their own sign-in email, confirmed by a link sent to the new address and by asking for their current password (question 20). Signatures are for doctors only, stored privately, and used only when letters are built. Photos are for everyone. Roles, work profile and guardian links are managed by the clinic, not by the person.
+- [2026-11] A missing notification choice counts as on, so a new person hears about everything until they turn something off.
 - [2026-11] No email carries a result, a value, a diagnosis or a medicine. It says that something is ready, or that an account is offered, and links to the portal.
 
 ## Findings
@@ -102,4 +138,8 @@ Status is "done" only where the screen and data path exist in code. Current stat
 - [2026-11] Sign-in method differs between prototype (magic link) and brief (email and password); `CLAUDE.md` lists forgot and update password routes, which implies passwords. The code implements email and password, so the question is effectively settled unless the clinic wants magic link.
 - [2026-11] Sign-in hardening (attempt limits, session limits, signed session cookies, content security policy, scoped audit actor) is built but uncommitted and not yet on the hosted project. It adds no screen and changes no scope.
 - [2026-11] The knowledge base lists 21 open questions and this document 10 (plus question 11 above). They are not reconciled yet; after the clinic answers, update both. It adds no scope and no role.
-- [2026-11] Emails are built but not wired: invitation sending, guardian access and result release do not exist yet, so `invitationEmail`, `guardianAccessEmail` and `resultReadyEmail` are unused. The knowledge base's email table was updated by the main session; its open-question count and this document's are still not reconciled.
+- [2026-11] Emails: `invitationEmail` is now wired to the invitations feature; guardian access and result release do not exist yet, so `guardianAccessEmail` and `resultReadyEmail` are unused. (Earlier note: `invitationEmail`, `guardianAccessEmail` and `resultReadyEmail` were all unused.) The knowledge base's email table was updated by the main session; its open-question count and this document's are still not reconciled.
+- [2026-11] The Profile screens are built and uncommitted. They add five open questions (17 to 21) and no new role. The notification choices are stored but nothing reads them yet, and the three clinic emails are still wired to no flow, so for now they change nothing a person receives. The knowledge base (`content/knowledge-base.md`) was edited in the same working tree; its open-question count is still not reconciled with this document.
+- [2026-11] The Profile page says a changed email takes effect "once you confirm". The sign-in service finished the change on one link locally although two are set, so that wording is stronger than what was seen (`docs/SECURITY.md` S-68).
+- [2026-11] Invitations are built and uncommitted. They add questions 22 to 27 and no new role. The knowledge base already describes them (`content/knowledge-base.md`, the team invitations page, the accept page and the flow "Invitation"); its question list and this one are still not reconciled. The guardian-access email is not sent when a guardian accepts. A cancelled invitation sends no notice. The menu item "Team and settings" opens a page that holds invitations only.
+- [2026-11] Question 25 (date of birth, contact email only) is now partly built: the date of birth is required and the address mismatch needs confirmation, but an invitation may still go to a different address. Decision above, line "Invitations decisions, as built", still says the link is the only check for team invitations, which holds (no date of birth for staff). The knowledge base now has 28 open questions; this document's list is still shorter and not reconciled. The decision about the knowledge base mentions "21 open questions", which is out of date.

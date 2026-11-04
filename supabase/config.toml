@@ -261,6 +261,12 @@ content_path = "./supabase/templates/email_change.html"
 subject = "Your confirmation code"
 content_path = "./supabase/templates/reauthentication.html"
 
+# Tells the person when their sign-in email changes, so a takeover is noticed (S-68).
+[auth.email.notification.email_changed]
+enabled = true
+subject = "The email address on your account has changed"
+content_path = "./supabase/templates/email_changed_notification.html"
+
 # Tells the person when their password changes, so a takeover is noticed.
 [auth.email.notification.password_changed]
 enabled = true

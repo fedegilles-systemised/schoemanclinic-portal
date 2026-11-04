@@ -6,12 +6,24 @@ import { headers } from "next/headers";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 
-type ThrottledAction = "sign-in" | "password-reset";
+type ThrottledAction =
+  | "sign-in"
+  | "password-reset"
+  | "password-change"
+  | "email-change"
+  | "invitation-send"
+  | "invitation-accept";
 
 // A clinic shares one address, so the address limit is well above the account limits.
 const LIMITS: Record<ThrottledAction, { windowSeconds: number; address: number; addressAndAccount: number; account: number }> = {
   "sign-in": { windowSeconds: 15 * 60, address: 60, addressAndAccount: 10, account: 30 },
   "password-reset": { windowSeconds: 60 * 60, address: 20, addressAndAccount: 3, account: 3 },
+  // Both check the current password, so they are limited like sign-in.
+  "password-change": { windowSeconds: 15 * 60, address: 60, addressAndAccount: 8, account: 20 },
+  "email-change": { windowSeconds: 60 * 60, address: 20, addressAndAccount: 5, account: 5 },
+  // Sending is per inviter. Accepting is per link, so one stolen link cannot be guessed at or hammered.
+  "invitation-send": { windowSeconds: 60 * 60, address: 80, addressAndAccount: 40, account: 40 },
+  "invitation-accept": { windowSeconds: 15 * 60, address: 60, addressAndAccount: 10, account: 15 },
 };
 
 /** Stored as a hash, so the table holds no plain email or IP address. */

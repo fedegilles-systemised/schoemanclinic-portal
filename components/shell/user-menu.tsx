@@ -3,7 +3,7 @@
 import { ArrowLeftRight, LogOut, User } from "lucide-react";
 import Link from "next/link";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,16 +18,21 @@ import { initials } from "@/lib/format";
 function UserMenu({
   name,
   roleLabel,
+  avatarUrl,
+  profileHref,
   switchTo,
 }: {
   name: string;
   roleLabel: string;
+  avatarUrl: string | null;
+  profileHref: string;
   switchTo?: { href: string; label: string };
 }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger aria-label="Account menu" className="rounded-round">
         <Avatar>
+          {avatarUrl ? <AvatarImage src={avatarUrl} alt="" /> : null}
           <AvatarFallback>{initials(name)}</AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
@@ -37,9 +42,11 @@ function UserMenu({
           <span className="block">{roleLabel}</span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem disabled>
-          <User aria-hidden />
-          Profile (coming soon)
+        <DropdownMenuItem asChild>
+          <Link href={profileHref}>
+            <User aria-hidden />
+            Profile
+          </Link>
         </DropdownMenuItem>
         {switchTo ? (
           <DropdownMenuItem asChild>

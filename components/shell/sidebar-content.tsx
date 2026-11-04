@@ -1,5 +1,7 @@
 import { Wordmark } from "@/components/ui/wordmark";
 
+import type { AppRole } from "@/lib/invitations/constants";
+
 import { NavRows, type NavCounts, type PortalKind } from "./nav";
 
 export type ShellUser = { name: string; roleLabel: string };
@@ -7,12 +9,12 @@ export type ShellUser = { name: string; roleLabel: string };
 /** Wordmark, portal label and navigation. The signed-in person is in the account menu. */
 function SidebarContent({
   kind,
-  currentHref,
   counts,
+  roles,
 }: {
   kind: PortalKind;
-  currentHref: string;
   counts?: NavCounts;
+  roles: readonly AppRole[];
 }) {
   return (
     <div className="flex h-full flex-col px-4 pt-7 pb-5">
@@ -22,7 +24,7 @@ function SidebarContent({
           {kind === "patient" ? "Patient portal" : "Clinic portal"}
         </div>
       </div>
-      <NavRows kind={kind} currentHref={currentHref} counts={counts} />
+      <NavRows kind={kind} counts={counts} roles={roles} />
     </div>
   );
 }

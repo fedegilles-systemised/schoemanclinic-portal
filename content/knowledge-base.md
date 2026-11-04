@@ -48,7 +48,7 @@ There are five roles, plus the guardian, who is a link to a patient rather than 
 - Records are archived, never deleted. People are suspended, never removed.
 - Nobody can change their own role.
 
-**How accounts are created.** Today the clinic's technical team creates each account and assigns its role directly in the database, because the invitation screen is planned. In the planned design a PA invites a patient or a team member by email, the invitation expires, and the person chooses their own password.
+**How accounts are created.** By invitation. A PA invites patients and guardians, and an admin invites anyone, from the Team and settings page. The person gets an email with a link that works for 3 days, chooses a password, and lands on their home page. Someone who already has an account signs in and accepts, and the new access is added to that same account.
 
 **Questions**
 
@@ -62,6 +62,8 @@ This table is what the database enforces today. "Read" means can see; "add" and 
 | Information | Patient | Guardian | Doctor | PA | Health coach | Admin |
 | --- | --- | --- | --- | --- | --- | --- |
 | Own account and contact details | Read, change | Read, change | Read, change | Read, change | Read, change | Read, change |
+| Profile photo | Own: add, replace, remove. Sees staff photos | Same as patient | Own: change. Sees everyone's | Own: change. Sees everyone's | Own: change. Sees staff photos | Own: change. Sees everyone's |
+| Signature for letters | - | - | Own: add, replace | - | - | - |
 | Other people's accounts (name, email, status) | - | - | Read | Read | - | Read, change |
 | Roles of every account | Own only | Own only | Own only | Own only | Own only | Read all |
 | Team directory (names and job titles) | Read | Read | Read | Read | Read | Read |
@@ -73,6 +75,7 @@ This table is what the database enforces today. "Read" means can see; "add" and 
 | Consents | Read, add | Read, add if can act | Read | Read | Read | - |
 | Care team (who looks after whom) | - | - | Read, add, change | Read, add, change | - | Read |
 | Safeguarding alerts | - | - | Read, add, change | - | - | - |
+| Invitations | - | - | - | Patient and guardian invitations | - | All invitations |
 | Appointments | Read | Read | Read | Read | Read | - |
 | Lab orders | Read | Read | Read, add, change | Read, add, change | Read | - |
 | Lab reports and results | Released only | Released only | Read all, comment, release | Read all | Released only | - |
@@ -101,7 +104,7 @@ This table is what the database enforces today. "Read" means can see; "add" and 
 
 ## Pages by role
 
-Five screens are built and the rest are planned. Every built screen reads real data. Their action buttons are visible but switched off until the flows behind them exist; menu items for planned screens read "Coming soon".
+Seven screens are built and the rest are planned. Every built screen reads real data. Their action buttons are visible but switched off until the flows behind them exist; menu items for planned screens read "Coming soon".
 
 **Built**
 
@@ -112,6 +115,9 @@ Five screens are built and the rest are planned. Every built screen reads real d
 | Choose a new password | Anyone with a valid link or a signed-in session | Sets a new password: at least 12 characters, with a lower-case letter, a capital and a number |
 | Patient home | Patient, guardian | A greeting. A banner when bloods are due, with the date. Next appointment. Bloods due, with the panel name and progress (ordered, paid, sample taken, results in). New results, once a doctor has released them. Up to four of the patient's markers at a glance, out-of-range first. The latest letter and shared documents. A guardian sees the same, headed with the patient's name |
 | Clinic home | Doctor, PA, health coach, admin | Four figures: today's appointments, results to review, imports waiting, open tasks (shown as a dash until GoHighLevel is connected). A list of results needing attention. Today's diary at the chosen location. Appointments in the next 14 days that are missing bloods |
+| Profile | Everyone signed in | One page for patients and guardians and one for staff, in tabs. Details: photo, name and phone. Security: change password, change sign-in email, sign out other devices. Notifications: email and portal choices by topic. Patients also see the clinic's record of them (read only), guardians see the patients they look after, staff see their work details, and doctors keep their signature for letters |
+| Team invitations | PAs and admins | A list of invitations with their status (pending, accepted, expired, cancelled), who sent them and when, and a button to invite someone. PAs see patient and guardian invitations. Admins see all of them. Each pending or expired invitation can be sent again, and a pending one can be cancelled |
+| Your invitation | Anyone with an invitation link | A page, with no sign-in needed, where the invited person creates their account, or signs in to add the new access to the account they already have |
 | App frame | Everyone signed in | Menu, a bell for notifications, a location chooser (clinic only), and an account menu showing name and role, with sign out and, for people with both views, a switch between clinic and patient |
 
 **Planned, patient and guardian**
@@ -136,7 +142,7 @@ Five screens are built and the rest are planned. Every built screen reads real d
 | Import queue | Match a PDF to a patient, check the values | Doctor, PA | AI extraction |
 | Lab orders | Create and follow orders | Doctor, PA | Stripe, lab partner |
 | Safeguarding alerts | Add and review alerts | Doctor only | None |
-| Team and settings | Invite people, manage roles, edit tests, prices, partners and locations | Admin, PA (invitations) | Email |
+| Team and settings | The list of the team, their roles, and the clinic's tests, prices, partners and locations. Invitations are already built | Admin | None |
 
 Today every staff member sees the same clinic menu, and the database decides what each can open. The planned design hides the items a role cannot use.
 
@@ -145,6 +151,41 @@ Today every staff member sees the same clinic menu, and the database decides wha
 1. Do the proposed roles per clinic page match how the team works?
 2. Should a guardian who looks after several patients choose between them? Today they see the first.
 3. Which pages matter most for the first release, in order?
+
+## Profile and account settings
+
+Every person has a profile page. It is where they look after their own account, and nothing there can change what they are allowed to see.
+
+| Tab | Who | What they can change | What is kept, and where |
+| --- | --- | --- | --- |
+| Details | Everyone | Photo, full name, phone | Name and phone in the account record. The photo in private storage, one per person |
+| Your record | Patients | Nothing: read only | The clinic's own record of the patient. Changes go through the clinic |
+| People you look after | Guardians | Nothing: read only | The guardian links the clinic has confirmed |
+| Work profile | Staff | Nothing: read only | Job title, role, GMC number (doctors), locations and status, managed by an admin |
+| Signature | Doctors | Upload or replace the signature | A separate private storage area that only that doctor can read |
+| Notifications | Everyone | Email and portal, for results, payments, appointments and messages | One saved choice per topic and channel |
+| Security | Everyone | Password, sign-in email, sign out other devices | The sign-in service, which holds the password safely and never shows it |
+
+**Rules the screen follows**
+
+- A photo is a JPEG, PNG or WebP. A large photo is made smaller in the browser, to 2 MB at most. HEIC from an iPhone has to be saved as JPEG first.
+- A name has up to 120 characters. A phone number has up to 30 characters, with digits, spaces, plus, brackets and hyphens only. The database enforces this, not only the screen.
+- A signature is 1 MB at most, and it is stored where no one else can read it, including patients, PAs and admins.
+- A change of sign-in email is confirmed by a link, and the old address is told, so a stolen session cannot change it quietly. When it is confirmed, the account record is updated by itself.
+- Every change to the account record is written to the permanent log, without its values.
+
+**What changed behind the scenes**
+
+- **Account record:** limits on name and phone, and an automatic update of the stored email when the sign-in email changes.
+- **Photos:** each person can store one photo, at a fixed place only they can write to. The clinic team can see patients' photos, and anyone signed in can see staff photos.
+- **Signatures:** a new private storage area, with its own rules, readable only by the signer.
+- **Emails:** five sign-in emails now have the clinic's look, including a notice to the old address when the sign-in email changes.
+
+**Questions**
+
+1. May a patient change their own phone and contact email?
+2. Who may see a patient's photo, and should patients see staff photos?
+3. Who besides doctors signs letters?
 
 ## Sign-in, sessions and passwords
 
@@ -160,8 +201,11 @@ Sign-in uses an email address and a password. There is no public sign-up: the cl
 | Being signed out | The person lands on the sign-in page with "You were signed out to protect your account. Please sign in again" |
 | While working | An open screen keeps the session alive every few minutes while the person is active, and ends it once they stop |
 | Forgot password | An emailed link, valid once, opens a page to choose a new password |
+| Change password | In the profile. The person enters the current password first. Every other device is signed out, and an email tells them the password changed |
+| Change sign-in email | In the profile, with the current password. A link goes to the new address to confirm, and the old address is told when the change is made |
+| Other devices | A button in the profile signs the account out everywhere else, for a lost device or a shared computer |
 
-**Email.** The reset link is an email sent by the sign-in service. It works once the clinic's sending domain is set up. Until then the clinic resets passwords by hand.
+**Email.** The sign-in emails (reset link, change of email, security code, and the notices that the password or email changed) are sent by the sign-in service through Resend, from an address on a test domain for now. They move to the clinic's own domain once it is verified.
 
 **Not built yet.** Two-step verification for staff, and a check that a person is not a robot on the sign-in form. Both wait until the clinic has accounts to enrol.
 
@@ -179,7 +223,7 @@ Each flow names who acts, the steps, whether it needs data from another system (
 
 | # | Flow | Status | Other system | Email |
 | --- | --- | --- | --- | --- |
-| 1 | Create an account | Planned (done by hand today) | None | Yes |
+| 1 | Create an account | Built | None | Yes |
 | 2 | Sign in and reset a password | Built | None | Yes |
 | 3 | Order bloods and pay | Planned | Stripe, lab partner | Proposed |
 | 4 | Results by lab feed | Planned | Lab partner | Proposed |
@@ -192,20 +236,35 @@ Each flow names who acts, the steps, whether it needs data from another system (
 | 11 | A guardian acts for a patient | Planned | None | Proposed |
 | 12 | Safeguarding alert | Planned | None | No |
 | 13 | A team member leaves | Planned | None | No |
+| 14 | Update your profile and sign-in details | Built | None | Yes |
 
 ### 1. Create an account
 
-**Who:** a PA (proposed), then the new patient or team member. **Status:** planned. Today the clinic's technical team creates the account and its role directly.
+**Who:** a PA or an admin invites; the new person accepts. **Status:** built.
 
-1. The PA enters the person's email and role. For a patient, the PA links the invitation to the patient's record.
-2. The system emails a one-time link that expires after a set time.
-3. The person opens the link and chooses a password.
-4. The system checks that the invitation is unused, has not expired, that the person who sent it is still active, and that the email matches. It then gives the role.
-5. The person lands on their home page.
+1. On Team and settings, the PA or admin chooses what kind of invitation to send. PAs can invite patients and guardians. Admins can invite anyone: patients, guardians and team members (doctor, PA, health coach or admin).
+2. For a patient or guardian, they choose a patient already in the clinic's records, or add a new patient with a name and date of birth. A guardian invitation also says how the guardian is related and whether they can act for the patient. A team invitation says the role and job title.
+3. For a patient invitation, the address should be the one in the patient's record. If it is different, the sender sees a warning and has to switch on "Send to this address anyway" before the invitation goes. A new patient takes the address from the invitation.
+4. The system emails a one-time link, valid for 3 days. The email never says who the patient is or anything clinical. When a doctor or an admin is invited, the other admins get a notice in the portal bell. When a guardian who can act for a patient is invited, the other PAs get one.
+5. The person opens the link. For a patient or guardian, they are asked for a date of birth: their own for a patient, the patient's for a guardian. After five wrong dates the link is cancelled and the sender is told. If they have no account, they enter their name and choose a password. If they already have an account, they sign in and press one button to add the new access to it, for example a doctor who is also a patient.
+6. The system checks that the link is unused and has not expired, that the person who sent it can still invite, that the address matches, that the date of birth matches (patient and guardian), and that the patient record has no account yet. It then adds the role or link, activates the account and tells the person who invited.
+7. The person lands on their home page.
 
-**Email:** the invitation, sent through Resend from the clinic's domain. It carries no clinical information. **Data in/out:** none from other systems.
+A PA or admin can send an invitation again, which cancels the old link, or cancel it. Nobody else can invite. There is no second approval for doctors or admins, but every invitation and every access it grants is in the permanent log under the inviter's name.
 
-**Questions:** how long should an invitation last? Can an invitation be re-sent or cancelled? Do patients get an account at their first visit, or only when the clinic first orders bloods?
+**What each invitation needs.** Use this table whenever you ask about an invitation: it says what the sender must give, and what the invited person must give.
+
+| Invitation | Who sends it | The sender gives | The invited person gives | Notice to others |
+| --- | --- | --- | --- | --- |
+| Patient | PA or admin | Email address (it should match the patient's record). Either a patient already in the records, or a new patient: first name, last name and date of birth | Their own date of birth, their name and a password (or their password, if they have an account) | None |
+| Guardian | PA or admin | Email address. The patient. How the guardian is related (parent, carer or power of attorney). Whether they can act for the patient. The guardian's name is optional | The patient's date of birth, their own name and a password (or their password, if they have an account) | If the guardian can act, the other PAs |
+| Doctor, PA, health coach or admin | Admin only | Email address. The role. Job title and name are optional | Their name and a password (or their password, if they have an account). No date of birth | If a doctor or an admin, the other admins |
+
+For a new patient the clinic reference (SC- and six digits) is made automatically. Every invitation is logged under the sender's name.
+
+**Email:** the invitation, sent through Resend. It carries no clinical information. **Data in/out:** none from other systems.
+
+**Questions:** are the notices in the portal bell enough when a doctor, an admin or a guardian who can act is invited, or should they go by email, or need a second person to approve? Should a doctor be able to invite their own patients? Should a patient get an account at their first visit, or only when the clinic first orders bloods?
 
 ### 2. Sign in and reset a password
 
@@ -216,7 +275,7 @@ Each flow names who acts, the steps, whether it needs data from another system (
 3. If they forgot the password, they ask for a link. The reply is the same whether or not the address has an account.
 4. The link opens a page to choose a new password, then signs them in.
 
-**Email:** the reset link, sent by the sign-in service. It needs the clinic's sending domain, so until that exists the clinic resets passwords by hand. **Data in/out:** none.
+**Email:** the reset link, sent by the sign-in service through Resend. It works from a test domain today and moves to the clinic's domain later. **Data in/out:** none.
 
 **Questions:** none beyond those under sign-in.
 
@@ -363,9 +422,23 @@ Each flow names who acts, the steps, whether it needs data from another system (
 
 **Questions:** should the admin also remove the person from GoHighLevel and Semble from here, or is that a separate step? Should a leaver's tasks be reassigned automatically?
 
+### 14. Update your profile and sign-in details
+
+**Who:** anyone signed in. **Status:** built.
+
+1. The person opens Profile from the account menu (top right).
+2. In **Details** they change their photo, name and phone. A large photo is made smaller in the browser before it is sent. A photo in HEIC format has to be saved as JPEG first.
+3. In **Notifications** they choose, per topic and for email and for the portal, what they want to hear about. A choice that has never been saved counts as on.
+4. In **Security** they can change the password (the current one is asked for, and every other device is signed out), ask to change the sign-in email (a link goes to the new address, and the old address is told when it changes), or sign out other devices.
+5. Patients also see the clinic's record of them, read only. Guardians see the patients they look after. Staff see their work details, and doctors can store a signature for letters that only they can read.
+
+**Data in/out:** none from other systems. **Email:** the password changed notice, the email change confirmation, and the email changed notice, all sent by the sign-in service.
+
+**Questions:** may patients change their own phone and contact email, or only the clinic? Who signs letters besides doctors?
+
 ## Integrations
 
-Clinic Hub connects to nine systems. Only the first two are in place; the rest are agreed in the data model and wait to be built. Every exchange with an outside system will be logged: what moved, in which direction, when, and whether it worked.
+Clinic Hub connects to nine systems. Supabase and Resend are in place (Resend on a test domain); the others are agreed in the data model and wait to be built. Every exchange with an outside system will be logged: what moved, in which direction, when, and whether it worked.
 
 | System | Used for | Data direction | What is exchanged | Status |
 | --- | --- | --- | --- | --- |
@@ -375,7 +448,7 @@ Clinic Hub connects to nine systems. Only the first two are in place; the rest a
 | Lab partners (TDL is named) | Results by electronic feed; barcodes | In (and out, proposed) | Results per marker, with the barcode that links them to an order | Planned |
 | GoHighLevel | Messaging, reminders, tasks, calendar, invoices, marketing | Both | Tasks and conversations out; bookings and replies in; reads each person's notification choices | Planned |
 | Semble | Consultation notes and prescribing | In | Bookings, and prescriptions (proposed) | Planned |
-| Resend | Email from Clinic Hub (invitations, password reset) | Out | Only links and neutral wording. No clinical values | Planned, waiting for the clinic's domain |
+| Resend | Email from Clinic Hub and the sign-in emails (invitations, password reset, security notices) | Out | Only links and neutral wording. No clinical values | In place on a test domain. It moves to the clinic's own domain later |
 | AI document reader | Reads values from imported PDFs | Both | The PDF's content out; proposed values back | Planned. Provider not chosen |
 | Fathom | Named as a source in the data model | To confirm | To confirm | Purpose to be confirmed |
 
@@ -392,15 +465,16 @@ Clinic Hub connects to nine systems. Only the first two are in place; the rest a
 
 ## Emails and notifications
 
-Every message has a template in the clinic's look, and the password reset is the only one wired to a flow today. The sender will be an address on the clinic's own domain, once that domain is verified. Each message still needs the clinic's approval of its wording.
+Every message has a template in the clinic's look. The sign-in emails (reset, change of email, security code and the two notices) are live through Resend on a test domain; the rest wait for their flows. The sender moves to the clinic's own domain once it is verified. Each message still needs the clinic's approval of its wording.
 
 | Message | Sent when | To | Sent through | Status |
 | --- | --- | --- | --- | --- |
-| Password reset link | The person asks for a reset | The person | Sign-in service, sent through Resend | Template built; needs the sending domain to be verified |
-| Email address change | The person changes their sign-in email | The old and the new address | Sign-in service, sent through Resend | Template built |
-| Security code | A sensitive action asks the person to confirm it is them | The person | Sign-in service, sent through Resend | Template built |
-| Password changed notice | The password on an account changes | The person | Sign-in service, sent through Resend | Template built |
-| Invitation | A PA or admin invites someone | The new person | Resend | Template built; the invitation flow is planned |
+| Password reset link | The person asks for a reset | The person | Sign-in service, sent through Resend | Live on a test domain |
+| Email address change | The person changes their sign-in email | The old and the new address | Sign-in service, sent through Resend | Live on a test domain |
+| Email changed notice | The sign-in email on an account changes | The address the account had before | Sign-in service, sent through Resend | Live on a test domain |
+| Security code | A sensitive action asks the person to confirm it is them | The person | Sign-in service, sent through Resend | Template built; used when a sensitive action asks for it |
+| Password changed notice | The password on an account changes | The person | Sign-in service, sent through Resend | Live on a test domain |
+| Invitation | A PA or admin invites someone | The new person | Resend | Built. Sent from the invitations page |
 | Bloods ordered, and a reminder before the due date | An order is created; the due date nears | The patient | GoHighLevel (proposed) | Planned |
 | Payment receipt | Stripe confirms a payment | The payer | Stripe or GoHighLevel (proposed) | Planned |
 | A result is ready | A doctor releases a report | The patient, and a guardian who can view | GoHighLevel, by the person's choices (a Clinic Hub template exists if the clinic prefers to send it from here) | Planned |
@@ -409,7 +483,7 @@ Every message has a template in the clinic's look, and the password reset is the
 | Guardian link created | A PA verifies a guardian | The guardian | Resend (proposed) | Template built; the flow is planned |
 | Results PDF received | A PDF is emailed to the clinic's inbox | The import queue, not a person | The clinic's mailbox | Planned (inbound) |
 
-**In the portal.** The bell in the top bar shows notifications on four topics: results, payments, appointments and messages. Each person chooses, per topic, whether they also want email, WhatsApp, SMS or the portal only. GoHighLevel reads those choices before it sends anything.
+**In the portal.** The bell in the top bar shows notifications on four topics: results, payments, appointments and messages. Each person chooses, per topic, whether they also want email, and the portal. WhatsApp and SMS join when the clinic's messaging system is connected. A choice that has never been saved counts as on. GoHighLevel reads those choices before it sends anything. Emails about sign-in security are always sent.
 
 **Rules for every message**
 
@@ -428,7 +502,7 @@ Every message has a template in the clinic's look, and the password reset is the
 
 ## Open questions for the clinic
 
-Twenty-one questions, grouped by topic and ordered within each topic by how much they block. Please send your answers to the project team.
+Twenty-seven questions, grouped by topic and ordered within each topic by how much they block. Please send your answers to the project team.
 
 | # | Topic | Question | What it decides |
 | --- | --- | --- | --- |
@@ -437,7 +511,7 @@ Twenty-one questions, grouped by topic and ordered within each topic by how much
 | 3 | Access | What may the health coach see beyond released results? | The coach's menu and data |
 | 4 | Access | May a doctor who is also a patient see their own unreleased results and safeguarding alerts? | Conflict-of-interest rule |
 | 5 | Guardians | What age and consent rules apply? Can one PA create a link that lets a guardian act, or is a second approver needed? Can a patient see and remove a guardian? | Guardian screens and checks |
-| 6 | Accounts | Who may invite staff, the PA, the admin or both? Is a second approval needed for doctors and admins? How long does an invitation last? | The invitation flow |
+| 6 | Accounts | Should inviting a doctor or an admin need a second approval, or an email to the other admins? Should a doctor be able to invite their own patients? | The invitation flow |
 | 7 | Accounts | Which roles are missing, such as reception, nurse or phlebotomist? | The role list |
 | 8 | Bloods | How are barcodes made, where are samples taken, are prices fixed, and what happens to an unpaid order or a refund? | The ordering flow |
 | 9 | Bloods | Which labs send results electronically, in what format, and what happens to an unknown barcode or marker? | The lab feed |
@@ -453,6 +527,13 @@ Twenty-one questions, grouped by topic and ordered within each topic by how much
 | 19 | Compliance | What retention periods apply to records, uploads and the activity log? | Archive and purge rules |
 | 20 | Compliance | Who is the clinic's data protection lead? How are patient requests to see or erase data handled, given records are archived and not deleted? Does the privacy notice mention page-speed and visit counts? | Legal readiness |
 | 21 | Priorities | Which planned pages matter most for the first release, in order? | The build order |
+| 22 | Profile | May a patient change their own phone number and contact email, or must the clinic do it? Those details also feed the clinic's messaging and notes systems | The patient's profile |
+| 23 | Profile | Who should see a patient's photo: the whole clinic team, or only the care team? Should patients see the photos of staff? | Photos |
+| 24 | Profile | Who signs letters: doctors only, or also PAs or the clinic as a whole? | Signatures |
+| 25 | Profile | When should WhatsApp and SMS be offered in the notification choices, and what should be on by default for a new account? | Notification choices |
+| 26 | Accounts | Should a change of sign-in email by a staff member need a check by the clinic, or is the confirmation by email enough? | Account security |
+| 27 | Access | Should the admin be able to see everything in the platform, clinical records included, so one person can solve problems across the whole system? Today an admin sees no clinical records: only the team, settings, invitations and logs. Giving full access is a separate change to many rules, so it needs the clinic's decision | The admin's reach |
+| 28 | Accounts | When a doctor, an admin or a guardian who can act is invited, other admins or PAs get a notice in the portal bell. Is that enough, or should the notice also go by email, or should a second person approve before the invitation is sent? Is the patient's date of birth enough proof that the right person opened the link, or does the clinic want something more for guardians who can act? | How much checking an invitation gets |
 
 ## Decisions already taken
 
@@ -465,3 +546,14 @@ Twenty-one questions, grouped by topic and ordered within each topic by how much
 - Every change to a clinical record is logged with who made it, and the log cannot be edited.
 - Two-step sign-in for staff and a robot check are deferred until the clinic has accounts to enrol.
 - Page-speed and visit counts use no cookies, and each address is cut to its path before it is sent.
+
+- Everyone can change their own photo, name, phone, notification choices, password and sign-in email. The clinic keeps roles, account status, the clinical record and a patient's contact details.
+- Changing a password needs the current one and signs out other devices. Changing the sign-in email needs the password and a confirmation link, and the old address is told.
+- For now, notification choices cover email and the portal only. WhatsApp and SMS wait for the messaging connection.
+- A doctor's signature is private to that doctor. Letters read it on the server.
+- Invitations: PAs invite patients and guardians, admins invite anyone, and nobody else invites. A link works for 3 days. Doctors and admins can be invited without a second approval, and everything is logged.
+- Patient and guardian invitations ask for the patient's date of birth when accepted. Five wrong dates cancel the link and tell the sender.
+- A patient invitation should go to the address in the patient's record. If it is different, the sender sees a warning and has to confirm.
+- Other admins are told when a doctor or admin is invited, and other PAs when a guardian who can act is invited. These are notices only, not approvals (see question 28).
+- Someone who already has an account accepts an invitation by signing in. The new access is added to that account, and the person always has to press accept.
+- Admins see every invitation and the names of patients for the invitation form, but still no clinical records. Giving admins full access is a question for the clinic.

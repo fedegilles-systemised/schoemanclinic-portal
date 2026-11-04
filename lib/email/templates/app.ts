@@ -32,7 +32,7 @@ export function invitationEmail({
 }: Base & {
   firstName?: string;
   inviterName?: string;
-  audience: "patient" | "team";
+  audience: "patient" | "guardian" | "team";
   acceptUrl: string;
   expiresInDays: number;
 }): EmailContent {
@@ -41,8 +41,16 @@ export function invitationEmail({
   const what =
     audience === "patient"
       ? "set up your account on the clinic's patient portal, where you can follow your appointments, tests and letters"
-      : "set up your account on the clinic's team portal";
-  const expiry = `This link works once and expires in ${expiresInDays} ${expiresInDays === 1 ? "day" : "days"}.`;
+      : audience === "guardian"
+        ? "set up your account on the clinic's patient portal, where you can see and manage the account of someone you look after"
+        : "set up your account on the clinic's team portal";
+  const dobNote =
+    audience === "patient"
+      ? " You will be asked for your date of birth."
+      : audience === "guardian"
+        ? " You will be asked for the patient's date of birth."
+        : "";
+  const expiry = `This link works once and expires in ${expiresInDays} ${expiresInDays === 1 ? "day" : "days"}.${dobNote}`;
   const reason = "You are receiving this email because the clinic invited this address to create an account.";
 
   return {
