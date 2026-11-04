@@ -7,11 +7,9 @@ export type ShellUser = { name: string; roleLabel: string };
 /** Wordmark, portal label and navigation. The signed-in person is in the account menu. */
 function SidebarContent({
   kind,
-  currentHref,
   counts,
 }: {
   kind: PortalKind;
-  currentHref: string;
   counts?: NavCounts;
 }) {
   return (
@@ -22,7 +20,7 @@ function SidebarContent({
           {kind === "patient" ? "Patient portal" : "Clinic portal"}
         </div>
       </div>
-      <NavRows kind={kind} currentHref={currentHref} counts={counts} />
+      <NavRows kind={kind} counts={counts} />
     </div>
   );
 }

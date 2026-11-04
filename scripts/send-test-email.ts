@@ -17,6 +17,10 @@ if (!kind || !to || !RESEND_API_KEY || !EMAIL_FROM || !SITE_URL) {
 }
 
 const siteUrl = SITE_URL.replace(/\/$/, "");
+// Plain constants, so their types stay narrowed inside the function below.
+const apiKey: string = RESEND_API_KEY;
+const from: string = EMAIL_FROM;
+const recipient: string = to;
 const samples = {
   invitation: () => invitationEmail({ siteUrl, firstName: "Test", inviterName: "The clinic team", audience: "patient", acceptUrl: `${siteUrl}/login`, expiresInDays: 7 }),
   guardian: () => guardianAccessEmail({ siteUrl, guardianFirstName: "Test", patientFirstName: "Sample", canAct: false, signInUrl: `${siteUrl}/login` }),
@@ -28,18 +32,26 @@ if (!(kind in samples)) {
   process.exit(1);
 }
 
-const content = samples[kind as keyof typeof samples]();
-const { data, error } = await new Resend(RESEND_API_KEY).emails.send({
-  from: EMAIL_FROM,
-  to,
-  subject: `[Test] ${content.subject}`,
-  html: content.html,
-  text: content.text,
-  replyTo: EMAIL_REPLY_TO || undefined,
-});
+async function main() {
+  const content = samples[kind as keyof typeof samples]();
+  const { data, error } = await new Resend(apiKey).emails.send({
+    from,
+    to: recipient,
+    subject: `[Test] ${content.subject}`,
+    html: content.html,
+    text: content.text,
+    replyTo: EMAIL_REPLY_TO || undefined,
+  });
 
-if (error || !data) {
-  console.error("Resend refused the email:", error?.message ?? "no response");
-  process.exit(1);
+  if (error || !data) {
+    console.error("Resend refused the email:", error?.message ?? "no response");
+    process.exit(1);
+  }
+  console.log(`Sent ${kind} to ${recipient} (id ${data.id}).`);
 }
-console.log(`Sent ${kind} to ${to} (id ${data.id}).`);
+
+// Not top-level await: the project's scripts run as CommonJS.
+main().catch((cause: unknown) => {
+  console.error("The test email could not be sent:", cause instanceof Error ? cause.message : cause);
+  process.exit(1);
+});

@@ -6,12 +6,15 @@ import { headers } from "next/headers";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 
-type ThrottledAction = "sign-in" | "password-reset";
+type ThrottledAction = "sign-in" | "password-reset" | "password-change" | "email-change";
 
 // A clinic shares one address, so the address limit is well above the account limits.
 const LIMITS: Record<ThrottledAction, { windowSeconds: number; address: number; addressAndAccount: number; account: number }> = {
   "sign-in": { windowSeconds: 15 * 60, address: 60, addressAndAccount: 10, account: 30 },
   "password-reset": { windowSeconds: 60 * 60, address: 20, addressAndAccount: 3, account: 3 },
+  // Both check the current password, so they are limited like sign-in.
+  "password-change": { windowSeconds: 15 * 60, address: 60, addressAndAccount: 8, account: 20 },
+  "email-change": { windowSeconds: 60 * 60, address: 20, addressAndAccount: 5, account: 5 },
 };
 
 /** Stored as a hash, so the table holds no plain email or IP address. */

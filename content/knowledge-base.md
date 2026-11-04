@@ -101,7 +101,7 @@ This table is what the database enforces today. "Read" means can see; "add" and 
 
 ## Pages by role
 
-Five screens are built and the rest are planned. Every built screen reads real data. Their action buttons are visible but switched off until the flows behind them exist; menu items for planned screens read "Coming soon".
+Six screens are built and the rest are planned. Every built screen reads real data. Their action buttons are visible but switched off until the flows behind them exist; menu items for planned screens read "Coming soon".
 
 **Built**
 
@@ -112,6 +112,7 @@ Five screens are built and the rest are planned. Every built screen reads real d
 | Choose a new password | Anyone with a valid link or a signed-in session | Sets a new password: at least 12 characters, with a lower-case letter, a capital and a number |
 | Patient home | Patient, guardian | A greeting. A banner when bloods are due, with the date. Next appointment. Bloods due, with the panel name and progress (ordered, paid, sample taken, results in). New results, once a doctor has released them. Up to four of the patient's markers at a glance, out-of-range first. The latest letter and shared documents. A guardian sees the same, headed with the patient's name |
 | Clinic home | Doctor, PA, health coach, admin | Four figures: today's appointments, results to review, imports waiting, open tasks (shown as a dash until GoHighLevel is connected). A list of results needing attention. Today's diary at the chosen location. Appointments in the next 14 days that are missing bloods |
+| Profile | Everyone signed in | A tab for each area: a photo, name and phone; the person's sign-in security (change password, change sign-in email, sign out other devices); which notifications they want by email and in the portal. Patients also see the clinic's record of them, read only. Guardians see the patients they look after. Staff see their work details, and doctors keep their signature for letters |
 | App frame | Everyone signed in | Menu, a bell for notifications, a location chooser (clinic only), and an account menu showing name and role, with sign out and, for people with both views, a switch between clinic and patient |
 
 **Planned, patient and guardian**
@@ -398,6 +399,7 @@ Every message has a template in the clinic's look, and the password reset is the
 | --- | --- | --- | --- | --- |
 | Password reset link | The person asks for a reset | The person | Sign-in service, sent through Resend | Template built; needs the sending domain to be verified |
 | Email address change | The person changes their sign-in email | The old and the new address | Sign-in service, sent through Resend | Template built |
+| Email changed notice | The sign-in email on an account changes | The address the account had before | Sign-in service, sent through Resend | Template built |
 | Security code | A sensitive action asks the person to confirm it is them | The person | Sign-in service, sent through Resend | Template built |
 | Password changed notice | The password on an account changes | The person | Sign-in service, sent through Resend | Template built |
 | Invitation | A PA or admin invites someone | The new person | Resend | Template built; the invitation flow is planned |

@@ -75,6 +75,24 @@ export const authTemplates = {
       }),
   },
 
+  email_changed: {
+    file: "email_changed_notification.html",
+    subject: "The email address on your account has changed",
+    html: () =>
+      renderEmail({
+        siteUrl: SITE,
+        preheader: "The sign-in email for your account was changed.",
+        eyebrow: "Account security",
+        title: { before: "Your sign-in email ", accent: "has changed" },
+        body:
+          paragraph("The email address you use to sign in to The Schoeman Clinic was changed. If this was you, there is nothing more to do.") +
+          paragraph("If it was not you, contact the clinic at once, and reset your password.") +
+          button("Reset password", `${SITE}/forgot-password`) +
+          fineprint("This notice goes to the address that was on your account before the change."),
+        reason: "You are receiving this email because the sign-in email on your account changed.",
+      }),
+  },
+
   password_changed: {
     file: "password_changed_notification.html",
     subject: "Your password has been changed",

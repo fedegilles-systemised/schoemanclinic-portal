@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import { getCurrentUser, homePathFor, type CurrentUser } from "@/lib/auth/session";
 import { parseReturnPath } from "@/lib/auth/next-path";
+import { newPasswordSchema, PASSWORD_RULES_MESSAGE } from "@/lib/auth/password-rules";
 import { allowAuthAttempt } from "@/lib/auth/throttle";
 import { createClient } from "@/lib/supabase/server";
 import { LAST_SEEN_COOKIE, SESSION_KIND_COOKIE } from "@/lib/supabase/session-cookies";
@@ -16,15 +17,6 @@ export type AuthFormState = { error?: string; sent?: boolean; email?: string };
 const credentials = z.object({
   email: z.email(),
   password: z.string().min(1),
-});
-
-const newPassword = z.object({
-  password: z
-    .string()
-    .min(12)
-    .regex(/[a-z]/)
-    .regex(/[A-Z]/)
-    .regex(/[0-9]/),
 });
 
 // One message for every failure, so the form never reveals whether an account exists.
@@ -80,9 +72,9 @@ export async function requestPasswordReset(_state: AuthFormState, formData: Form
 }
 
 export async function updatePassword(_state: AuthFormState, formData: FormData): Promise<AuthFormState> {
-  const parsed = newPassword.safeParse({ password: formData.get("password") });
+  const parsed = newPasswordSchema.safeParse({ password: formData.get("password") });
   if (!parsed.success) {
-    return { error: "Use at least 12 characters, with a lower-case letter, a capital and a number." };
+    return { error: PASSWORD_RULES_MESSAGE };
   }
 
   const supabase = await createClient();

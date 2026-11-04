@@ -18,6 +18,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -72,7 +73,8 @@ const NAV: Record<PortalKind, NavGroup[]> = {
 const rowClass =
   "type-table flex h-nav-row items-center gap-3 border-l-2 border-transparent px-3 text-content-muted no-underline";
 
-function NavRows({ kind, currentHref, counts }: { kind: PortalKind; currentHref: string; counts?: NavCounts }) {
+function NavRows({ kind, counts }: { kind: PortalKind; counts?: NavCounts }) {
+  const pathname = usePathname();
   return (
     <nav aria-label="Main" className="flex flex-col gap-0.5">
       {NAV[kind].map((group, index) => (
@@ -96,7 +98,7 @@ function NavRows({ kind, currentHref, counts }: { kind: PortalKind; currentHref:
                 </ComingSoon>
               );
             }
-            const current = item.href === currentHref;
+            const current = item.href === pathname;
             return (
               <Link
                 key={item.label}
