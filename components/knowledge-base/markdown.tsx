@@ -27,6 +27,9 @@ const components: Components = {
   p: ({ children }) => <p className="type-body mt-3">{children}</p>,
   ul: ({ children }) => <ul className="type-body mt-3 list-disc space-y-1.5 pl-6">{children}</ul>,
   ol: ({ children }) => <ol className="type-body mt-3 list-decimal space-y-1.5 pl-6">{children}</ol>,
+  blockquote: ({ children }) => (
+    <blockquote className="mt-2 mb-6 border-l-2 border-secondary-border pl-4 text-content-muted [&_p]:mt-1">{children}</blockquote>
+  ),
   a: ({ children, href }) => (
     <a href={href} className="text-secondary underline underline-offset-2">
       {children}
