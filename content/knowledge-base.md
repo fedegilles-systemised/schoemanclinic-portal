@@ -502,41 +502,239 @@ Every message has a template in the clinic's look. The sign-in emails (reset, ch
 
 ## Open questions for the clinic
 
-Twenty-seven questions, grouped by topic and ordered within each topic by how much they block. Please send your answers to the project team.
+Thirty-one questions, grouped by topic and ordered within each topic by how much they block. Under each one is what we heard on the call on 6 November, if anything, and what we assume until the clinic answers. If an assumption is wrong, please tell the project team.
 
-| # | Topic | Question | What it decides |
-| --- | --- | --- | --- |
-| 1 | Access | Do staff see every patient, or only those on their care team? Who maintains the care team? | Who can open which record |
-| 2 | Access | May admins read clinical records? | The admin's menu and data |
-| 3 | Access | What may the health coach see beyond released results? | The coach's menu and data |
-| 4 | Access | May a doctor who is also a patient see their own unreleased results and safeguarding alerts? | Conflict-of-interest rule |
-| 5 | Guardians | What age and consent rules apply? Can one PA create a link that lets a guardian act, or is a second approver needed? Can a patient see and remove a guardian? | Guardian screens and checks |
-| 6 | Accounts | Should inviting a doctor or an admin need a second approval, or an email to the other admins? Should a doctor be able to invite their own patients? | The invitation flow |
-| 7 | Accounts | Which roles are missing, such as reception, nurse or phlebotomist? | The role list |
-| 8 | Bloods | How are barcodes made, where are samples taken, are prices fixed, and what happens to an unpaid order or a refund? | The ordering flow |
-| 9 | Bloods | Which labs send results electronically, in what format, and what happens to an unknown barcode or marker? | The lab feed |
-| 10 | Bloods | Which AI provider reads PDFs, which terms does the clinic accept, which inbox receives them, and how long are originals kept? | PDF imports |
-| 11 | Bloods | Who may release results, is a second doctor needed for critical values, and do some markers need a hold-back? | The release rules |
-| 12 | Bloods | Does the patient see the lab's range or the clinic's own range? | How results are shown |
-| 13 | Requests | For repeat prescriptions: the fee, refunds, which medicines, how often, and how an approval reaches Semble and the pharmacy | The repeat flow |
-| 14 | Messages | Do replies to questions show in the portal? What do patients do in an emergency, and how fast is "important" answered? | Ask the clinic |
-| 15 | Systems | Which system holds the truth for bookings and contact details? How often do we copy bookings? Which appointment types need bloods? | The sync |
-| 16 | Systems | What is Fathom used for? Who owns the Stripe, GoHighLevel and Semble accounts? | The connections |
-| 17 | Emails | Which domain and sender name? Do patients want WhatsApp and SMS? Who approves each message? May a critical result override a patient's choices? | Resend and the message list |
-| 18 | Sign-in | Are the session lengths right? Do staff need a second step at sign-in? Who resets a staff password? Is reception a shared computer? | Sign-in rules |
-| 19 | Compliance | What retention periods apply to records, uploads and the activity log? | Archive and purge rules |
-| 20 | Compliance | Who is the clinic's data protection lead? How are patient requests to see or erase data handled, given records are archived and not deleted? Does the privacy notice mention page-speed and visit counts? | Legal readiness |
-| 21 | Priorities | Which planned pages matter most for the first release, in order? | The build order |
-| 22 | Profile | May a patient change their own phone number and contact email, or must the clinic do it? Those details also feed the clinic's messaging and notes systems | The patient's profile |
-| 23 | Profile | Who should see a patient's photo: the whole clinic team, or only the care team? Should patients see the photos of staff? | Photos |
-| 24 | Profile | Who signs letters: doctors only, or also PAs or the clinic as a whole? | Signatures |
-| 25 | Profile | When should WhatsApp and SMS be offered in the notification choices, and what should be on by default for a new account? | Notification choices |
-| 26 | Accounts | Should a change of sign-in email by a staff member need a check by the clinic, or is the confirmation by email enough? | Account security |
-| 27 | Access | Should the admin be able to see everything in the platform, clinical records included, so one person can solve problems across the whole system? Today an admin sees no clinical records: only the team, settings, invitations and logs. Giving full access is a separate change to many rules, so it needs the clinic's decision | The admin's reach |
-| 28 | Accounts | When a doctor, an admin or a guardian who can act is invited, other admins or PAs get a notice in the portal bell. Is that enough, or should the notice also go by email, or should a second person approve before the invitation is sent? Is the patient's date of birth enough proof that the right person opened the link, or does the clinic want something more for guardians who can act? | How much checking an invitation gets |
+**1. Access.** Do staff see every patient, or only those on their care team? Who maintains the care team?
+
+*What it decides: Who can open which record.*
+
+> **What we assume.** We follow the Access by role table in this document. The care team is recorded for later, but it does not limit access yet.
+
+**2. Access.** May admins read clinical records?
+
+*What it decides: The admin's menu and data.*
+
+> **What we assume.** No. Admins see the team, settings, invitations, the activity log and the names of patients for the invitation form.
+
+**3. Access.** What may the health coach see beyond released results?
+
+*What it decides: The coach's menu and data.*
+
+> **What we assume.** Released results only.
+
+**4. Access.** May a doctor who is also a patient see their own unreleased results and safeguarding alerts?
+
+*What it decides: Conflict-of-interest rule.*
+
+> **What we assume.** No. As a patient they see what any patient sees.
+
+**5. Guardians.** What age and consent rules apply? Can one PA create a link that lets a guardian act, or is a second approver needed? Can a patient see and remove a guardian?
+
+*What it decides: Guardian screens and checks.*
+
+> **What we assume.** One PA creates the link, as in flow 11. No age rule yet. A patient cannot remove a guardian; the clinic does.
+
+**6. Accounts.** Should inviting a doctor or an admin need a second approval, or an email to the other admins? Should a doctor be able to invite their own patients?
+
+*What it decides: The invitation flow.*
+
+> **Heard on the call, 6 November.** The admin adds team members with a role and a location. Nothing was said about approvals.
+>
+> **What we assume.** No second approval. Other admins get a notice in the portal bell. Doctors invite nobody. See also question 28.
+
+**7. Accounts.** Which roles are missing, such as reception, nurse or phlebotomist?
+
+*What it decides: The role list.*
+
+> **Heard on the call, 6 November.** Doctor, health coach and PA were named. No new role came up.
+>
+> **What we assume.** The roles stay: doctor, PA, health coach, admin, patient and guardian.
+
+**8. Bloods.** How are barcodes made, where are samples taken, are prices fixed, and what happens to an unpaid order or a refund?
+
+*What it decides: The ordering flow.*
+
+> **Heard on the call, 6 November.** The TDL barcode is "quite complicated". We will ask TDL for the details we need.
+>
+> **What we assume.** Prices come from the clinic's price list (flow 3). We hold the barcode design until TDL's requirements arrive. An unpaid order is not sent to the lab.
+
+**9. Bloods.** Which labs send results electronically, in what format, and what happens to an unknown barcode or marker?
+
+*What it decides: The lab feed.*
+
+> **Heard on the call, 6 November.** Labs named: TDL, Nordic Health, Regenerus and GutMap. Today they email when results are ready and staff download the PDF into the patient record. We will ask each lab whether it has an API. Adding new labs and pharmacies must be easy.
+>
+> **What we assume.** Every lab goes through PDF import (flow 5) until a lab confirms an electronic feed. An unknown barcode or marker goes to a PA to match.
+
+**10. Bloods.** Which AI provider reads PDFs, which terms does the clinic accept, which inbox receives them, and how long are originals kept?
+
+*What it decides: PDF imports.*
+
+> **Heard on the call, 6 November.** Patients abroad would upload their own results. The clinic converts units today with a general AI assistant.
+>
+> **What we assume.** AI only suggests values. A PA confirms every value. Provider, inbox and retention are still to be decided (see question 19).
+
+**11. Bloods.** Who may release results, is a second doctor needed for critical values, and do some markers need a hold-back?
+
+*What it decides: The release rules.*
+
+> **What we assume.** Only a doctor releases. One doctor is enough. No hold-backs yet.
+
+**12. Bloods.** Which markers do you test, and what are your base units and ranges in UK units? When a lab's range differs from the clinic's, which one does the patient see?
+
+*What it decides: How results are shown.*
+
+> **Heard on the call, 6 November.** Results from US, Middle East and UK labs use different units, so they must be converted to UK units to compare like for like. The clinic will send its base units. We also need the list of markers with their ranges. Reworded after the call.
+>
+> **What we assume.** All values are converted to UK units on import, and the original value and unit are kept. The patient sees the lab's range with a flag (flow 7).
+
+**13. Requests.** For repeat prescriptions: the fee, refunds, which medicines and how often. How does an approval reach Semble and the pharmacy? Is a prescription alert three weeks before it runs out right for every medicine?
+
+*What it decides: The repeat flow.*
+
+> **Heard on the call, 6 November.** A prescription usually covers one month more than the follow-up, for example four months for a three-month follow-up. After that the patient pays for a new one. Three weeks is the alert time, because compounded medicines take time to make and ship, for example to Qatar. We will show a banner and send an email. Reworded after the call.
+>
+> **What we assume.** The fee is £30, as in the data model. An approval is passed on by the team by hand at first.
+
+**14. Messages.** Do replies to questions show in the portal? What do patients do in an emergency, and how fast is "important" answered?
+
+*What it decides: Ask the clinic.*
+
+> **Heard on the call, 6 November.** Questions go to info@theschoemanclinic.com, and staff triage them because a doctor may be away. Patients can mark a question urgent or not urgent.
+>
+> **What we assume.** Replies show in the portal with a status (flow 9). The page says it is not for emergencies. Wording and response times are to be agreed.
+
+**15. Systems.** Until we can show how notes, prescriptions and rescheduling would work in GoHighLevel, which system holds the truth for bookings, contact details and notes? How often do we copy bookings? Which appointment types need bloods?
+
+*What it decides: The sync.*
+
+> **Heard on the call, 6 November.** Notes are written in Semble, and that needs an appointment in the Semble calendar, so going fully to GoHighLevel is hard to picture. The clinic wants to see what it would look like first. GoHighLevel is quicker to connect. Reworded after the call.
+>
+> **What we assume.** Semble keeps notes, prescribing and bookings for now. The portal shows a copy of the bookings (flow 10). A reschedule button waits for this decision.
+
+**16. Systems.** What is Fathom used for? Which accounts will the clinic own: GitHub, Supabase, Resend, Vercel and its domain?
+
+*What it decides: The connections.*
+
+> **Heard on the call, 6 November.** Stripe, GoHighLevel and Semble are the clinic's. The clinic is asked to open or share GitHub, Supabase, Resend, Vercel, GoDaddy and Semble. Vercel already exists. Patient data is stored in London. Nothing was said about Fathom.
+>
+> **What we assume.** Every account is in the clinic's name. Reworded after the call.
+
+**17. Emails.** Which sender address should patients see? Do they want WhatsApp as well as email? Who approves each message? May a critical result override a patient's choices?
+
+*What it decides: Resend and the message list.*
+
+> **Heard on the call, 6 November.** Reminders go by email and WhatsApp through GoHighLevel, whose automatic WhatsApp replaces SMS. Staff can answer from GoHighLevel, so many people can handle messages while fewer share the WhatsApp phone. Nothing was said about the sender address or who approves wording.
+>
+> **What we assume.** Emails come from The Schoeman Clinic on the subdomain already set up, until the clinic chooses another. The clinic approves each message. A critical result does not override a patient's choices.
+
+**18. Sign-in.** Are the session lengths right? Do staff need a second step at sign-in? Who resets a staff password? Is reception a shared computer?
+
+*What it decides: Sign-in rules.*
+
+> **What we assume.** Staff sessions: 12 hours, or 30 minutes idle. Patients: 7 days, or 2 hours idle. No second step yet. Staff reset their own password.
+
+**19. Compliance.** What retention periods apply to records, uploads and the activity log?
+
+*What it decides: Archive and purge rules.*
+
+> **Heard on the call, 6 November.** Not discussed. We confirmed that patient data is stored in London.
+>
+> **What we assume.** Nothing is deleted. Records are archived and accounts suspended until the clinic sets periods.
+
+**20. Compliance.** Who is the clinic's data protection lead? How are patient requests to see or erase data handled, given records are archived and not deleted? Does the privacy notice mention page-speed and visit counts?
+
+*What it decides: Legal readiness.*
+
+> **Heard on the call, 6 November.** The privacy and consent page was shown, with a switch for using data in research. No comment was made.
+>
+> **What we assume.** The clinic writes the privacy notice. Requests are handled by hand until a process is agreed.
+
+**21. Priorities.** Which planned pages matter most for the first release, in order? New requests from the call are listed in questions 29 to 31.
+
+*What it decides: The build order.*
+
+> **Heard on the call, 6 November.** New wishes: ID and consent at first sign-in, education content, wearables, structured notes, and a Christmas prescription email. Reworded after the call.
+>
+> **What we assume.** The bloods loop comes first, then the rest of the planned pages in the order of this document. Questions 29 to 31 come after.
+
+**22. Profile.** May a patient change their own phone number and contact email, or must the clinic do it? Those details also feed the clinic's messaging and notes systems
+
+*What it decides: The patient's profile.*
+
+> **What we assume.** The clinic keeps a patient's contact details, as in the decisions below.
+
+**23. Profile.** Who should see a patient's photo: the whole clinic team, or only the care team? Should patients see the photos of staff?
+
+*What it decides: Photos.*
+
+> **What we assume.** Staff see patients' photos. Patients do not see staff photos.
+
+**24. Profile.** Who signs letters: doctors only, or also PAs or the clinic as a whole?
+
+*What it decides: Signatures.*
+
+> **What we assume.** Doctors only. A signature is private to that doctor.
+
+**25. Profile.** When should WhatsApp be offered in the notification choices, and what should be on by default for a new account?
+
+*What it decides: Notification choices.*
+
+> **Heard on the call, 6 November.** The clinic wants WhatsApp, through GoHighLevel's automatic WhatsApp, in place of SMS.
+>
+> **What we assume.** Email and the portal for now. WhatsApp is offered once the GoHighLevel connection is built, and starts off until the patient turns it on.
+
+**26. Accounts.** Should a change of sign-in email by a staff member need a check by the clinic, or is the confirmation by email enough?
+
+*What it decides: Account security.*
+
+> **What we assume.** The email confirmation is enough, and the old address is told.
+
+**27. Access.** Should the admin be able to see everything in the platform, clinical records included, so one person can solve problems across the whole system? Today an admin sees no clinical records: only the team, settings, invitations and logs. Giving full access is a separate change to many rules, so it needs the clinic's decision
+
+*What it decides: The admin's reach.*
+
+> **What we assume.** No, as in question 2.
+
+**28. Accounts.** When a doctor, an admin or a guardian who can act is invited, other admins or PAs get a notice in the portal bell. Is that enough, or should the notice also go by email, or should a second person approve before the invitation is sent? Is the patient's date of birth enough proof that the right person opened the link, or is the ID upload at first sign-in (question 29) the check the clinic wants?
+
+*What it decides: How much checking an invitation gets.*
+
+> **Heard on the call, 6 November.** Not discussed. The ID upload at first sign-in was agreed for patients, which adds a stronger check. Reworded after the call.
+>
+> **What we assume.** Notices only, and the date of birth. No second approval.
+
+**29. Identity.** Please share the registration and consent forms. Must a PA check the ID before the patient gets in, or does uploading it open the portal? Where should the ID be kept? What happens if a patient cannot upload it? New after the call.
+
+*What it decides: First sign-in.*
+
+> **Heard on the call, 6 November.** Photo ID and a signed consent are a legal requirement, because the clinic prescribes controlled drugs and does not always follow NICE guidelines. Today the patient receives a link in Semble. It was agreed to ask for both at the first sign-in only, so nobody enters the portal without them. The clinic will share the form.
+>
+> **What we assume.** Uploading the ID and signing the consent open the portal. A PA sees a list of IDs to check.
+
+**30. Content.** Which education videos, blogs and newsletters go in the portal first, and who adds them? Which wearables should we list, and does the clinic hold affiliate links? New after the call.
+
+*What it decides: Education and wearables.*
+
+> **Heard on the call, 6 November.** The clinic has a video bank on nutrition, fertility and endometriosis. The wish is a library, plus a personal folder of PDFs and videos a practitioner chooses for each patient. A wearables section would list Oura, Whoop and Garmin, with affiliate links. Wearable data could come in through their APIs.
+>
+> **What we assume.** This follows the bloods loop and is not in the first release.
+
+**31. Moving over.** What must move from Semble: historical PDFs, notes, contacts? Who in the clinic checks they are accurate? Which weekend suits for training the doctors and admin team? New after the call.
+
+*What it decides: Migration and go-live.*
+
+> **Heard on the call, 6 November.** We need a Semble login to see what its API can export. The change would be best done over a quiet weekend with training in advance, starting from clean data. A Christmas email about prescriptions should go to patients only, so the list needs to come from Semble, not the 1,400 contacts in GoHighLevel.
+>
+> **What we assume.** Nothing moves until we know what Semble can export.
 
 ## Decisions already taken
 
+- Agreed on the call, 6 November: a banner and an email three weeks before a prescription runs out.
+- Agreed on the call, 6 November: results from other countries are converted to UK units, from a list of base units the clinic will send.
+- Agreed on the call, 6 November: at the first sign-in a patient uploads photo ID and signs the consent form. The clinic will share the form (question 29).
+- Agreed on the call, 6 November: questions from patients go to info@theschoemanclinic.com, where staff triage them.
+- Agreed on the call, 6 November: reminders go by email and by WhatsApp through GoHighLevel's automatic WhatsApp, in place of SMS.
 - The first release is the bloods loop. Messaging, reminders, calendar, invoices and marketing stay in GoHighLevel. Consultation notes and prescribing stay in Semble.
 - Least privilege: admins and health coaches have no clinical access until the clinic decides otherwise.
 - A patient sees a result only after a doctor releases it. Safeguarding alerts are for doctors only.
