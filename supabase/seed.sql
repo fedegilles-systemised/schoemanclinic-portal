@@ -218,6 +218,32 @@ insert into public.markers (code, name, category, unit, ref_low, ref_high, expla
   ('DHEAS', 'DHEA-S', 'Hormones', 'µmol/L', null, null, 'A hormone made by the adrenal glands.'),
   ('PSA', 'PSA', 'Hormones', 'µg/L', null, 2.5, 'A protein made by the prostate gland.');
 
+-- Unit conversions for the markers above (the same standard factors as the migration).
+insert into public.marker_conversions (marker_id, from_unit, factor, offset_value)
+select m.id, c.from_unit, c.factor, c.offset_value
+from (values
+  ('TESTO',    'ng/dL',  0.03467,  0),
+  ('OEST',     'pg/mL',  3.671,    0),
+  ('PROG',     'ng/mL',  3.18,     0),
+  ('GLUCOSE',  'mg/dL',  0.05551,  0),
+  ('TCHOL',    'mg/dL',  0.02586,  0),
+  ('LDL',      'mg/dL',  0.02586,  0),
+  ('HDL',      'mg/dL',  0.02586,  0),
+  ('TRIG',     'mg/dL',  0.01129,  0),
+  ('VITD',     'ng/mL',  2.496,    0),
+  ('HBA1C',    '%',      10.929,   -23.497),
+  ('B12',      'pmol/L', 1.355,    0),
+  ('FERRITIN', 'ng/mL',  1,        0),
+  ('PSA',      'ng/mL',  1,        0),
+  ('CRP',      'mg/dL',  10,       0),
+  ('DHEAS',    'µg/dL',  0.02714,  0),
+  ('HB',       'g/dL',   10,       0),
+  ('FT4',      'ng/dL',  12.87,    0),
+  ('FT3',      'pg/mL',  1.536,    0)
+) as c (code, from_unit, factor, offset_value)
+join public.markers m on m.code = c.code
+on conflict do nothing;
+
 insert into public.lab_panel_markers (panel_id, marker_id)
 select p.id, m.id
 from (values

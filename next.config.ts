@@ -5,8 +5,8 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   productionBrowserSourceMaps: false,
   poweredByHeader: false,
-  // The profile photo and signature are uploaded through server actions: 2 MiB at most, plus form overhead.
-  experimental: { serverActions: { bodySizeLimit: "3mb" } },
+  // Photos, signatures and lab reports are uploaded through server actions: 10 MiB at most (lab reports), plus form overhead.
+  experimental: { serverActions: { bodySizeLimit: "11mb" } },
   async headers() {
     return [
       {

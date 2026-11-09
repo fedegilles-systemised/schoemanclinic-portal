@@ -51,16 +51,18 @@ Status is "done" only where the screen and data path exist in code. Current stat
 | Doctor | Signature for letters, stored privately; used when letters are built | done [2026-11], uncommitted (storing only; nothing uses it yet) |
 | Both | Notification choices: topics results, payments, appointments and messages, by email and in the portal | done [2026-11], uncommitted (stores the choice; GoHighLevel and the portal bell do not read it yet) |
 | Patient | Lab orders | planned |
-| Patient | My results | planned |
-| Patient | Upload results | planned |
+| Patient | My results `/portal/results` and a marker page `/portal/results/[markerId]`: released results only, each marker with its latest value, range, status and small trend; a marker opens a chart of every released value with the range as a band, a table of values and the doctor's comments | done [2026-11], uncommitted |
+| Patient | Upload results (patient's own PDF from the portal) | planned |
 | Patient | Prescriptions | planned |
 | Patient | Appointments | planned |
 | Patient | Ask the clinic | planned |
 | Patient | Letters and documents | planned |
 | Patient | Privacy and consent | planned |
 | Clinic | Patient list | planned |
-| Clinic | Results review | planned |
-| Clinic | Import queue | planned |
+| Clinic | Results review `/clinic/results` and a report page `/clinic/results/[id]`: a doctor checks each value, comments on values and releases (the system records who and when); a PA sees the report; a health coach sees released reports only | done [2026-11], uncommitted. Release needs a doctor. [2026-11] On release the patient gets a notice in the portal bell ("Your results are ready") and an email saying a new result is ready, with a sign-in link to `/portal/results` and no value or verdict: we never send results by email. No email is sent if the patient switched off results emails in their profile (topic results, channel email; no saved choice counts as on); the portal notice is still made. No email is sent if the patient has no account or the account is suspended; the doctor is told so on screen. If the email fails, the release still stands, the portal notice is kept and the doctor is told. The GoHighLevel message is not wired to release |
+| Clinic | Add results `/clinic/results/new`: a PA or doctor picks the patient and sample date, optionally attaches the lab's file, and enters each value with its unit. A value in another unit is converted to UK units and the original value and unit are kept. Status is set automatically: low or high against the range, borderline when inside the range but within 5% of an edge, otherwise in range; only a doctor sets critical. Conversions use standard factors until the clinic sends its base units | done [2026-11], uncommitted. This is the import without AI |
+| Clinic | Import queue (needs-match list, AI reading of PDFs, inbox forwarding) | planned |
+| Clinic | Results by lab feed | planned |
 | Clinic | Lab orders | planned |
 | Clinic | Safeguarding alerts | planned |
 | Clinic | Team and settings: team invitations (a list with status, who sent it and when, filters, resend and cancel, and an "Invite someone" form). The menu item shows only to PAs and admins | done [2026-11], uncommitted; locally verified at desktop width, tablet and mobile not checked. Managing existing team members (roles, deactivation) and the clinic's tests, prices, partners and locations are planned |
@@ -115,6 +117,9 @@ A doctor who is also a patient sees the patient tabs under `/portal/profile` and
 
 28. **Are notices enough?** [2026-11] When a doctor, an admin or a guardian who can act is invited, other admins or PAs get a notice in the portal bell only. Is that enough, or should the notice also go by email, or should a second person approve before the invitation is sent? Is the patient's date of birth enough proof that the right person opened the link, or does the clinic want more for guardians who can act? (Partly answers question 25 as built; extends 22 and 23. Same as question 28 in the knowledge base.)
 
+29. **Markers, units and ranges.** [2026-11] Which markers are tested, what are the clinic's base units and ranges in UK units, and which range does the patient see when a lab's differs? Is "borderline" right at within 5% of an edge? (Knowledge base Q12; the call of 6 November asked for UK units.)
+30. **Release rules.** [2026-11] Only a doctor releases today. May a PA release normal results? Is a second doctor needed for critical values? Do some markers need a hold-back? (Knowledge base Q11.)
+
 ## 7. Decisions
 
 - [2026-11] MVP centres on the bloods loop; messaging, reminders, calendar, invoices and marketing stay in GoHighLevel, notes and prescribing in Semble.
@@ -132,13 +137,18 @@ A doctor who is also a patient sees the patient tabs under `/portal/profile` and
 - [2026-11] A missing notification choice counts as on, so a new person hears about everything until they turn something off.
 - [2026-11] No email carries a result, a value, a diagnosis or a medicine. It says that something is ready, or that an account is offered, and links to the portal.
 
+- [2026-11] Results decisions, as built. Results are entered by hand, without AI: a PA or doctor types each value from the lab's report. Values convert to UK units on entry and the original is kept. Status is automatic (low, high, borderline within 5% of an edge, in range) and only a doctor sets critical. Only a doctor releases; one doctor is enough; no hold-backs. The patient sees the range held for each marker. These are assumptions the clinic has not confirmed (open questions 29 and 30; knowledge base Q10, Q11, Q12).
+
 ## Findings
 
+- [2026-11] Result-ready email on release: the code now reads the patient's saved choice for results by email and skips the email if it is off (no saved choice counts as on); the portal notice is created whatever they chose. When the email is skipped for that reason the doctor still sees "The patient has been told", which is true only of the portal notice. The clinic should confirm a result-ready email may be switched off. The email goes to the sign-in address on the account, not the patient record's contact email; the two can differ. The "no account or suspended" and "email failed" cases are reported to the doctor on screen only, and are not logged anywhere else; not tested with a real email.
+
+- [2026-11] Results are built and uncommitted (migration `20261109120000_results_entry_and_release.sql`, pgTAP `06_results.test.sql`). The bloods loop is still partial: lab orders, Stripe payment and barcode, the lab feed, patient upload and AI reading are not built, so results enter only by hand. The bell notice and the "result ready" email on release are now both built (`lib/results/actions.ts`, `release_report`); see the 2026-11 finding below on notification choices. Open question 7 (AI provider) stays open. The nav, dashboards and the "Coming soon" note in section 5 may still show disabled buttons for results; not checked. The knowledge base's flow 5 step 3 still describes the AI step as if built, while its status line says it is not.
 - [2026-11] Earlier finding that sign-in and dashboard routes do not exist no longer holds: `/login`, `/forgot-password`, `/update-password`, `/auth/confirm`, `/portal` and `/clinic` exist (committed in `c831ccf`).
 - [2026-11] Sign-in method differs between prototype (magic link) and brief (email and password); `CLAUDE.md` lists forgot and update password routes, which implies passwords. The code implements email and password, so the question is effectively settled unless the clinic wants magic link.
 - [2026-11] Sign-in hardening (attempt limits, session limits, signed session cookies, content security policy, scoped audit actor) is built but uncommitted and not yet on the hosted project. It adds no screen and changes no scope.
 - [2026-11] The knowledge base lists 21 open questions and this document 10 (plus question 11 above). They are not reconciled yet; after the clinic answers, update both. It adds no scope and no role.
-- [2026-11] Emails: `invitationEmail` is now wired to the invitations feature; guardian access and result release do not exist yet, so `guardianAccessEmail` and `resultReadyEmail` are unused. (Earlier note: `invitationEmail`, `guardianAccessEmail` and `resultReadyEmail` were all unused.) The knowledge base's email table was updated by the main session; its open-question count and this document's are still not reconciled.
+- [2026-11] Emails: `invitationEmail` is now wired to the invitations feature; `resultReadyEmail` is now wired to report release (see below); guardian access does not exist yet, so `guardianAccessEmail` is unused. (Earlier note: `invitationEmail`, `guardianAccessEmail` and `resultReadyEmail` were all unused.) The knowledge base's email table was updated by the main session; its open-question count and this document's are still not reconciled.
 - [2026-11] The Profile screens are built and uncommitted. They add five open questions (17 to 21) and no new role. The notification choices are stored but nothing reads them yet, and the three clinic emails are still wired to no flow, so for now they change nothing a person receives. The knowledge base (`content/knowledge-base.md`) was edited in the same working tree; its open-question count is still not reconciled with this document.
 - [2026-11] The Profile page says a changed email takes effect "once you confirm". The sign-in service finished the change on one link locally although two are set, so that wording is stronger than what was seen (`docs/SECURITY.md` S-68).
 - [2026-11] Invitations are built and uncommitted. They add questions 22 to 27 and no new role. The knowledge base already describes them (`content/knowledge-base.md`, the team invitations page, the accept page and the flow "Invitation"); its question list and this one are still not reconciled. The guardian-access email is not sent when a guardian accepts. A cancelled invitation sends no notice. The menu item "Team and settings" opens a page that holds invitations only.
