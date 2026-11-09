@@ -741,6 +741,7 @@ Thirty-one questions, grouped by topic and ordered within each topic by how much
 - Sign-in is by email and password. There is no public sign-up.
 - Staff sessions end after 12 hours, or 30 minutes idle. Patient sessions end after 7 days, or 2 hours idle.
 - Records are archived, never deleted. Accounts are suspended, never removed.
+- Until go-live, the clinic can try the platform with fictional patients and results. Before the clinic goes live, the test data will be cleared once, so the live system holds only real patients and nothing from testing. This is a one-off clean-up, not a way to delete records once the clinic is live.
 - Every change to a clinical record is logged with who made it, and the log cannot be edited.
 - Two-step sign-in for staff and a robot check are deferred until the clinic has accounts to enrol.
 - Page-speed and visit counts use no cookies, and each address is cut to its path before it is sent.

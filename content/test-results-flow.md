@@ -1,6 +1,8 @@
 ## What you are testing
 
-> **Use a fictional test patient only.** Results entered here are real records, and releasing one emails the patient. A released report cannot yet be withdrawn or corrected. Never enter test values against a real patient.
+> **Test with fictional data.** You can try everything here with made-up patients and values. Before the clinic goes live, the test data will be cleared from the database, so that only real patients remain and nothing old is left behind.
+>
+> Until then, never enter test values against a real patient. Releasing a result emails the patient, and a released report cannot yet be withdrawn or corrected.
 
 The bloods loop from the clinic's side: a PA enters a lab report, a doctor reviews it and releases it, and the patient sees the values and how they have changed over time.
 
