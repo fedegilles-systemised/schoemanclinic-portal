@@ -12,7 +12,8 @@ type ThrottledAction =
   | "password-change"
   | "email-change"
   | "invitation-send"
-  | "invitation-accept";
+  | "invitation-accept"
+  | "results-entry";
 
 // A clinic shares one address, so the address limit is well above the account limits.
 const LIMITS: Record<ThrottledAction, { windowSeconds: number; address: number; addressAndAccount: number; account: number }> = {
@@ -24,6 +25,8 @@ const LIMITS: Record<ThrottledAction, { windowSeconds: number; address: number; 
   // Sending is per inviter. Accepting is per link, so one stolen link cannot be guessed at or hammered.
   "invitation-send": { windowSeconds: 60 * 60, address: 80, addressAndAccount: 40, account: 40 },
   "invitation-accept": { windowSeconds: 15 * 60, address: 60, addressAndAccount: 10, account: 15 },
+  // Each entry can carry a file, so this keeps a stuck script from filling storage.
+  "results-entry": { windowSeconds: 60 * 60, address: 300, addressAndAccount: 120, account: 120 },
 };
 
 /** Stored as a hash, so the table holds no plain email or IP address. */

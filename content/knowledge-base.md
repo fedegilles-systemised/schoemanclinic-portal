@@ -104,7 +104,7 @@ This table is what the database enforces today. "Read" means can see; "add" and 
 
 ## Pages by role
 
-Seven screens are built and the rest are planned. Every built screen reads real data. Their action buttons are visible but switched off until the flows behind them exist; menu items for planned screens read "Coming soon".
+Ten screens are built and the rest are planned. Every built screen reads real data. Their action buttons are visible but switched off until the flows behind them exist; menu items for planned screens read "Coming soon".
 
 **Built**
 
@@ -118,6 +118,9 @@ Seven screens are built and the rest are planned. Every built screen reads real 
 | Profile | Everyone signed in | One page for patients and guardians and one for staff, in tabs. Details: photo, name and phone. Security: change password, change sign-in email, sign out other devices. Notifications: email and portal choices by topic. Patients also see the clinic's record of them (read only), guardians see the patients they look after, staff see their work details, and doctors keep their signature for letters |
 | Team invitations | PAs and admins | A list of invitations with their status (pending, accepted, expired, cancelled), who sent them and when, and a button to invite someone. PAs see patient and guardian invitations. Admins see all of them. Each pending or expired invitation can be sent again, and a pending one can be cancelled |
 | Your invitation | Anyone with an invitation link | A page, with no sign-in needed, where the invited person creates their account, or signs in to add the new access to the account they already have |
+| My results | Patient, guardian | Every released marker with its latest value, the range, a status and a small trend. A marker opens a chart of every value over time with the range as a band, a table of the values and the doctor's comments | None |
+| Results review | Doctor, PA, health coach | Files waiting for entry, reports to review, and recently released ones. A report shows each value, the value as the lab reported it, the range and a status. A doctor comments on markers and releases. A health coach sees released reports only | None |
+| Add results | PA, doctor | Pick the patient, the sample date and optionally the lab's file, then enter each value with its unit. Values in another unit are converted to UK units, and the original is kept | None |
 | App frame | Everyone signed in | Menu, a bell for notifications, a location chooser (clinic only), and an account menu showing name and role, with sign out and, for people with both views, a switch between clinic and patient |
 
 **Planned, patient and guardian**
@@ -125,7 +128,6 @@ Seven screens are built and the rest are planned. Every built screen reads real 
 | Page | What it will do | Uses another system |
 | --- | --- | --- |
 | Lab orders | List orders, pay, show the barcode, follow progress | Stripe |
-| My results | Released results by marker, trends, the doctor's comment | None |
 | Upload results | Send a PDF from another lab, for example abroad | AI extraction (provider to be chosen) |
 | Prescriptions | Current medicines; request a repeat for a fee | Stripe, GoHighLevel |
 | Appointments | Upcoming and past visits | GoHighLevel or Semble |
@@ -138,8 +140,6 @@ Seven screens are built and the rest are planned. Every built screen reads real 
 | Page | What it will do | Proposed roles | Uses another system |
 | --- | --- | --- | --- |
 | Patient list | Find a patient and open their record | Doctor, PA, health coach | None |
-| Results review | Review, comment and release reports | Doctor (PA reads) | None |
-| Import queue | Match a PDF to a patient, check the values | Doctor, PA | AI extraction |
 | Lab orders | Create and follow orders | Doctor, PA | Stripe, lab partner |
 | Safeguarding alerts | Add and review alerts | Doctor only | None |
 | Team and settings | The list of the team, their roles, and the clinic's tests, prices, partners and locations. Invitations are already built | Admin | None |
@@ -227,9 +227,9 @@ Each flow names who acts, the steps, whether it needs data from another system (
 | 2 | Sign in and reset a password | Built | None | Yes |
 | 3 | Order bloods and pay | Planned | Stripe, lab partner | Proposed |
 | 4 | Results by lab feed | Planned | Lab partner | Proposed |
-| 5 | Results by PDF import | Planned | AI extraction | Yes (inbound) |
-| 6 | Doctor reviews and releases | Planned | GoHighLevel | Proposed |
-| 7 | Patient reads results and trends | Planned | None | No |
+| 5 | Results by PDF import | Built without AI: values entered by hand | None | Yes (inbound) |
+| 6 | Doctor reviews and releases | Built | GoHighLevel | Proposed |
+| 7 | Patient reads results and trends | Built | None | No |
 | 8 | Request a repeat prescription | Planned | Stripe, GoHighLevel | Proposed |
 | 9 | Ask the clinic | Planned | GoHighLevel | Proposed |
 | 10 | Appointments and bloods due date | Read built, sync planned | GoHighLevel, Semble | No |
@@ -309,13 +309,13 @@ For a new patient the clinic reference (SC- and six digits) is made automaticall
 
 ### 5. Results by PDF import
 
-**Who:** the patient uploads, or a PDF arrives by email; a PA checks. **Status:** planned.
+**Who:** the patient uploads, or a PDF arrives by email; a PA checks. **Status:** built without the AI step. A PA enters each value by hand from the lab's report. The AI reading is planned for later. A patient's own upload from the portal is planned too.
 
-1. A PDF arrives: the patient uploads it, or the clinic's inbox forwards it to Clinic Hub.
+1. A PDF arrives: a PA or doctor attaches it when adding results, or (planned) the patient uploads it or the clinic's inbox forwards it.
 2. The file is stored privately and appears in the import queue as "needs match".
-3. An AI tool reads it and proposes each value with a confidence level (high, medium or low).
-4. A PA matches the PDF to a patient, then confirms or rejects every value. Nothing becomes a result without this confirmation.
-5. On confirm, a report is created and waits for the doctor (flow 6).
+3. Planned for later: an AI tool reads the file and proposes each value with a confidence level (high, medium or low). Today this step is done by hand.
+4. A PA picks the patient, the sample date and the lab, and enters each value with the unit on the report. A value in another unit is converted to the clinic's UK unit, and the original value and unit are kept next to it. Each value gets a status: low or high against the range, borderline when it is inside the range but within 5% of an edge, otherwise in range. A doctor sets critical.
+5. On sending, a report is created and waits for the doctor (flow 6). Nothing is visible to the patient yet.
 
 **Data in/out:** a document reader sends the PDF's text to an AI provider and receives the values back. The provider is not chosen yet, and the file contains health information. **Email:** inbound only, the clinic's results inbox.
 
@@ -323,12 +323,12 @@ For a new patient the clinic reference (SC- and six digits) is made automaticall
 
 ### 6. Doctor reviews and releases
 
-**Who:** a doctor. **Status:** planned.
+**Who:** a doctor. **Status:** built, except the message through GoHighLevel.
 
-1. The report appears under "Results to review", with out-of-range values first.
+1. The report appears under "To review" on the Results review page.
 2. The doctor checks each value against the lab's range and earlier results, and may add a comment to a value or a note to the whole report.
 3. The doctor releases the report. The system records who released it and when.
-4. The patient is told a result is ready, through the bell in the portal and, according to their preferences, a message.
+4. The patient is told a result is ready, through the bell in the portal and by email ("A new result is ready in your portal"). The email holds no value or verdict, only a sign-in link, and it is not sent if the patient has switched results emails off in their profile. A message by WhatsApp is planned.
 5. The order is marked reviewed.
 
 **Data in/out:** a message through GoHighLevel to the patient (proposed), because that system owns reminders and messaging. **Email:** proposed, "You have a new result in your portal". It must never contain a value or a verdict, only a prompt to sign in.
@@ -337,11 +337,11 @@ For a new patient the clinic reference (SC- and six digits) is made automaticall
 
 ### 7. Patient reads results and trends
 
-**Who:** a patient, or a guardian. **Status:** planned (the home page already shows a short version).
+**Who:** a patient, or a guardian. **Status:** built.
 
 1. The patient opens "My results" and sees released reports, newest first.
-2. Each marker shows its value, the lab's range, a flag (normal, borderline, low, high, critical) and the doctor's comment.
-3. A marker opens a chart of every released value over time, across labs.
+2. Each marker shows its latest value, the range, a status and a small trend.
+3. A marker opens a chart of every released value over time, with the range as a band, a table of the values and the doctor's comments.
 
 **Data in/out:** none. **Email:** none.
 
@@ -572,7 +572,7 @@ Thirty-one questions, grouped by topic and ordered within each topic by how much
 
 > **Heard on the call, 6 November.** Patients abroad would upload their own results. The clinic converts units today with a general AI assistant.
 >
-> **What we assume.** AI only suggests values. A PA confirms every value. Provider, inbox and retention are still to be decided (see question 19).
+> **What we assume.** For now a PA enters every value by hand, and a doctor reviews before release. The AI reading comes later, and it will only suggest values that a PA confirms. Provider, inbox and retention are still to be decided (see question 19).
 
 **11. Bloods.** Who may release results, is a second doctor needed for critical values, and do some markers need a hold-back?
 
@@ -580,13 +580,13 @@ Thirty-one questions, grouped by topic and ordered within each topic by how much
 
 > **What we assume.** Only a doctor releases. One doctor is enough. No hold-backs yet.
 
-**12. Bloods.** Which markers do you test, and what are your base units and ranges in UK units? When a lab's range differs from the clinic's, which one does the patient see?
+**12. Bloods.** Which markers do you test, and what are your base units and ranges in UK units? When a lab's range differs from the clinic's, which one does the patient see? Is it right to call a value borderline when it is inside the range but within 5% of an edge?
 
 *What it decides: How results are shown.*
 
 > **Heard on the call, 6 November.** Results from US, Middle East and UK labs use different units, so they must be converted to UK units to compare like for like. The clinic will send its base units. We also need the list of markers with their ranges. Reworded after the call.
 >
-> **What we assume.** All values are converted to UK units on import, and the original value and unit are kept. The patient sees the lab's range with a flag (flow 7).
+> **What we assume.** All values are converted to UK units when entered, and the original value and unit are kept. The conversions in use are the standard factors, and they are replaced by the clinic's list when it arrives. The patient sees the range held for each marker, with a status: low or high against the range, borderline within 5% of an edge, and critical only when a doctor sets it.
 
 **13. Requests.** For repeat prescriptions: the fee, refunds, which medicines and how often. How does an approval reach Semble and the pharmacy? Is a prescription alert three weeks before it runs out right for every medicine?
 
@@ -741,6 +741,7 @@ Thirty-one questions, grouped by topic and ordered within each topic by how much
 - Sign-in is by email and password. There is no public sign-up.
 - Staff sessions end after 12 hours, or 30 minutes idle. Patient sessions end after 7 days, or 2 hours idle.
 - Records are archived, never deleted. Accounts are suspended, never removed.
+- Until go-live, the clinic can try the platform with fictional patients and results. Before the clinic goes live, the test data will be cleared once, so the live system holds only real patients and nothing from testing. This is a one-off clean-up, not a way to delete records once the clinic is live.
 - Every change to a clinical record is logged with who made it, and the log cannot be edited.
 - Two-step sign-in for staff and a robot check are deferred until the clinic has accounts to enrol.
 - Page-speed and visit counts use no cookies, and each address is cut to its path before it is sent.
