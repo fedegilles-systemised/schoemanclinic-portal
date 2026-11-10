@@ -7,5 +7,6 @@ export const ROLE_LABELS: Record<AppRole, string> = {
   doctor: "Doctor",
   pa: "PA",
   health_coach: "Health coach",
+  nurse: "Nurse",
   admin: "Admin",
 };

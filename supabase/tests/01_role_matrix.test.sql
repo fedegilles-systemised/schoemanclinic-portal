@@ -82,7 +82,7 @@ select is(t.n(t.eleanor(), 'select * from public.medications'), 3, 'a patient re
 select is(t.n(t.eleanor(), 'select * from public.patient_profiles'), 0, 'a patient has no direct read of patient_profiles');
 select is(t.n(t.eleanor(), 'select * from public.staff_profiles'), 0, 'a patient has no direct read of staff_profiles');
 select is(t.n(t.eleanor(), 'select * from public.get_my_patient_record()'), 1, 'get_my_patient_record returns the patient''s own row');
-select is(t.n(t.eleanor(), 'select * from public.get_staff_directory()'), 6, 'get_staff_directory returns the active team');
+select is(t.n(t.eleanor(), 'select * from public.get_staff_directory()'), 7, 'get_staff_directory returns the active team');
 select hasnt_function('public', 'staff_directory', 'no staff_directory function');
 select is(
   (select count(*)::int from pg_proc p join pg_namespace n on n.oid = p.pronamespace
@@ -231,7 +231,7 @@ select is(t.n(t.admin(), 'select * from public.patient_profiles'), 0, 'an admin 
 select is(t.n(t.admin(), 'select * from public.results'), 0, 'an admin cannot read results');
 select is(t.n(t.admin(), 'select * from public.safeguarding_alerts'), 0, 'an admin cannot read safeguarding alerts');
 select cmp_ok(t.n(t.admin(), 'select * from public.user_roles'), '>', 1, 'an admin reads all roles');
-select is(t.n(t.admin(), 'select * from public.staff_profiles'), 6, 'an admin reads staff profiles');
+select is(t.n(t.admin(), 'select * from public.staff_profiles'), 7, 'an admin reads staff profiles');
 select throws_ok($$ select t.run(t.admin(), $q$insert into public.user_roles (user_id, role) values ('a0000000-0000-4000-8000-000000000006', 'doctor')$q$) $$, '42501', null, 'an admin cannot change their own role from the client');
 select is(t.run(t.admin(), $q$update public.profiles set status = 'suspended' where id = 'a0000000-0000-4000-8000-000000000022'$q$), 1, 'an admin can suspend an account');
 select throws_ok($$ select t.run(t.admin(), $q$update public.profiles set full_name = 'X' where id = 'a0000000-0000-4000-8000-000000000012'$q$) $$, '42501', null, 'an admin cannot rewrite someone else''s details');

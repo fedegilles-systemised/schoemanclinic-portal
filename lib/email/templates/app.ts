@@ -1,3 +1,4 @@
+import { contactLineText } from "@/lib/email/contact";
 import {
   button,
   escapeHtml,
@@ -17,8 +18,12 @@ import {
 
 type Base = { siteUrl: string };
 
+/** Every email closes the same way: a sign-off, then phone, email and WhatsApp (added by the layout). */
+const SIGN_OFF_HTML = "Regards,<br />The Schoeman Clinic team";
+const SIGN_OFF_TEXT = "Regards,\nThe Schoeman Clinic team";
+
 function textFooter(reason: string): string {
-  return `${reason}\n\nThe Schoeman Clinic · A private Harley Street and Wimbledon clinic, London.\n`;
+  return `${SIGN_OFF_TEXT}\n\n${contactLineText}\n\n${reason}\n\nThe Schoeman Clinic · A private Harley Street and Wimbledon clinic, London.\n`;
 }
 
 /** A person is invited to create an account. */
@@ -36,7 +41,7 @@ export function invitationEmail({
   acceptUrl: string;
   expiresInDays: number;
 }): EmailContent {
-  const hello = firstName ? `Hello ${firstName},` : "Hello,";
+  const hello = firstName ? `Dear ${firstName},` : "Hello,";
   const who = inviterName ? `${inviterName} at The Schoeman Clinic` : "The Schoeman Clinic";
   const what =
     audience === "patient"
@@ -65,6 +70,7 @@ export function invitationEmail({
         paragraph(`${escapeHtml(who)} has invited you to ${what}. You will choose your own password.`) +
         button("Set up your account", acceptUrl) +
         linkFallback(acceptUrl) +
+        paragraph(SIGN_OFF_HTML) +
         fineprint(`${escapeHtml(expiry)} If you were not expecting this, you can ignore this email.`),
       reason,
     }),
@@ -85,7 +91,7 @@ export function guardianAccessEmail({
   canAct: boolean;
   signInUrl: string;
 }): EmailContent {
-  const hello = guardianFirstName ? `Hello ${guardianFirstName},` : "Hello,";
+  const hello = guardianFirstName ? `Dear ${guardianFirstName},` : "Hello,";
   const scope = canAct
     ? "view their portal, and ask the clinic questions, request repeat prescriptions and pay on their behalf"
     : "view their portal";
@@ -102,6 +108,7 @@ export function guardianAccessEmail({
         paragraph(escapeHtml(hello)) +
         paragraph(`The Schoeman Clinic has confirmed you as a guardian for ${escapeHtml(patientFirstName)}. You can ${scope}.`) +
         button("Sign in", signInUrl) +
+        paragraph(SIGN_OFF_HTML) +
         fineprint("If you did not expect this, please contact the clinic."),
       reason,
     }),
@@ -115,7 +122,7 @@ export function resultReadyEmail({
   firstName,
   portalUrl,
 }: Base & { firstName?: string; portalUrl: string }): EmailContent {
-  const hello = firstName ? `Hello ${firstName},` : "Hello,";
+  const hello = firstName ? `Dear ${firstName},` : "Hello,";
   const reason = "You are receiving this email because you have an account at The Schoeman Clinic.";
 
   return {
@@ -129,6 +136,7 @@ export function resultReadyEmail({
         paragraph(escapeHtml(hello)) +
         paragraph("A doctor at The Schoeman Clinic has reviewed one of your tests and shared it with you in your portal.") +
         button("View in your portal", portalUrl) +
+        paragraph(SIGN_OFF_HTML) +
         fineprint("For your privacy, we never send results by email. You will be asked to sign in."),
       reason,
     }),

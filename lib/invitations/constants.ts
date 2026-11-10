@@ -13,13 +13,14 @@ export const KIND_LABELS: Record<InvitationKind, string> = {
   team: "Team member",
 };
 
-export const TEAM_ROLES = ["doctor", "pa", "health_coach", "admin"] as const;
+export const TEAM_ROLES = ["doctor", "pa", "health_coach", "nurse", "admin"] as const;
 export type TeamRole = (typeof TEAM_ROLES)[number];
 
 export const TEAM_ROLE_LABELS: Record<TeamRole, string> = {
   doctor: "Doctor",
   pa: "PA",
   health_coach: "Health coach",
+  nurse: "Nurse",
   admin: "Admin",
 };
 

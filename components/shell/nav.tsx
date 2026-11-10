@@ -69,7 +69,13 @@ const NAV: Record<PortalKind, NavGroup[]> = {
       ],
     },
     { eyebrow: "Clinical", items: [{ label: "Safeguarding alerts", icon: Shield }] },
-    { eyebrow: "Clinic", items: [{ label: "Team and settings", icon: Settings, href: "/clinic/team", roles: ["pa", "admin"] }] },
+    {
+      eyebrow: "Clinic",
+      items: [
+        { label: "Team and settings", icon: Settings, href: "/clinic/team", roles: ["pa", "admin"] },
+        { label: "Activity", icon: Activity, href: "/clinic/activity", roles: ["admin"] },
+      ],
+    },
   ],
 };
 

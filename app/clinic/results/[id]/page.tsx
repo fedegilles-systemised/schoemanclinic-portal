@@ -13,6 +13,7 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { getReport } from "@/lib/data/results";
 import { formatDate, formatLongDate, formatRange } from "@/lib/format";
 import { resultStatus, valueClass } from "@/lib/results";
+import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Report · The Schoeman Clinic" };
@@ -22,6 +23,12 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
   if (!z.uuid().safeParse(id).success) notFound();
   const [report, user] = await Promise.all([getReport(id), getCurrentUser()]);
   if (!report) notFound();
+
+  // Opening a patient's report is written to the activity log, once every ten minutes at most. If it
+  // cannot be written the report is not shown: the clinic needs the log to be complete for CQC.
+  const supabase = await createClient();
+  const logged = await supabase.rpc("log_record_view", { _patient: report.patientId, _entity: "lab_reports", _entity_id: report.id });
+  if (logged.error) throw new Error("Could not write to the activity log.");
 
   const isDoctor = Boolean(user?.roles.includes("doctor"));
   const released = report.releasedAt !== null;

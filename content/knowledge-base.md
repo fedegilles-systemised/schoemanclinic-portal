@@ -23,13 +23,13 @@ Clinic Hub is a patient portal and a clinic portal built around one journey, the
 6. **Doctor review and release.** A doctor reviews the report, adds a comment if needed, and releases it.
 7. **Patient view.** Only now can the patient see the results, with a trend against their earlier values.
 
-Two other systems stay in charge of what they do today: GoHighLevel keeps messaging, reminders, tasks, calendar, invoices and marketing, and Semble keeps consultation notes and prescribing. Clinic Hub reads from them where a screen needs the information. The section on integrations lists every connection.
+Two other systems stay in charge of what they do today: GoHighLevel keeps messaging, reminders, tasks, calendar, invoices and marketing, Semble keeps consultation notes, and SignatureRx handles prescribing. Clinic Hub reads from them where a screen needs the information. The section on integrations lists every connection.
 
 **Status today:** the database for every step above exists and is protected, and both home screens are built. Steps 1 to 7 as screens, and every connection to Stripe, the labs, GoHighLevel and Semble, are planned.
 
 ## Roles
 
-There are five roles, plus the guardian, who is a link to a patient rather than a role. What each role can reach is enforced in the database, not only on screen, so a missing button never means the data is hidden by accident.
+There are six roles, plus the guardian, who is a link to a patient rather than a role. What each role can reach is enforced in the database, not only on screen, so a missing button never means the data is hidden by accident.
 
 | Role | Who | What they do in Clinic Hub | Home |
 | --- | --- | --- | --- |
@@ -38,6 +38,7 @@ There are five roles, plus the guardian, who is a link to a patient rather than 
 | Doctor | A clinician | Reviews and releases results, comments on values, writes letters, sees safeguarding alerts, orders bloods | Clinic portal |
 | PA | A personal assistant or practice administrator | Matches and confirms imported PDFs, manages orders and repeat requests, invites patients and verifies guardians | Clinic portal |
 | Health coach | A coaching team member | Sees released results only, and no team-only information | Clinic portal |
+| Nurse | A nurse at the clinic | Can sign in and has a profile. Sees no patient records until the clinic decides what a nurse may do (question 7) | Clinic portal |
 | Admin | A clinic or system administrator | Manages the team, roles and settings, reads the activity logs; sees no clinical records | Clinic portal |
 
 **Rules that apply to every role**
@@ -53,7 +54,7 @@ There are five roles, plus the guardian, who is a link to a patient rather than 
 **Questions**
 
 - Who should be able to invite team members, the PA, the admin, or both? Should inviting a doctor or an admin need a second approval?
-- Is "health coach" the right name, and does the clinic have other roles to add, such as reception, a nurse or a phlebotomist?
+- Is "health coach" the right name, and does the clinic have other roles to add, such as reception, a nurse or a phlebotomist? What may the nurse see and do?
 
 ## Access by role
 
@@ -85,7 +86,7 @@ This table is what the database enforces today. "Read" means can see; "add" and 
 | Repeat prescription requests | Read, request | Read, request if can act | Read, change status | Read, request for a patient, change status | Read | - |
 | Own notifications and preferences | Read, change | Read, change | Read, change | Read, change | Read, change | Read, change |
 | Reference data (tests, markers, prices, lab partners, locations) | Read | Read | Read | Read | Read | Read, add, change |
-| Activity and integration logs | - | - | - | - | - | Read (no screen yet) |
+| Activity and integration logs | - | - | - | - | - | Read the activity log on the Activity screen |
 
 **Points the table does not show**
 
@@ -93,6 +94,8 @@ This table is what the database enforces today. "Read" means can see; "add" and 
 - Appointments and payments are never entered by hand: they arrive from the booking system and from Stripe.
 - Patients and guardians never reach unreleased results, safeguarding alerts, imports or the care team, however they ask. This is tested.
 - Every change to a clinical record is written to a permanent log: who, what and when. The log never stores the clinical values themselves.
+- Opening a patient's report is written to the same log: who, which record, which patient and when, once every ten minutes at most. Admins read it on the Activity screen. Other record screens will do the same as they are built.
+- The nurse role exists, but a nurse has no access to patient information until the clinic decides (question 7).
 
 **Questions**
 
@@ -104,7 +107,7 @@ This table is what the database enforces today. "Read" means can see; "add" and 
 
 ## Pages by role
 
-Ten screens are built and the rest are planned. Every built screen reads real data. Their action buttons are visible but switched off until the flows behind them exist; menu items for planned screens read "Coming soon".
+Eleven screens are built and the rest are planned. Every built screen reads real data. Their action buttons are visible but switched off until the flows behind them exist; menu items for planned screens read "Coming soon".
 
 **Built**
 
@@ -121,6 +124,7 @@ Ten screens are built and the rest are planned. Every built screen reads real da
 | My results | Patient, guardian | Every released marker with its latest value, the range, a status and a small trend. A marker opens a chart of every value over time with the range as a band, a table of the values and the doctor's comments | None |
 | Results review | Doctor, PA, health coach | Files waiting for entry, reports to review, and recently released ones. A report shows each value, the value as the lab reported it, the range and a status. A doctor comments on markers and releases. A health coach sees released reports only | None |
 | Add results | PA, doctor | Pick the patient, the sample date and optionally the lab's file, then enter each value with its unit. Values in another unit are converted to UK units, and the original is kept | None |
+| Activity | Who opened or changed a patient's record, and when: date, person and role, what was done, and the patient's name. No clinical values. Newest first, fifty at a time. Built | Admin | None |
 | App frame | Everyone signed in | Menu, a bell for notifications, a location chooser (clinic only), and an account menu showing name and role, with sign out and, for people with both views, a switch between clinic and patient |
 
 **Planned, patient and guardian**
@@ -128,7 +132,7 @@ Ten screens are built and the rest are planned. Every built screen reads real da
 | Page | What it will do | Uses another system |
 | --- | --- | --- |
 | Lab orders | List orders, pay, show the barcode, follow progress | Stripe |
-| Upload results | Send a PDF from another lab, for example abroad | AI extraction (provider to be chosen) |
+| Upload results | Send PDFs from another lab, for example abroad: up to 5 files each time, PDF only, in the name the patient registered with | AI extraction (provider to be chosen) |
 | Prescriptions | Current medicines; request a repeat for a fee | Stripe, GoHighLevel |
 | Appointments | Upcoming and past visits | GoHighLevel or Semble |
 | Ask the clinic | Send a question and see its status | GoHighLevel |
@@ -242,7 +246,7 @@ Each flow names who acts, the steps, whether it needs data from another system (
 
 **Who:** a PA or an admin invites; the new person accepts. **Status:** built.
 
-1. On Team and settings, the PA or admin chooses what kind of invitation to send. PAs can invite patients and guardians. Admins can invite anyone: patients, guardians and team members (doctor, PA, health coach or admin).
+1. On Team and settings, the PA or admin chooses what kind of invitation to send. PAs can invite patients and guardians. Admins can invite anyone: patients, guardians and team members (doctor, PA, health coach, nurse or admin).
 2. For a patient or guardian, they choose a patient already in the clinic's records, or add a new patient with a name and date of birth. A guardian invitation also says how the guardian is related and whether they can act for the patient. A team invitation says the role and job title.
 3. For a patient invitation, the address should be the one in the patient's record. If it is different, the sender sees a warning and has to switch on "Send to this address anyway" before the invitation goes. A new patient takes the address from the invitation.
 4. The system emails a one-time link, valid for 3 days. The email never says who the patient is or anything clinical. When a doctor or an admin is invited, the other admins get a notice in the portal bell. When a guardian who can act for a patient is invited, the other PAs get one.
@@ -290,6 +294,8 @@ For a new patient the clinic reference (SC- and six digits) is made automaticall
 5. The patient takes the barcode to the sample point. When the lab or clinic records the sample, the order becomes "sample taken".
 6. When results arrive (flows 4 and 5), the order becomes "results in", then "reviewed" after a doctor's review.
 
+**Cycle guidance.** For a patient whose sex at birth is female: with regular periods, the sample is taken on day 21 of the cycle; with irregular periods or none, any day. If sex at birth is missing, the order stops and a PA is told. It is never guessed.
+
 **Data in/out:** Stripe, for the payment. The clinic never stores card details. Stripe sends a confirmation message that Clinic Hub records once, so a payment is never counted twice. The lab partner receives the barcode and panel (proposed). **Email:** proposed, a payment receipt and a reminder before the due date, sent through GoHighLevel according to the patient's preferences.
 
 **Questions:** how are barcodes created, by Clinic Hub or by the lab? Where are samples taken (clinic, partner site, home visit)? Are panel prices fixed or set per order? What happens to an unpaid order after the due date? Can the clinic refund, and through which system? Who sends chasing reminders?
@@ -309,7 +315,7 @@ For a new patient the clinic reference (SC- and six digits) is made automaticall
 
 ### 5. Results by PDF import
 
-**Who:** the patient uploads, or a PDF arrives by email; a PA checks. **Status:** built without the AI step. A PA enters each value by hand from the lab's report. The AI reading is planned for later. A patient's own upload from the portal is planned too.
+**Who:** the patient uploads, or a PDF arrives by email; a PA checks. **Status:** built without the AI step. A PA enters each value by hand from the lab's report. The AI reading is planned for later. A patient's own upload from the portal is planned too: PDF only, up to 5 files each time (a patient can upload again later), and the name on the report must match the name the patient registered with. A PA checks it is complete. Staff can add PDF, JPEG or PNG files up to 10 MB.
 
 1. A PDF arrives: a PA or doctor attaches it when adding results, or (planned) the patient uploads it or the clinic's inbox forwards it.
 2. The file is stored privately and appears in the import queue as "needs match".
@@ -331,7 +337,7 @@ For a new patient the clinic reference (SC- and six digits) is made automaticall
 4. The patient is told a result is ready, through the bell in the portal and by email ("A new result is ready in your portal"). The email holds no value or verdict, only a sign-in link, and it is not sent if the patient has switched results emails off in their profile. A message by WhatsApp is planned.
 5. The order is marked reviewed.
 
-**Data in/out:** a message through GoHighLevel to the patient (proposed), because that system owns reminders and messaging. **Email:** proposed, "You have a new result in your portal". It must never contain a value or a verdict, only a prompt to sign in.
+**Data in/out:** the email is sent by Clinic Hub through Resend, as one of the portal's own messages. GoHighLevel keeps the clinic's reminders and WhatsApp, so nothing here goes through it. **Email:** "A new result is ready in your portal". It never contains a value or a verdict, only a prompt to sign in.
 
 **Questions:** may a PA release normal results, or only doctors? Is a second doctor needed for critical values? How soon must a doctor review a report, and who is alerted if one waits too long? Should the doctor see a draft of the patient's view before release?
 
@@ -354,10 +360,10 @@ For a new patient the clinic reference (SC- and six digits) is made automaticall
 1. The patient picks a current medicine and adds a note.
 2. The patient pays the repeat fee, set at £30 in the data model, through Stripe.
 3. A task is created in GoHighLevel for the team, and the request shows as "requested".
-4. A doctor or PA approves or declines. An approval is passed to the prescriber's system and the pharmacy. The request moves to "sent to pharmacy".
+4. A doctor or PA approves or declines. An approval is passed to SignatureRx, where the doctor signs with a PIN, and to the pharmacy. The request moves to "sent to pharmacy".
 5. The patient sees the status at each step.
 
-**Data in/out:** Stripe for the fee; GoHighLevel for the task. Prescribing itself stays in Semble, so Clinic Hub only tracks the request (proposed). **Email:** proposed, a receipt and a status update.
+**Data in/out:** Stripe for the fee; GoHighLevel for the task. Prescribing itself is done in SignatureRx, so Clinic Hub only tracks the request (proposed). **Email:** proposed, a receipt and a status update.
 
 **Questions:** is the fee refunded if a request is declined? Who pays for a guardian's request? How does an approved request reach Semble and the pharmacy? Which medicines may be requested, and how often?
 
@@ -447,7 +453,8 @@ Clinic Hub connects to nine systems. Supabase and Resend are in place (Resend on
 | Stripe | Payments for bloods and repeat-request fees | Both | Payment amounts and a reference. The clinic never holds card details | Planned |
 | Lab partners (TDL is named) | Results by electronic feed; barcodes | In (and out, proposed) | Results per marker, with the barcode that links them to an order | Planned |
 | GoHighLevel | Messaging, reminders, tasks, calendar, invoices, marketing | Both | Tasks and conversations out; bookings and replies in; reads each person's notification choices | Planned |
-| Semble | Consultation notes and prescribing | In | Bookings, and prescriptions (proposed) | Planned |
+| Semble | Consultation notes, bookings and invoices | In | Bookings | Planned |
+| SignatureRx | Prescribing, signed by the doctor with a PIN | Out | Repeat prescriptions (proposed) | Planned |
 | Resend | Email from Clinic Hub and the sign-in emails (invitations, password reset, security notices) | Out | Only links and neutral wording. No clinical values | In place on a test domain. It moves to the clinic's own domain later |
 | AI document reader | Reads values from imported PDFs | Both | The PDF's content out; proposed values back | Planned. Provider not chosen |
 | Fathom | Named as a source in the data model | To confirm | To confirm | Purpose to be confirmed |
@@ -477,17 +484,20 @@ Every message has a template in the clinic's look. The sign-in emails (reset, ch
 | Invitation | A PA or admin invites someone | The new person | Resend | Built. Sent from the invitations page |
 | Bloods ordered, and a reminder before the due date | An order is created; the due date nears | The patient | GoHighLevel (proposed) | Planned |
 | Payment receipt | Stripe confirms a payment | The payer | Stripe or GoHighLevel (proposed) | Planned |
-| A result is ready | A doctor releases a report | The patient, and a guardian who can view | GoHighLevel, by the person's choices (a Clinic Hub template exists if the clinic prefers to send it from here) | Planned |
+| A result is ready | A doctor releases a report | The patient | Resend, from Clinic Hub, following the patient's choice for results emails | Built. A guardian is not emailed yet |
 | Repeat request update | The request is approved, declined or sent | The patient | GoHighLevel (proposed) | Planned |
 | Question answered | The team replies | The patient | GoHighLevel | Planned |
 | Guardian link created | A PA verifies a guardian | The guardian | Resend (proposed) | Template built; the flow is planned |
 | Results PDF received | A PDF is emailed to the clinic's inbox | The import queue, not a person | The clinic's mailbox | Planned (inbound) |
+
+**Who sends what.** Clinic Hub sends the emails that belong to the portal (sign-in, invitations, a result being ready) through Resend. GoHighLevel sends the clinic's own reminders, follow-ups and WhatsApp messages, and the clinic's team manage those there.
 
 **In the portal.** The bell in the top bar shows notifications on four topics: results, payments, appointments and messages. Each person chooses, per topic, whether they also want email, and the portal. WhatsApp and SMS join when the clinic's messaging system is connected. A choice that has never been saved counts as on. GoHighLevel reads those choices before it sends anything. Emails about sign-in security are always sent.
 
 **Rules for every message**
 
 - It never contains a result, a value, a diagnosis or a medicine. It says that something is ready and links to the portal.
+- It closes with the same line: the clinic's phone, email and WhatsApp. Emails from Clinic Hub are signed "The Schoeman Clinic team" and open with "Dear" and the first name.
 - It uses a neutral subject line, for example "You have a new message from The Schoeman Clinic".
 - It is in British English, with no exclamation marks and no medical promises.
 - Links lead to the sign-in page. Nobody is signed in by clicking a link in a message, except a password reset or an invitation, which work once.
@@ -496,13 +506,13 @@ Every message has a template in the clinic's look. The sign-in emails (reset, ch
 
 1. Which domain and sender name should emails use, and who owns that domain's settings?
 2. Do patients want WhatsApp and SMS as well as email? Does the clinic already have a provider and consent for them?
-3. Who approves the wording of each message, and is a footer or disclaimer required?
+3. Who approves the wording of each message? The closing line with phone, email and WhatsApp is agreed.
 4. Should some messages ignore a patient's choices, for example a critical result?
 5. Is there a reply-to address, and who monitors it?
 
 ## Open questions for the clinic
 
-Thirty-one questions, grouped by topic and ordered within each topic by how much they block. Under each one is what we heard on the call on 6 November, if anything, and what we assume until the clinic answers. If an assumption is wrong, please tell the project team.
+Thirty-three questions, grouped by topic and ordered within each topic by how much they block. Under each one is what we heard on the call on 6 November, if anything, and what we assume until the clinic answers. If an assumption is wrong, please tell the project team.
 
 **1. Access.** Do staff see every patient, or only those on their care team? Who maintains the care team?
 
@@ -532,6 +542,8 @@ Thirty-one questions, grouped by topic and ordered within each topic by how much
 
 *What it decides: Guardian screens and checks.*
 
+> **Seen in the clinic's current plan.** The clinic sees patients under 18. Its plan has a guardian route at registration, and its own retention rules for under 18s.
+>
 > **What we assume.** One PA creates the link, as in flow 11. No age rule yet. A patient cannot remove a guardian; the clinic does.
 
 **6. Accounts.** Should inviting a doctor or an admin need a second approval, or an email to the other admins? Should a doctor be able to invite their own patients?
@@ -548,7 +560,9 @@ Thirty-one questions, grouped by topic and ordered within each topic by how much
 
 > **Heard on the call, 6 November.** Doctor, health coach and PA were named. No new role came up.
 >
-> **What we assume.** The roles stay: doctor, PA, health coach, admin, patient and guardian.
+> **Seen in the clinic's current plan.** The team includes a nurse.
+>
+> **What we assume.** The roles are doctor, PA, health coach, nurse, admin, patient and guardian. A nurse signs in but sees no patient records until the clinic says what a nurse may do.
 
 **8. Bloods.** How are barcodes made, where are samples taken, are prices fixed, and what happens to an unpaid order or a refund?
 
@@ -564,6 +578,8 @@ Thirty-one questions, grouped by topic and ordered within each topic by how much
 
 > **Heard on the call, 6 November.** Labs named: TDL, Nordic Health, Regenerus and GutMap. Today they email when results are ready and staff download the PDF into the patient record. We will ask each lab whether it has an API. Adding new labs and pharmacies must be easy.
 >
+> **Seen in the clinic's current plan (patient flow V8 and the emails since).** The options a patient chooses from are the clinic's own lab (not yet live; the patient pays the lab directly), TDL, a TDL home kit and "I have my own results". Randox, GutMapDx, Genova and Nordic also appear. Results are matched by barcode, then by surname and date of birth, and anything unsure goes to a PA.
+>
 > **What we assume.** Every lab goes through PDF import (flow 5) until a lab confirms an electronic feed. An unknown barcode or marker goes to a PA to match.
 
 **10. Bloods.** Which AI provider reads PDFs, which terms does the clinic accept, which inbox receives them, and how long are originals kept?
@@ -572,7 +588,9 @@ Thirty-one questions, grouped by topic and ordered within each topic by how much
 
 > **Heard on the call, 6 November.** Patients abroad would upload their own results. The clinic converts units today with a general AI assistant.
 >
-> **What we assume.** For now a PA enters every value by hand, and a doctor reviews before release. The AI reading comes later, and it will only suggest values that a PA confirms. Provider, inbox and retention are still to be decided (see question 19).
+> **Seen in the clinic's current plan (patient flow V8 and the emails since).** Own results are uploaded as PDF only, up to 5 files, in the name the patient registered with, and a PA checks they are complete.
+>
+> **What we assume.** A patient's own upload takes PDF only, up to 5 files each time. For now a PA enters every value by hand, and a doctor reviews before release. The AI reading comes later, and it will only suggest values that a PA confirms. Provider, inbox and retention are still to be decided (see question 19).
 
 **11. Bloods.** Who may release results, is a second doctor needed for critical values, and do some markers need a hold-back?
 
@@ -586,13 +604,17 @@ Thirty-one questions, grouped by topic and ordered within each topic by how much
 
 > **Heard on the call, 6 November.** Results from US, Middle East and UK labs use different units, so they must be converted to UK units to compare like for like. The clinic will send its base units. We also need the list of markers with their ranges. Reworded after the call.
 >
+> **Seen in the clinic's current plan (patient flow V8 and the emails since).** Results are due two weeks before the appointment (about three weeks for Randox). The doctor's own limits for an abnormal result are still to come and may differ from the lab's range. HbA1c is held in mmol/mol, so "HbA1c above 6%" means above 42. Panels in use include GS5 (female hormone and metabolic, fasting), GS10 (male hormone, no fasting) and GS11 (comprehensive male health, fasting).
+>
 > **What we assume.** All values are converted to UK units when entered, and the original value and unit are kept. The conversions in use are the standard factors, and they are replaced by the clinic's list when it arrives. The patient sees the range held for each marker, with a status: low or high against the range, borderline within 5% of an edge, and critical only when a doctor sets it.
 
-**13. Requests.** For repeat prescriptions: the fee, refunds, which medicines and how often. How does an approval reach Semble and the pharmacy? Is a prescription alert three weeks before it runs out right for every medicine?
+**13. Requests.** For repeat prescriptions: the fee, refunds, which medicines and how often. How does an approval reach SignatureRx and the pharmacy? Is a prescription alert three weeks before it runs out right for every medicine?
 
 *What it decides: The repeat flow.*
 
 > **Heard on the call, 6 November.** A prescription usually covers one month more than the follow-up, for example four months for a three-month follow-up. After that the patient pays for a new one. Three weeks is the alert time, because compounded medicines take time to make and ship, for example to Qatar. We will show a banner and send an email. Reworded after the call.
+>
+> **Seen in the clinic's current plan (patient flow V8 and the emails since).** The £30 repeat request replaces the Typeform form. Prescribing goes through SignatureRx, and the doctor signs with a PIN as now.
 >
 > **What we assume.** The fee is £30, as in the data model. An approval is passed on by the team by hand at first.
 
@@ -610,13 +632,15 @@ Thirty-one questions, grouped by topic and ordered within each topic by how much
 
 > **Heard on the call, 6 November.** Notes are written in Semble, and that needs an appointment in the Semble calendar, so going fully to GoHighLevel is hard to picture. The clinic wants to see what it would look like first. GoHighLevel is quicker to connect. Reworded after the call.
 >
-> **What we assume.** Semble keeps notes, prescribing and bookings for now. The portal shows a copy of the bookings (flow 10). A reschedule button waits for this decision.
+> **What we assume.** Semble keeps notes, prescribing and bookings for now. The portal shows a copy of the bookings (flow 10). There is no reschedule or cancel button. The page asks the patient to contact the team and shows the 48-hour policy, as in the clinic's patient flow.
 
 **16. Systems.** What is Fathom used for? Which accounts will the clinic own: GitHub, Supabase, Resend, Vercel and its domain?
 
 *What it decides: The connections.*
 
 > **Heard on the call, 6 November.** Stripe, GoHighLevel and Semble are the clinic's. The clinic is asked to open or share GitHub, Supabase, Resend, Vercel, GoDaddy and Semble. Vercel already exists. Patient data is stored in London. Nothing was said about Fathom.
+>
+> **Seen in the clinic's current plan (patient flow V8 and the emails since).** Fathom turns a consultation transcript and the doctor's notes into a letter in the clinic's style, which the doctor approves before it is sent. It replaces a custom letter tool.
 >
 > **What we assume.** Every account is in the clinic's name. Reworded after the call.
 
@@ -626,7 +650,9 @@ Thirty-one questions, grouped by topic and ordered within each topic by how much
 
 > **Heard on the call, 6 November.** Reminders go by email and WhatsApp through GoHighLevel, whose automatic WhatsApp replaces SMS. Staff can answer from GoHighLevel, so many people can handle messages while fewer share the WhatsApp phone. Nothing was said about the sender address or who approves wording.
 >
-> **What we assume.** Emails come from The Schoeman Clinic on the subdomain already set up, until the clinic chooses another. The clinic approves each message. A critical result does not override a patient's choices.
+> **Seen in the clinic's current plan (patient flow V8 and the emails since).** Every email ends with phone, email and WhatsApp. WhatsApp goes only to patients who agreed to it, and always alongside an alert to the PAs. Mary Anne rewrites the wording and Gina approves it.
+>
+> **What we assume.** Emails come from The Schoeman Clinic on the subdomain already set up, until the clinic chooses another. The clinic approves each message. Emails from Clinic Hub close with the clinic's phone, email and WhatsApp. A critical result does not override a patient's choices.
 
 **18. Sign-in.** Are the session lengths right? Do staff need a second step at sign-in? Who resets a staff password? Is reception a shared computer?
 
@@ -639,6 +665,8 @@ Thirty-one questions, grouped by topic and ordered within each topic by how much
 *What it decides: Archive and purge rules.*
 
 > **Heard on the call, 6 November.** Not discussed. We confirmed that patient data is stored in London.
+>
+> **Seen in the clinic's current plan (patient flow V8 and the emails since).** The clinic needs retention rules for CQC, including its own rules for patients under 18.
 >
 > **What we assume.** Nothing is deleted. Records are archived and accounts suspended until the clinic sets periods.
 
@@ -704,13 +732,15 @@ Thirty-one questions, grouped by topic and ordered within each topic by how much
 >
 > **What we assume.** Notices only, and the date of birth. No second approval.
 
-**29. Identity.** Please share the registration and consent forms. Must a PA check the ID before the patient gets in, or does uploading it open the portal? Where should the ID be kept? What happens if a patient cannot upload it? New after the call.
+**29. Identity.** Please share the registration and consent forms. Must a PA check the ID before the patient gets in, or does uploading it open the portal? Where should the ID be kept? What happens if a patient cannot upload it? The clinic's registration form in Semble already asks for ID and consent too. Which of the two is the record that counts, and can one of them be dropped? New after the call.
 
 *What it decides: First sign-in.*
 
 > **Heard on the call, 6 November.** Photo ID and a signed consent are a legal requirement, because the clinic prescribes controlled drugs and does not always follow NICE guidelines. Today the patient receives a link in Semble. It was agreed to ask for both at the first sign-in only, so nobody enters the portal without them. The clinic will share the form.
 >
-> **What we assume.** Uploading the ID and signing the consent open the portal. A PA sees a list of IDs to check.
+> **Seen in the clinic's current plan (patient flow V8 and the emails since).** The registration form in Semble already asks for photo ID, which is mandatory there, and for three consents.
+>
+> **What we assume.** Uploading the ID and signing the consent open the portal. A PA sees a list of IDs to check. Until the clinic decides, the portal's first sign-in is the check Clinic Hub relies on.
 
 **30. Content.** Which education videos, blogs and newsletters go in the portal first, and who adds them? Which wearables should we list, and does the clinic hold affiliate links? New after the call.
 
@@ -728,6 +758,18 @@ Thirty-one questions, grouped by topic and ordered within each topic by how much
 >
 > **What we assume.** Nothing moves until we know what Semble can export.
 
+**32. Notes.** The clinic needs clinical notes locked and versioned once a doctor signs them off, for CQC. Which system holds them, Semble or Clinic Hub? Who may reopen a signed note, and what is kept of each version? New after reading the clinic's plan.
+
+*What it decides: Whether Clinic Hub takes on notes.*
+
+> **What we assume.** Semble keeps the notes, as today. Clinic Hub does not hold them until the clinic decides.
+
+**33. Bloods.** The clinic's current flow gives a patient four choices: the clinic's own lab, TDL, a TDL home kit, or their own results. Only TDL and the home kit are paid through an invoice and get a barcode. Should Clinic Hub follow the same four choices instead of a doctor creating an order? New after reading the clinic's plan.
+
+*What it decides: The ordering flow (flow 3).*
+
+> **What we assume.** Flow 3 stays as written until the clinic confirms. It covers TDL and the home kit, with payment through Stripe.
+
 ## Decisions already taken
 
 - Agreed on the call, 6 November: a banner and an email three weeks before a prescription runs out.
@@ -735,12 +777,18 @@ Thirty-one questions, grouped by topic and ordered within each topic by how much
 - Agreed on the call, 6 November: at the first sign-in a patient uploads photo ID and signs the consent form. The clinic will share the form (question 29).
 - Agreed on the call, 6 November: questions from patients go to info@theschoemanclinic.com, where staff triage them.
 - Agreed on the call, 6 November: reminders go by email and by WhatsApp through GoHighLevel's automatic WhatsApp, in place of SMS.
-- The first release is the bloods loop. Messaging, reminders, calendar, invoices and marketing stay in GoHighLevel. Consultation notes and prescribing stay in Semble.
+- The first release is the bloods loop. Messaging, reminders, calendar, invoices and marketing stay in GoHighLevel. Consultation notes stay in Semble. Prescribing goes through SignatureRx.
 - Least privilege: admins and health coaches have no clinical access until the clinic decides otherwise.
 - A patient sees a result only after a doctor releases it. Safeguarding alerts are for doctors only.
 - Sign-in is by email and password. There is no public sign-up.
 - Staff sessions end after 12 hours, or 30 minutes idle. Patient sessions end after 7 days, or 2 hours idle.
 - Records are archived, never deleted. Accounts are suspended, never removed.
+- From the clinic's patient flow: rescheduling and cancelling are done by the team. There is no cancel or reschedule button anywhere. Messages ask the patient to contact the team and refer to the 48-hour policy.
+- Every email closes with the clinic's phone, email and WhatsApp. WhatsApp only goes to patients who agreed to it.
+- Clinic Hub sends the portal's own emails through Resend. Anything GoHighLevel sends, the clinic's team manage there.
+- Sex at birth and gender identity are both kept. Sex at birth decides blood panels and cycle guidance. If it is missing, those steps stop and a PA is told. It is never guessed.
+- A nurse role exists. A nurse has no access to patient records until the clinic decides what a nurse may do.
+- Opening a patient's report is written to the activity log, and admins read it on the Activity screen.
 - Until go-live, the clinic can try the platform with fictional patients and results. Before the clinic goes live, the test data will be cleared once, so the live system holds only real patients and nothing from testing. This is a one-off clean-up, not a way to delete records once the clinic is live.
 - Every change to a clinical record is logged with who made it, and the log cannot be edited.
 - Two-step sign-in for staff and a robot check are deferred until the clinic has accounts to enrol.
