@@ -644,7 +644,7 @@ Thirty-three questions, grouped by topic and ordered within each topic by how mu
 >
 > **What we assume.** Every account is in the clinic's name. Reworded after the call.
 
-**17. Emails.** Which sender address should patients see? Do they want WhatsApp as well as email? Who approves each message? May a critical result override a patient's choices?
+**17. Emails.** Which sender address should patients see, and which address should receive their replies? Do they want WhatsApp as well as email? Who approves each message? May a critical result override a patient's choices?
 
 *What it decides: Resend and the message list.*
 
