@@ -359,6 +359,26 @@ isOneToOne: true
       referencedColumns: ["id"]
     }
                   ]
+                },"google_revocations": {
+                  Row: {
+                    "attempts": number,"created_at": string,"id": string,"queued_at": string,"refresh_token_encrypted": string | null,"revoked_at": string | null,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "attempts"?: number,"created_at"?: string,"id"?: string,"queued_at"?: string,"refresh_token_encrypted"?: string | null,"revoked_at"?: string | null,"user_id": string
+                  }
+                  Update: {
+                    "attempts"?: number,"created_at"?: string,"id"?: string,"queued_at"?: string,"refresh_token_encrypted"?: string | null,"revoked_at"?: string | null,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "google_revocations_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"import_items": {
                   Row: {
                     "confidence": Database["public"]['Enums']["import_confidence"],"created_at": string,"decided_by": string | null,"decision": Database["public"]['Enums']["import_decision"],"id": string,"import_id": string,"marker_id": string | null,"raw_name": string,"ref_range_text": string | null,"unit": string | null,"value": string | null
@@ -695,14 +715,14 @@ isOneToOne: false
                   ]
                 },"patient_allergies": {
                   Row: {
-                    "created_at": string,"id": string,"patient_id": string,"reaction": string | null,"recorded_by": string | null,"severity": string | null,"substance": string
+                    "archived_at": string | null,"created_at": string,"id": string,"patient_id": string,"reaction": string | null,"recorded_by": string | null,"severity": string | null,"substance": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"id"?: string,"patient_id": string,"reaction"?: string | null,"recorded_by"?: string | null,"severity"?: string | null,"substance": string
+                    "archived_at"?: string | null,"created_at"?: string,"id"?: string,"patient_id": string,"reaction"?: string | null,"recorded_by"?: string | null,"severity"?: string | null,"substance": string
                   }
                   Update: {
-                    "created_at"?: string,"id"?: string,"patient_id"?: string,"reaction"?: string | null,"recorded_by"?: string | null,"severity"?: string | null,"substance"?: string
+                    "archived_at"?: string | null,"created_at"?: string,"id"?: string,"patient_id"?: string,"reaction"?: string | null,"recorded_by"?: string | null,"severity"?: string | null,"substance"?: string
                   }
                   Relationships: [
                     {
@@ -1147,6 +1167,9 @@ isOneToOne: false
                            },
 "reply_to_question":
 { Args: { "_body": string,"_question": string }; Returns: boolean
+                           },
+"mark_google_revocation":
+{ Args: { "_id": string,"_revoked": boolean }; Returns: undefined
                            },
 "log_record_view":
 { Args: { "_entity": string,"_entity_id"?: string,"_patient": string }; Returns: undefined

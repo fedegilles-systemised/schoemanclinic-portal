@@ -137,6 +137,25 @@ export async function revokeToken(token: string): Promise<void> {
   }).catch(() => undefined);
 }
 
+/**
+ * Revokes a token and says whether Google confirmed it. A token Google no longer knows (400) counts
+ * as revoked: there is nothing left to withdraw. A network failure or a Google error does not.
+ */
+export async function tryRevokeToken(token: string): Promise<boolean> {
+  try {
+    const response = await fetch(REVOKE_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ token }),
+      cache: "no-store",
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
+    return response.ok || response.status === 400;
+  } catch {
+    return false;
+  }
+}
+
 type Session = { accessToken: string; calendarId: string };
 
 /**

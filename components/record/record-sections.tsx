@@ -3,7 +3,7 @@ import { CircleCheck, CircleMinus, CircleX, ShieldAlert } from "lucide-react";
 
 import { ArchiveDocumentButton, ShareDocumentButton, UploadDocumentForm } from "@/components/documents/forms";
 import { QuestionStatusPill } from "@/components/questions/question-parts";
-import { AllergyForm, DiagnosisForm, DiagnosisStatusForm, ResolveAlertButton, SafeguardingForm } from "@/components/record/forms";
+import { AllergyForm, DiagnosisForm, RemoveAllergyButton, DiagnosisStatusForm, ResolveAlertButton, SafeguardingForm } from "@/components/record/forms";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -87,12 +87,15 @@ export function ClinicalSummarySection({
         ) : (
           <ul className={listClass}>
             {allergies.map((a) => (
-              <li key={a.id} className="px-4 py-2">
-                {a.substance}
-                <span className="type-small text-content-muted">
-                  {a.reaction ? ` · ${a.reaction}` : ""}
-                  {a.severity ? ` · ${a.severity}` : ""}
+              <li key={a.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-2">
+                <span>
+                  {a.substance}
+                  <span className="type-small text-content-muted">
+                    {a.reaction ? ` · ${a.reaction}` : ""}
+                    {a.severity ? ` · ${a.severity}` : ""}
+                  </span>
                 </span>
+                {canAddAllergy ? <RemoveAllergyButton patientId={patientId} allergyId={a.id} substance={a.substance} /> : null}
               </li>
             ))}
           </ul>

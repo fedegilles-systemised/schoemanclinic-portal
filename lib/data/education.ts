@@ -1,5 +1,6 @@
 import "server-only";
 
+import { getPortalPatient } from "@/lib/portal/patient";
 import { createClient } from "@/lib/supabase/server";
 import type { WearableMetric } from "@/lib/wearables/metrics";
 
@@ -95,12 +96,9 @@ export async function getReadings(patientId: string, limit = 60): Promise<Readin
   return data.map((r) => ({ id: r.id, metric: r.metric, value: Number(r.value), measuredOn: r.measured_on, device: r.device, enteredBy: r.entered_by }));
 }
 
-/** The patient the signed-in person sees in the portal: their own record first, else the first person they look after. */
+/** The patient the portal is showing: the one chosen in the switcher, else their own record, else the first they look after. */
 export async function getPortalPatientId(): Promise<{ id: string; canAct: boolean; firstName: string } | null> {
-  const supabase = await createClient();
-  const { data, error } = await supabase.rpc("get_my_patient_record");
-  if (error) throw new Error("Could not load your record.");
-  const record = data.find((r) => r.is_self) ?? data[0];
+  const record = await getPortalPatient();
   return record ? { id: record.id, canAct: record.can_act, firstName: record.first_name } : null;
 }
 
