@@ -72,6 +72,13 @@ update public.patient_allergies set archived_at = now() where patient_id = 'd000
 select throws_ok($$ select count(*) from public.google_revocations $$, '42501', null, 'a patient never sees the Google queue');
 reset role;
 select is((select count(*)::int from public.patient_allergies where patient_id = 'd0000000-0000-4000-8000-000000000001' and archived_at is not null), 1, 'and a patient cannot remove an allergy');
+select pg_temp.become('a0000000-0000-4000-8000-000000000011');
+select is((select count(*)::int from public.patient_allergies where archived_at is not null), 0, 'nor sees one that was removed');
+reset role;
+select pg_temp.become('a0000000-0000-4000-8000-000000000003');
+update public.patient_allergies set archived_at = null where archived_at is not null;
+reset role;
+select is((select count(*)::int from public.patient_allergies where patient_id = 'd0000000-0000-4000-8000-000000000001' and archived_at is not null), 1, 'and a removed allergy cannot be restored');
 
 -- Letters: hidden from the patient until shared.
 insert into public.documents (patient_id, kind, title, storage_path, source, uploaded_by, shared_with_patient)

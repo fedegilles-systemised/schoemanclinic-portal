@@ -44,6 +44,12 @@ update public.staff_profiles set active = false where user_id = 'a0000000-0000-4
 select is((select count(*)::int from public.google_calendar_connections where user_id = 'a0000000-0000-4000-8000-000000000001'), 0, 'switching a team member off removes their Google connection');
 select is((select count(*)::int from public.google_revocations where user_id = 'a0000000-0000-4000-8000-000000000001' and revoked_at is null and refresh_token_encrypted = 'v1.x'), 1, 'and queues the token to be revoked at Google');
 update public.staff_profiles set active = true where user_id = 'a0000000-0000-4000-8000-000000000001';
+set local role service_role;
+select public.save_google_calendar_connection('a0000000-0000-4000-8000-000000000002', 'laura@example.test', 'v1.y', 'openid');
+reset role;
+update public.profiles set status = 'suspended' where id = 'a0000000-0000-4000-8000-000000000002';
+select is((select count(*)::int from public.google_revocations where user_id = 'a0000000-0000-4000-8000-000000000002' and refresh_token_encrypted = 'v1.y'), 1, 'suspending an account queues its Google token too');
+update public.profiles set status = 'active' where id = 'a0000000-0000-4000-8000-000000000002';
 
 -- S-126: a recording file needs its own open recording row, at exactly its path.
 select pg_temp.become('a0000000-0000-4000-8000-000000000001');

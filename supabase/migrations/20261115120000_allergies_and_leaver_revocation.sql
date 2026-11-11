@@ -50,3 +50,37 @@ begin
 end;
 $$;
 comment on function private.drop_leaver_connections() is 'Trigger: a team member switched off loses their Google connection at once; the token is queued for the server to revoke at Google.';
+
+-- An archived allergy is hidden from the patient side, and nobody edits or restores it.
+alter policy "Patients, guardians and staff in scope read allergies" on public.patient_allergies
+  using (((archived_at is null) and (patient_id in (select private.my_patient_ids()))) or private.in_scope(patient_id));
+alter policy "Doctors and PAs change allergies" on public.patient_allergies
+  using (
+    ((select private.has_role('doctor')) or (select private.has_role('nurse')) or (select private.has_role('pa')))
+    and private.in_scope(patient_id)
+    and archived_at is null
+  );
+
+-- Suspending an account (profiles.status) also ends that person's Google connection, as switching
+-- off their staff profile does.
+create function private.drop_suspended_connections()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if new.status = 'suspended' and old.status is distinct from 'suspended'
+     and exists (select 1 from public.google_calendar_connections c where c.user_id = new.id) then
+    perform set_config('app.system_actor', 'offboarding', true);
+    insert into public.google_revocations (user_id, refresh_token_encrypted)
+    select c.user_id, c.refresh_token_encrypted from public.google_calendar_connections c where c.user_id = new.id;
+    delete from public.google_calendar_connections where user_id = new.id;
+  end if;
+  return new;
+end;
+$$;
+comment on function private.drop_suspended_connections() is 'Trigger: a suspended account loses its Google connection; the token is queued for revocation at Google.';
+revoke all on function private.drop_suspended_connections() from public, anon, authenticated;
+create trigger profiles_drop_suspended_connections after update of status on public.profiles
+  for each row execute function private.drop_suspended_connections();
