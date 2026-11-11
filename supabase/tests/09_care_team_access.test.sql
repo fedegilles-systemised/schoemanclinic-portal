@@ -124,5 +124,23 @@ select is(
   1, 'an admin adds to a care team');
 select is(t.n(t.nora(), 'select * from public.care_team'), (select count(*)::int from public.care_team where patient_id = t.p_eleanor()), 'a nurse reads the care team of her own patients only');
 
+-- Nobody opens their own record as staff ---------------------------------------------------------
+
+-- Dr Laura Bennett is also a patient (record d..0b). Gina is on that record's care team.
+select throws_ok(
+  $$ select t.run(t.admin(), $q$insert into public.care_team (patient_id, staff_id, relationship) values ('d0000000-0000-4000-8000-00000000000b', 'b0000000-0000-4000-8000-000000000002', 'doctor')$q$) $$,
+  '42501', null, 'nobody can put a doctor on her own care team');
+select is(t.n(t.laura(), $q$select * from public.lab_reports where patient_id = 'd0000000-0000-4000-8000-00000000000b' and released_at is null$q$), 0, 'a doctor does not see her own unreleased results');
+select is(t.n(t.laura(), $q$select * from public.safeguarding_alerts where patient_id = 'd0000000-0000-4000-8000-00000000000b'$q$), 0, 'or safeguarding alerts about herself');
+-- A PA who is also a patient sees every patient but herself.
+insert into public.patient_profiles (id, user_id, clinic_ref, first_name, last_name, date_of_birth)
+  values ('d0000000-0000-4000-8000-0000000000aa', t.priya(), 'SC-999999', 'Priya', 'Shah', '1990-01-01');
+insert into public.user_roles (user_id, role) values (t.priya(), 'patient') on conflict do nothing;
+select is(t.n(t.priya(), $q$select * from public.lab_reports where patient_id = 'd0000000-0000-4000-8000-0000000000aa'$q$), 0, 'a PA who is a patient does not open her own record as staff');
+select cmp_ok(t.n(t.priya(), 'select * from public.patient_profiles'), '>', 1, 'but still sees every other patient');
+
+-- The care team list follows the same rule: a doctor sees only her own patients' teams.
+select is(t.n(t.laura(), $q$select * from public.care_team where patient_id = 'd0000000-0000-4000-8000-000000000001'$q$), 0, 'a doctor does not read the care team of a patient she does not look after');
+
 select * from finish();
 rollback;

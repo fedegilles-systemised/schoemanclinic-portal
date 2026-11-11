@@ -31,7 +31,11 @@ stable
 security definer
 set search_path = ''
 as $$
-  select _patient_id is not null and (
+  -- Nobody opens their own record, or that of someone they look after, as staff: as a patient or
+  -- guardian they see what any patient sees (knowledge base question 4).
+  select _patient_id is not null
+  and _patient_id not in (select private.my_patient_ids())
+  and (
     private.has_role('admin')
     or private.has_role('pa')
     or (
@@ -357,7 +361,31 @@ alter policy "PAs and doctors change the care team" on public.care_team
     and private.in_scope(patient_id)
   );
 alter policy "The team reads the care team" on public.care_team
-  using ((select private.is_team()) or private.in_scope(patient_id));
+  using (private.in_scope(patient_id));
+
+-- Nobody joins the care team of their own patient record, whoever adds them.
+create function private.reject_self_care()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if exists (
+    select 1
+    from public.staff_profiles s
+    join public.patient_profiles p on p.user_id = s.user_id
+    where s.id = new.staff_id and p.id = new.patient_id
+  ) then
+    raise exception 'A team member cannot be on their own care team.' using errcode = '42501';
+  end if;
+  return new;
+end;
+$$;
+comment on function private.reject_self_care() is 'Trigger: a staff member who is also a patient is never on their own care team.';
+revoke all on function private.reject_self_care() from public, anon, authenticated;
+create trigger care_team_reject_self before insert or update on public.care_team
+  for each row execute function private.reject_self_care();
 
 -- Nurses enter results with the lab's file, so they upload to the documents bucket as doctors and PAs do.
 alter policy "People upload document files for patients they can act for" on storage.objects

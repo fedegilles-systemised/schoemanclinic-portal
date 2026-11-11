@@ -105,5 +105,9 @@ select is((select body from public.clinical_notes where id = (select id from not
 
 select cmp_ok((select count(*)::int from public.audit_log where entity = 'clinical_notes'), '>=', 4, 'every change is in the audit log');
 
+select throws_ok(
+  format($$ select t.run(t.gina(), $q$insert into public.clinical_notes (patient_id, author_id, title, body, source) values (%L, %L, 'X', 'Y', 'recording')$q$) $$, t.p_eleanor(), t.s_gina()),
+  '42501', null, 'only the server marks a note as coming from a recording');
+
 select * from finish();
 rollback;

@@ -58,6 +58,11 @@ as $$
 declare
   previous public.clinical_notes;
 begin
+  if new.appointment_id is not null and not exists (
+    select 1 from public.appointments a where a.id = new.appointment_id and a.patient_id = new.patient_id
+  ) then
+    raise exception 'That appointment belongs to another patient.' using errcode = '22023';
+  end if;
   if new.supersedes_id is null then
     new.version := 1;
     return new;
@@ -106,7 +111,9 @@ alter table public.clinical_notes force row level security;
 
 revoke all on table public.clinical_notes from public, anon, authenticated, service_role;
 grant select on public.clinical_notes to authenticated, service_role;
-grant insert (patient_id, author_id, appointment_id, title, body, source, supersedes_id) on public.clinical_notes to authenticated, service_role;
+-- Only the server marks a note as coming from a recording, when it saves a transcript.
+grant insert (patient_id, author_id, appointment_id, title, body, supersedes_id) on public.clinical_notes to authenticated;
+grant insert (patient_id, author_id, appointment_id, title, body, source, supersedes_id) on public.clinical_notes to service_role;
 grant update (title, body, archived_at) on public.clinical_notes to authenticated;
 
 create policy "Staff who can open the record read its notes" on public.clinical_notes
