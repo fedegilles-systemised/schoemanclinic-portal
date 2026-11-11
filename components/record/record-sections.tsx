@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ShieldAlert } from "lucide-react";
+import { CircleCheck, CircleMinus, CircleX, ShieldAlert } from "lucide-react";
 
 import { ArchiveDocumentButton, ShareDocumentButton, UploadDocumentForm } from "@/components/documents/forms";
 import { QuestionStatusPill } from "@/components/questions/question-parts";
@@ -9,6 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SectionHeader } from "@/components/ui/page-header";
 import { StatusPill } from "@/components/ui/status-pill";
+import { CONSENT_TYPES, CONSENTS, type ConsentType } from "@/lib/consents/constants";
+import type { ConsentState } from "@/lib/data/consents";
 import type { DocumentRow } from "@/lib/data/documents";
 import type { AllergyRow, DiagnosisRow, MedicationRow, SafeguardingRow } from "@/lib/data/patient-record";
 import type { QuestionSummary } from "@/lib/data/questions";
@@ -219,6 +221,37 @@ export function QuestionsSection({ questions }: { questions: QuestionSummary[] }
             <QuestionStatusPill status={q.status} />
           </li>
         ))}
+      </ul>
+    </section>
+  );
+}
+
+/** The patient's current consent choices, so the team sees a withdrawal. */
+export function ConsentsSection({ consents }: { consents: Partial<Record<ConsentType, ConsentState>> }) {
+  return (
+    <section aria-labelledby="consents" className="mb-12 flex flex-col gap-4">
+      <SectionHeader id="consents" title="Consent" />
+      <ul className={listClass}>
+        {CONSENT_TYPES.map((type) => {
+          const current = consents[type];
+          return (
+            <li key={type} className="flex flex-wrap items-center justify-between gap-3 px-4 py-2">
+              <span>
+                {CONSENTS[type].title}
+                {current ? <span className="type-small text-content-muted"> · changed {formatDate(current.changedAt)}, wording {current.version}</span> : null}
+              </span>
+              {current ? (
+                current.granted ? (
+                  <StatusPill tone="success" icon={CircleCheck} label="Given" />
+                ) : (
+                  <StatusPill tone="warning" icon={CircleX} label="Withdrawn" />
+                )
+              ) : (
+                <StatusPill tone="neutral" icon={CircleMinus} label="Not recorded" />
+              )}
+            </li>
+          );
+        })}
       </ul>
     </section>
   );

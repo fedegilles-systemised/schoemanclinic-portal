@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { ArrowRight, CalendarDays, MapPin } from "lucide-react";
 
 import { ComingSoon } from "@/components/shell/coming-soon";
@@ -113,11 +114,9 @@ export default async function PortalHomePage() {
               {appointment.durationMin} minutes
             </CardDescription>
             <CardActions>
-              <ComingSoon>
-                <Button variant="outline" size="sm" disabled>
-                  View details
-                </Button>
-              </ComingSoon>
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/portal/appointments">View details</Link>
+              </Button>
             </CardActions>
           </Card>
         ) : (
@@ -161,11 +160,9 @@ export default async function PortalHomePage() {
                 : "."}
             </CardDescription>
             <CardActions>
-              <ComingSoon>
-                <Button variant="outline" size="sm" disabled>
-                  View results
-                </Button>
-              </ComingSoon>
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/portal/results">View results</Link>
+              </Button>
             </CardActions>
           </Card>
         ) : (
@@ -175,11 +172,11 @@ export default async function PortalHomePage() {
 
       <section className="mt-12 flex flex-col gap-4">
         <SectionHeader title="Your markers " accent="at a glance">
-          <ComingSoon>
-            <Button variant="ghost" disabled>
+          <Button variant="ghost" asChild>
+            <Link href="/portal/results">
               All results <ArrowRight aria-hidden className="size-3.5" />
-            </Button>
-          </ComingSoon>
+            </Link>
+          </Button>
         </SectionHeader>
         {glance.length ? (
           <div className="grid grid-cols-1 gap-6 phone:grid-cols-2 min-[1100px]:grid-cols-4">
@@ -201,11 +198,9 @@ export default async function PortalHomePage() {
               <CardTitle>{letter.title}</CardTitle>
               {letter.authorName ? <CardDescription>From {letter.authorName}</CardDescription> : null}
               <CardActions>
-                <ComingSoon>
-                  <Button variant="outline" size="sm" disabled>
-                    View letter
-                  </Button>
-                </ComingSoon>
+                <Button variant="outline" size="sm" asChild>
+                  <Link href="/portal/documents">View letter</Link>
+                </Button>
               </CardActions>
             </Card>
           ) : (

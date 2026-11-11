@@ -30,7 +30,7 @@ export function AskQuestionForm({ patientId }: { patientId: string }) {
         <Label htmlFor="question-urgency">How soon you need an answer</Label>
         <Select id="question-urgency" name="urgency" defaultValue="routine">
           <option value="routine">Routine</option>
-          <option value="important">Important, within a working day</option>
+          <option value="important">Important</option>
         </Select>
       </div>
       <FormMessage state={state} />

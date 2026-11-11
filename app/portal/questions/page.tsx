@@ -23,7 +23,7 @@ export default async function AskTheClinicPage() {
         eyebrow="Ask the clinic"
         title="Ask the "
         accent="clinic"
-        description="Send the clinic team a question about your care. We reply within two working days, sooner for anything marked important."
+        description="Send the clinic team a question about your care. Their reply appears here, and we will tell you when it arrives."
       />
       <div className="mb-8">
         <Alert variant="warning">
@@ -36,7 +36,7 @@ export default async function AskTheClinicPage() {
         <Card className="mb-12">
           <CardHeader>
             <CardTitle>New question</CardTitle>
-            <CardDescription>Only the clinic team looking after you can read it.</CardDescription>
+            <CardDescription>Only the clinic team can read it.</CardDescription>
           </CardHeader>
           <CardContent>
             <AskQuestionForm patientId={patient.id} />
