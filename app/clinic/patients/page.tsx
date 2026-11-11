@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { AddToCareTeamDialog, RELATIONSHIP_LABELS, RemoveFromCareTeamButton } from "@/components/patients/care-team-forms";
@@ -54,7 +55,9 @@ export default async function PatientsPage() {
             {patients.map((patient) => (
               <TableRow key={patient.id}>
                 <TableCell>
-                  <div className="text-content">{patient.name}</div>
+                  <Link href={`/clinic/patients/${patient.id}`} className="text-content underline underline-offset-2">
+                    {patient.name}
+                  </Link>
                   <div className="type-small text-content-muted">{patient.clinicRef}</div>
                 </TableCell>
                 <TableCell className="tabular-nums">{formatDate(patient.dateOfBirth)}</TableCell>
