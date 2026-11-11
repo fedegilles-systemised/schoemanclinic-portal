@@ -151,5 +151,24 @@ select is(t.n(t.gina(), $q$select * from public.documents where patient_id is nu
 select is(t.n(t.nora(), $q$select * from public.documents where patient_id is null$q$), 0, 'nor does a nurse');
 select throws_ok($$ select t.run(t.gina(), $q$insert into storage.objects (bucket_id, name) values ('documents', 'unmatched/y.pdf')$q$) $$, '42501', null, 'a doctor cannot file an unmatched upload');
 
+-- Removing a guardian (question 5): a PA or an admin, never the patient ------------------------------
+
+-- Seed: Isla (d..0a) has a guardian a..21 who can act, verified by Priya.
+select is(
+  t.run('a0000000-0000-4000-8000-000000000004'::uuid, $q$update public.patient_guardians set can_view = false, can_act = false where patient_id = 'd0000000-0000-4000-8000-00000000000a'$q$),
+  1, 'another PA removes a guardian someone else verified');
+select is(
+  (select count(*)::int from public.patient_guardians where patient_id = 'd0000000-0000-4000-8000-00000000000a' and (can_view or can_act)),
+  0, 'and the guardian keeps no access');
+select is(
+  t.run(t.admin(), $q$update public.patient_guardians set can_view = false, can_act = false where patient_id = 'd0000000-0000-4000-8000-000000000006'$q$),
+  1, 'an admin removes a guardian');
+select is(
+  t.run('a0000000-0000-4000-8000-000000000011'::uuid, $q$update public.patient_guardians set can_view = false$q$),
+  0, 'a patient cannot remove a guardian');
+select is(
+  t.run(t.gina(), $q$update public.patient_guardians set can_view = false$q$),
+  0, 'nor can a doctor');
+
 select * from finish();
 rollback;

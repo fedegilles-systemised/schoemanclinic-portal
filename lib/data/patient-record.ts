@@ -93,3 +93,23 @@ export async function getMyStaffId(userId: string): Promise<string | null> {
   const { data } = await supabase.from("staff_profiles").select("id").eq("user_id", userId).maybeSingle();
   return data?.id ?? null;
 }
+
+export type GuardianLink = { id: string; name: string; email: string; relationship: string; canAct: boolean };
+
+/** The guardians who can currently see this patient's portal. For PAs and admins, who manage them. */
+export async function getGuardians(patientId: string): Promise<GuardianLink[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("patient_guardians")
+    .select("id, relationship, can_act, guardian:profiles!patient_guardians_guardian_user_id_fkey(full_name, email)")
+    .eq("patient_id", patientId)
+    .eq("can_view", true);
+  if (error) throw new Error("Could not load the patient's guardians.");
+  return data.map((g) => ({
+    id: g.id,
+    name: g.guardian?.full_name ?? "Guardian",
+    email: g.guardian?.email ?? "",
+    relationship: g.relationship,
+    canAct: g.can_act,
+  }));
+}

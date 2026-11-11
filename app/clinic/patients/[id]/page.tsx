@@ -7,6 +7,7 @@ import { z } from "zod";
 import { AssignCourseForm, UnassignButton } from "@/components/education/forms";
 import { DraftForm, NewNoteForm } from "@/components/notes/note-forms";
 import { RELATIONSHIP_LABELS } from "@/components/patients/care-team-forms";
+import { RemoveGuardianButton } from "@/components/patients/guardian-forms";
 import { ReadingsTable } from "@/components/wearables/readings-table";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,7 +15,8 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader, SectionHeader } from "@/components/ui/page-header";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getPatientAssignments, getReadings, listCourses } from "@/lib/data/education";
-import { getMyStaffId, getPatientRecord } from "@/lib/data/patient-record";
+import { getGuardians, getMyStaffId, getPatientRecord } from "@/lib/data/patient-record";
+import { RELATIONSHIP_LABELS as GUARDIAN_LABELS } from "@/lib/invitations/constants";
 import { formatDate } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 
@@ -52,6 +54,8 @@ export default async function PatientRecordPage({ params }: { params: Promise<{ 
   const myStaffId = canWrite ? await getMyStaffId(user.id) : null;
   const [assignments, library, readings] = await Promise.all([getPatientAssignments(record.id), listCourses(), getReadings(record.id, 30)]);
   const assignable = library.filter((course) => course.published && !assignments.some((a) => a.courseId === course.id));
+  const managesGuardians = user.roles.some((role) => role === "pa" || role === "admin");
+  const guardians = managesGuardians ? await getGuardians(record.id) : [];
   const drafts = record.notes.filter((note) => note.status === "draft");
   const signed = record.notes.filter((note) => note.status === "signed");
 
@@ -95,6 +99,32 @@ export default async function PatientRecordPage({ params }: { params: Promise<{ 
           {readings.length === 0 ? <EmptyState>The patient has not added any readings.</EmptyState> : <ReadingsTable readings={readings} />}
         </section>
       </div>
+
+      {managesGuardians ? (
+        <section aria-labelledby="guardians" className="mb-12 flex flex-col gap-4">
+          <SectionHeader id="guardians" title="Guardians" />
+          {guardians.length === 0 ? (
+            <EmptyState>No guardian can see this patient&apos;s account.</EmptyState>
+          ) : (
+            <ul className="flex flex-col divide-y divide-surface-border border border-surface-border">
+              {guardians.map((g) => (
+                <li key={g.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+                  <span>
+                    {g.name}
+                    <span className="type-small text-content-muted">
+                      {" "}
+                      · {GUARDIAN_LABELS[g.relationship as keyof typeof GUARDIAN_LABELS] ?? g.relationship} · {g.canAct ? "can act" : "can view"}
+                      {g.email ? ` · ${g.email}` : ""}
+                    </span>
+                  </span>
+                  <RemoveGuardianButton patientId={record.id} linkId={g.id} name={g.name} />
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="type-small text-content-muted">Patients cannot remove a guardian themselves. New guardians are invited from Team and settings.</p>
+        </section>
+      ) : null}
 
       <section aria-labelledby="notes" className="flex flex-col gap-6">
         <SectionHeader id="notes" title="Clinical " accent="notes" />
