@@ -791,6 +791,32 @@ isOneToOne: true
                   Relationships: [
                     
                   ]
+                },"question_replies": {
+                  Row: {
+                    "author_id": string,"body": string,"created_at": string,"from_clinic": boolean,"id": string,"question_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "author_id": string,"body": string,"created_at"?: string,"from_clinic": boolean,"id"?: string,"question_id": string
+                  }
+                  Update: {
+                    "author_id"?: string,"body"?: string,"created_at"?: string,"from_clinic"?: boolean,"id"?: string,"question_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "question_replies_author_id_fkey"
+      columns: ["author_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "question_replies_question_id_fkey"
+      columns: ["question_id"]
+isOneToOne: false
+      referencedRelation: "questions"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"questions": {
                   Row: {
                     "answered_at": string | null,"asked_by": string,"body": string,"created_at": string,"ghl_conversation_id": string | null,"id": string,"patient_id": string,"status": Database["public"]['Enums']["question_status"],"subject": string,"urgency": Database["public"]['Enums']["question_urgency"]
@@ -1115,6 +1141,12 @@ isOneToOne: false
 { Args: Record<PropertyKey, never>; Returns: {
               "avatar_path": string,"clinical_role": Database["public"]['Enums']["staff_role"],"full_name": string,"job_title": string,"profile_id": string,"staff_id": string
             }[]
+                           },
+"close_question":
+{ Args: { "_question": string }; Returns: undefined
+                           },
+"reply_to_question":
+{ Args: { "_body": string,"_question": string }; Returns: string
                            },
 "log_record_view":
 { Args: { "_entity": string,"_entity_id"?: string,"_patient": string }; Returns: undefined
