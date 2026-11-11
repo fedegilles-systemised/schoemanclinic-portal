@@ -46,4 +46,4 @@ export function kindsFor(roles: readonly AppRole[]): InvitationKind[] {
  * Who is emailed whenever a doctor or an admin is invited, so nobody joins the clinic with that
  * level of access unnoticed. Decided by the clinic on 11 November 2026 (knowledge base question 6).
  */
-export const TEAM_INVITE_ALERT_TO = "drgina@theschoemanclinic.com";
+export const TEAM_INVITE_ALERT_TO_DEFAULT = "drgina@theschoemanclinic.com";

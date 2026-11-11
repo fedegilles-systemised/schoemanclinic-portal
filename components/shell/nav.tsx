@@ -57,9 +57,9 @@ const NAV: Record<PortalKind, NavGroup[]> = {
         { label: "Wearables", icon: Watch, href: "/portal/wearables" },
         { label: "Prescriptions", icon: Pill },
         { label: "Appointments", icon: CalendarDays, href: "/portal/appointments" },
-        { label: "Ask the clinic", icon: MessageSquare },
-        { label: "Letters and documents", icon: FileText },
-        { label: "Privacy and consent", icon: Shield },
+        { label: "Ask the clinic", icon: MessageSquare, href: "/portal/questions" },
+        { label: "Letters and documents", icon: FileText, href: "/portal/documents" },
+        { label: "Privacy and consent", icon: Shield, href: "/portal/privacy" },
       ],
     },
   ],
@@ -76,12 +76,13 @@ const NAV: Record<PortalKind, NavGroup[]> = {
       eyebrow: "Patients",
       items: [
         { label: "Patient list", icon: Users, href: "/clinic/patients" },
+        { label: "Questions", icon: MessageSquare, href: "/clinic/questions" },
         { label: "Results review", icon: ClipboardList, href: "/clinic/results", countKey: "review" },
         { label: "Import queue", icon: Inbox, href: "/clinic/results#imports", countKey: "imports", roles: ["pa", "doctor", "nurse", "admin"] },
         { label: "Lab orders", icon: FlaskConical },
       ],
     },
-    { eyebrow: "Clinical", items: [{ label: "Safeguarding alerts", icon: Shield }] },
+    { eyebrow: "Clinical", items: [{ label: "Safeguarding alerts", icon: Shield, href: "/clinic/safeguarding", roles: ["doctor"] }] },
     {
       eyebrow: "Clinic",
       items: [
@@ -126,7 +127,7 @@ function NavRows({ kind, counts, roles }: { kind: PortalKind; counts?: NavCounts
                 </ComingSoon>
               );
             }
-            const current = item.href === pathname;
+            const current = item.href === pathname || (item.href !== "/clinic" && item.href !== "/portal" && pathname.startsWith(`${item.href}/`));
             return (
               <Link
                 key={item.label}

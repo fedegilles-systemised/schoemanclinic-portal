@@ -90,7 +90,7 @@ select lives_ok(
 
 -- A patient sees only her own clinicians' busy times and hours, and never the past.
 select is(t.n('a0000000-0000-4000-8000-000000000011', format('select * from public.clinician_busy(%L, now(), now() + interval ''30 days'')', 'b0000000-0000-4000-8000-000000000002')), 0, 'a patient cannot read the diary of a clinician who does not look after her');
-select is(t.n('a0000000-0000-4000-8000-000000000011', format('select * from public.clinician_busy(%L, now() - interval ''400 days'', now())', 'b0000000-0000-4000-8000-000000000001')), 0, 'or any past appointments');
+select is(t.n('a0000000-0000-4000-8000-000000000011', format('select * from public.clinician_busy(%L, now() - interval ''400 days'', now() - interval ''1 day'')', 'b0000000-0000-4000-8000-000000000001')), 0, 'or any past appointments');
 select is(t.n('a0000000-0000-4000-8000-000000000011', $q$select * from public.clinician_availability where staff_id = 'b0000000-0000-4000-8000-000000000002'$q$), 0, 'or another clinician''s hours');
 
 select is(t.n('a0000000-0000-4000-8000-000000000011', $q$select * from public.get_bookable_clinicians('d0000000-0000-4000-8000-000000000001')$q$), 1, 'a patient sees the clinicians she can book');

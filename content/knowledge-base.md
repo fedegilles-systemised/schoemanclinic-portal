@@ -23,7 +23,7 @@ Clinic Hub is a patient portal and a clinic portal built around one journey, the
 6. **Doctor review and release.** A doctor reviews the report, adds a comment if needed, and releases it.
 7. **Patient view.** Only now can the patient see the results, with a trend against their earlier values.
 
-Two other systems stay in charge of what they do today: GoHighLevel keeps messaging, reminders, tasks, calendar, invoices and marketing, Semble keeps consultation notes, and SignatureRx handles prescribing. Clinic Hub reads from them where a screen needs the information. The section on integrations lists every connection.
+Since 11 November, Clinic Hub also holds clinical notes, patient booking, call recordings with transcripts, education and wearables. GoHighLevel sends patient email and WhatsApp and keeps tasks, invoices and marketing; Semble is retired in stages; SignatureRx handles prescribing. The section on integrations lists every connection.
 
 **Status today:** the database for every step above exists and is protected, and both home screens are built. Steps 1 to 7 as screens, and every connection to Stripe, the labs, GoHighLevel and Semble, are planned.
 
@@ -137,7 +137,7 @@ Eleven screens are built and the rest are planned. Every built screen reads real
 | Upload results | Send PDFs from another lab, for example abroad: up to 5 files each time, PDF only, in the name the patient registered with | AI extraction (provider to be chosen) |
 | Prescriptions | Current medicines; request a repeat for a fee | Stripe, GoHighLevel |
 | Appointments | Upcoming and past visits | GoHighLevel or Semble |
-| Ask the clinic | Send a question and see its status | GoHighLevel |
+| Ask the clinic | Send a question, read replies and write back | Clinic Hub |
 | Letters and documents | Read what the clinic has shared | None |
 | Privacy and consent | See and change consents, notification choices | GoHighLevel reads the choices |
 
@@ -237,7 +237,7 @@ Each flow names who acts, the steps, whether it needs data from another system (
 | 6 | Doctor reviews and releases | Built | GoHighLevel | Proposed |
 | 7 | Patient reads results and trends | Built | None | No |
 | 8 | Request a repeat prescription | Planned | Stripe, GoHighLevel | Proposed |
-| 9 | Ask the clinic | Planned | GoHighLevel | Proposed |
+| 9 | Ask the clinic | Built | Clinic Hub | Built |
 | 10 | Appointments and bloods due date | Read built, sync planned | GoHighLevel, Semble | No |
 | 11 | A guardian acts for a patient | Planned | None | Proposed |
 | 12 | Safeguarding alert | Planned | None | No |
@@ -371,15 +371,16 @@ For a new patient the clinic reference (SC- and six digits) is made automaticall
 
 ### 9. Ask the clinic
 
-**Who:** a patient, or a guardian who can act. **Status:** planned.
+**Who:** a patient, or a guardian who can act. **Status:** built.
 
-1. The patient writes a subject and message, and marks it routine or important.
-2. The question opens a conversation in GoHighLevel, where the team replies.
-3. The portal shows the question's status: awaiting reply, answered or closed.
+1. The patient writes a subject and message, and marks it routine or important. The page says it is not for emergencies and points to 999, A&E and NHS 111.
+2. The clinic inbox is emailed that a question is waiting, with no details. The team sees it under Questions in Clinic Hub, and on the patient's record.
+3. A team member who can open the patient replies. The patient is told by email, WhatsApp where turned on, and the portal bell, without the words of the reply.
+4. The patient can write back; the team can close the conversation when nothing more is needed.
 
-**Data in/out:** outbound to GoHighLevel when the question is sent; inbound status updates when the team replies. **Email:** none from Clinic Hub. Replies reach the patient through GoHighLevel's own channels.
+**Data in/out:** none outside Clinic Hub, apart from the notices. **Email:** an alert to the clinic inbox, and a reply notice to the patient.
 
-**Questions:** do replies show inside the portal, or only in the patient's usual channel? Is "important" a promise of a faster reply, and how fast? What should patients do in an emergency, and where is that stated?
+**Questions:** how quickly does the clinic aim to reply, and who on the team answers which questions?
 
 ### 10. Appointments and the bloods due date
 
@@ -454,19 +455,20 @@ Clinic Hub connects to nine systems. Supabase and Resend are in place (Resend on
 | Vercel | Hosting, page-speed measures, visit counts | Out | Page address (without query), device and performance data. No cookies | Set-up in progress |
 | Stripe | Payments for bloods and repeat-request fees | Both | Payment amounts and a reference. The clinic never holds card details | Planned |
 | Lab partners (TDL is named) | Results by electronic feed; barcodes | In (and out, proposed) | Results per marker, with the barcode that links them to an order | Planned |
-| GoHighLevel | Messaging, reminders, tasks, calendar, invoices, marketing | Both | Tasks and conversations out; bookings and replies in; reads each person's notification choices | Planned |
-| Semble | Consultation notes, bookings and invoices | In | Bookings | Planned |
+| GoHighLevel | Patient email and WhatsApp (as texts its plug-in diverts), tasks, invoices, marketing | Out | Contact details and message text; never a result value | Built; needs the clinic's key |
+| Semble | Being retired in stages: notes and bookings now live in Clinic Hub | In | Records to move across | Migration planned |
 | SignatureRx | Prescribing, signed by the doctor with a PIN | Out | Repeat prescriptions (proposed) | Planned |
 | Resend | Email from Clinic Hub and the sign-in emails (invitations, password reset, security notices) | Out | Only links and neutral wording. No clinical values | In place on a test domain. It moves to the clinic's own domain later |
 | AI document reader | Reads values from imported PDFs | Both | The PDF's content out; proposed values back | Planned. Provider not chosen |
-| Fathom | Named as a source in the data model | To confirm | To confirm | Purpose to be confirmed |
+| AssemblyAI (EU) | Transcribes call recordings; replaces Fathom | Out and back | A short-lived link to the audio out; the transcript back, then deleted there | Built; needs the clinic's key and data agreement |
+| Google Calendar | Each staff member's own calendar, and bookings added to it | Both | Event times and titles with the clinic reference, never a name | Built; needs the Google keys |
 
 **How incoming messages are handled.** Stripe, the labs and GoHighLevel push messages to Clinic Hub. Each message is stored first, then processed, and its unique number stops it being applied twice. A failed message can be retried.
 
 **Questions**
 
 1. Which lab partners will send results, and in which format? Is TDL the first?
-2. What is Fathom used for, and should it connect to Clinic Hub?
+2. Answered: Fathom is replaced by call recording in Clinic Hub (decision 16).
 3. Which system is the source of truth for bookings, and for patient contact details, GoHighLevel, Semble or Clinic Hub?
 4. Which AI provider, where is it hosted, and does the clinic accept its data terms?
 5. Does the clinic have an existing Stripe account, and is the lab fee passed through or invoiced separately?
@@ -631,7 +633,7 @@ The clinic answered the rest on 11 November. Those answers are under Decisions a
 - Doctors invite their own patients. A new patient a doctor invites joins that doctor's care team as primary doctor. Whenever a doctor or an admin is invited, drgina@theschoemanclinic.com is emailed, as well as the notice in the portal bell. No second approval. Built. (Question 6)
 - The roles are doctor, nurse, health coach, PA and admin, plus patients and guardians. A nurse works like a doctor on the patients of their care team: reads the record, enters results, records allergies and writes notes. Diagnoses, prescribing, safeguarding alerts and releasing results stay with doctors. Built. (Question 7)
 - Repeat prescriptions are requested three weeks before they run out. When the patient has paid, the admins, the PAs and the doctor are told that payment is made and the prescription is to be offered. Not built yet: needs payments and prescriptions. (Question 13)
-- Replies to questions show in the portal with a status. The page says it is not for emergencies. Response times are agreed later. Not built yet. (Question 14)
+- Replies to questions show in the portal with a status. The page says it is not for emergencies. Response times are agreed later. Built. (Question 14)
 - Everything moves into Clinic Hub. Clinical notes are written here, and a signed note is final: nobody edits or corrects it (decided 12 November). Staff connect their own Google Calendar. Patients book with the clinicians on their care team, and staff book for any patient they can open, inside each clinician's weekly hours; a booking goes into the clinician's Google Calendar with the clinic reference only, and the patient gets a confirmation. Patients cannot cancel or move a booking; the team does. Built. (Questions 15 and 32)
 - Fathom is replaced. From a patient's record, a doctor, nurse or health coach records the call (their microphone and the call's sound, or the microphone only), and the transcript arrives as a draft note in their name to check and sign. Transcription is by AssemblyAI in the EU. The clinic already has patients' consent to record. Built; needs the AssemblyAI key. Every account is in the clinic's name. (Question 16)
 - Messages go by email and WhatsApp through GoHighLevel, which the clinic connects with a private integration key; until it is connected, email goes through the portal's own email service. Built; needs the GoHighLevel key. (Question 17)
@@ -641,7 +643,7 @@ The clinic answered the rest on 11 November. Those answers are under Decisions a
 - Everything heard on the call matters. The Christmas prescription email is separate and is sent from GoHighLevel. Education content and wearables are part of the build. (Question 21)
 - Education: admins build courses of sections and modules, with text and video links, and staff add them to a patient's portal. Built, starting empty for the clinic's content. (Questions 21 and 30)
 - Wearables: patients type in their readings until the device connections are built, which come next. Manual entry is built. (Question 21)
-- The clinic keeps a patient's contact details. A patient who wants one changed messages the clinic. Built; messaging the clinic is not built yet. (Question 22)
+- The clinic keeps a patient's contact details. A patient who wants one changed messages the clinic. Built, including Ask the clinic. (Question 22)
 - Staff see the team's photos and the photos of patients they can open. Patients see only their own photo. Built. (Question 23)
 - Only doctors sign letters, and prescribing will go through SignatureRx. Signatures are built; SignatureRx is not built yet. (Question 24)
 - WhatsApp goes through GoHighLevel: a plug-in diverts GoHighLevel's text messages to WhatsApp, so a message sent as a text arrives as a WhatsApp. WhatsApp appears in a patient's notification choices once GoHighLevel is connected, off until they turn it on. Built; needs the GoHighLevel key. (Question 25)

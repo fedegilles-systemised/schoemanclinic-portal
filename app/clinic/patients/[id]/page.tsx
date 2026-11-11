@@ -11,6 +11,7 @@ import { DraftForm, NewNoteForm } from "@/components/notes/note-forms";
 import { CheckRecordingButton, Recorder } from "@/components/recordings/recorder";
 import { RELATIONSHIP_LABELS } from "@/components/patients/care-team-forms";
 import { RemoveGuardianButton } from "@/components/patients/guardian-forms";
+import { ClinicalSummarySection, ConsentsSection, DocumentsSection, QuestionsSection, SafeguardingSection } from "@/components/record/record-sections";
 import { ReadingsTable } from "@/components/wearables/readings-table";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -20,7 +21,11 @@ import { PageHeader, SectionHeader } from "@/components/ui/page-header";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getUpcomingAppointments } from "@/lib/data/appointments";
 import { getPatientAssignments, getReadings, listCourses } from "@/lib/data/education";
-import { getGuardians, getMyStaffId, getPatientRecord, getRecordings } from "@/lib/data/patient-record";
+import { getConsents } from "@/lib/data/consents";
+import { listDocuments } from "@/lib/data/documents";
+import { getClinicalSummary, getGuardians, getMyStaffId, getPatientRecord, getRecordings, getSafeguardingAlerts } from "@/lib/data/patient-record";
+import { listQuestions } from "@/lib/data/questions";
+import { todayInLondon } from "@/lib/calendar/time";
 import { isTranscriptionConfigured } from "@/lib/env";
 import { RELATIONSHIP_LABELS as GUARDIAN_LABELS } from "@/lib/invitations/constants";
 import { formatDate } from "@/lib/format";
@@ -64,17 +69,25 @@ export default async function PatientRecordPage({
   if (logged.error) throw new Error("Could not write to the activity log.");
 
   const canWrite = user.roles.some((role) => role === "doctor" || role === "nurse" || role === "health_coach");
+  const isDoctor = user.roles.includes("doctor");
+  const canManageDocuments = user.roles.some((role) => role === "doctor" || role === "nurse" || role === "pa");
+  const today = todayInLondon();
   const myStaffId = canWrite ? await getMyStaffId(user.id) : null;
-  const [assignments, library, readings, appointments] = await Promise.all([
+  const [assignments, library, readings, appointments, summary, documents, questions, safeguarding, consents] = await Promise.all([
     getPatientAssignments(record.id),
     listCourses(),
     getReadings(record.id, 30),
     getUpcomingAppointments(record.id),
+    getClinicalSummary(record.id),
+    listDocuments(record.id, { sharedOnly: false }),
+    listQuestions({ patientId: record.id, open: true }),
+    isDoctor ? getSafeguardingAlerts(record.id) : Promise.resolve([]),
+    getConsents(record.id),
   ]);
   const assignable = library.filter((course) => course.published && !assignments.some((a) => a.courseId === course.id));
   const recordings = await getRecordings(record.id);
   const canRecord = canWrite && Boolean(myStaffId) && isTranscriptionConfigured();
-  const RECORDING_STATUS = { uploading: "Not uploaded", transcribing: "Being transcribed", transcribed: "Transcript in notes", failed: "Transcription failed" } as const;
+  const RECORDING_STATUS = { uploading: "Upload did not finish; record again", transcribing: "Being transcribed", transcribed: "Transcript in notes", failed: "Transcription failed" } as const;
   const managesGuardians = user.roles.some((role) => role === "pa" || role === "admin");
   const guardians = managesGuardians ? await getGuardians(record.id) : [];
   const drafts = record.notes.filter((note) => note.status === "draft");
@@ -98,10 +111,28 @@ export default async function PatientRecordPage({
       {booked ? (
         <div className="mb-6">
           <Alert variant="success">
-            <AlertDescription>Appointment booked. A confirmation goes to the patient where their choices allow.</AlertDescription>
+            <AlertDescription>
+              {booked === "told" ? "Appointment booked, and the patient has been sent a confirmation." : "Appointment booked. The patient could not be messaged, so please let them know."}
+            </AlertDescription>
           </Alert>
         </div>
       ) : null}
+
+      {isDoctor ? <SafeguardingSection patientId={record.id} alerts={safeguarding} today={today} /> : null}
+
+      <ClinicalSummarySection
+        patientId={record.id}
+        allergies={summary.allergies}
+        diagnoses={summary.diagnoses}
+        medications={summary.medications}
+        canAddAllergy={canManageDocuments}
+        canDiagnose={isDoctor}
+        today={today}
+      />
+
+      <QuestionsSection questions={questions} />
+
+      <ConsentsSection consents={consents} />
 
       <section aria-labelledby="appointments" className="mb-12 flex flex-col gap-4">
         <SectionHeader id="appointments" title="Appointments">
@@ -148,6 +179,8 @@ export default async function PatientRecordPage({
           {readings.length === 0 ? <EmptyState>The patient has not added any readings.</EmptyState> : <ReadingsTable readings={readings} />}
         </section>
       </div>
+
+      <DocumentsSection patientId={record.id} documents={documents} canManage={canManageDocuments} />
 
       {managesGuardians ? (
         <section aria-labelledby="guardians" className="mb-12 flex flex-col gap-4">

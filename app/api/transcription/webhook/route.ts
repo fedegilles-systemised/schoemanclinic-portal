@@ -27,9 +27,12 @@ export async function POST(request: NextRequest) {
   const { data } = await createAdminClient().from("call_recordings").select("id").eq("provider_job_id", body.transcript_id).maybeSingle();
   if (!data) return new NextResponse(null, { status: 200 });
   try {
-    await completeRecording(data.id);
+    const outcome = await completeRecording(data.id);
+    // Still working, or a failure on our side: answer with an error so the service tries again later.
+    if (outcome === "working") return new NextResponse(null, { status: 503 });
   } catch {
-    console.error("Transcript not collected from the webhook; it can be checked from the record.");
+    console.error("Transcript not collected from the webhook; the service will retry, or it can be checked from the record.");
+    return new NextResponse(null, { status: 500 });
   }
   return new NextResponse(null, { status: 200 });
 }

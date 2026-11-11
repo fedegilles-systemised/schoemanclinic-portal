@@ -11,12 +11,17 @@ type Topic = Database["public"]["Enums"]["notification_topic"];
 
 export type PatientMessage = {
   topic: Topic;
+  /** The portal bell notice: a title and a short line, with no clinical detail. Optional. */
+  notice?: { title: string; body: string; link: string };
   email: EmailContent;
   /** Plain text for WhatsApp. Like every message, never a value, a diagnosis or a medicine. */
   whatsapp: string;
 };
 
-export type Delivery = { email: "sent" | "off" | "no-address" | "failed"; whatsapp: "sent" | "off" | "no-phone" | "not-connected" | "failed" };
+export type Delivery = {
+  email: "sent" | "off" | "no-address" | "failed" | "suspended";
+  whatsapp: "sent" | "off" | "no-phone" | "not-connected" | "failed" | "suspended";
+};
 
 /**
  * Tells a patient something by email, and by WhatsApp if they turned it on. With GoHighLevel
@@ -40,7 +45,7 @@ export async function notifyPatient(patientId: string, message: PatientMessage):
     const account = p.user_id
       ? await admin.from("profiles").select("email, phone, status").eq("id", p.user_id).maybeSingle()
       : null;
-    if (account?.data?.status === "suspended") return { email: "off", whatsapp: "off" };
+    if (account?.data?.status === "suspended") return { email: "suspended", whatsapp: "suspended" };
     const email = account?.data?.email ?? p.contact_email;
     const phone = p.contact_phone ?? account?.data?.phone ?? null;
 
@@ -51,6 +56,11 @@ export async function notifyPatient(patientId: string, message: PatientMessage):
     const choice = (channel: string) => choices.data?.find((row) => row.channel === channel)?.enabled;
     const wantsEmail = choice("email") ?? true;
     const wantsWhatsApp = choice("whatsapp") ?? false;
+
+    // The portal notice, unless the person turned portal notices off for this topic.
+    if (message.notice && p.user_id && (choice("portal") ?? true)) {
+      await admin.from("notifications").insert({ user_id: p.user_id, topic: message.topic, ...message.notice });
+    }
 
     let ghl = isGhlConfigured();
     // The GoHighLevel contact is looked up afresh on every send with today's details, so a changed

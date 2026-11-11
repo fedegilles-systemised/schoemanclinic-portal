@@ -4,6 +4,7 @@ import { useActionState } from "react";
 
 import { FormMessage } from "@/components/profile/form-message";
 import { Button } from "@/components/ui/button";
+import { ConfirmButton } from "@/components/ui/confirm-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
@@ -124,18 +125,16 @@ export function RemoveHoursButton({ id, label }: { id: string; label: string }) 
   return (
     <form action={action}>
       <input type="hidden" name="id" value={id} />
-      <Button
-        type="submit"
+      <ConfirmButton
         variant="destructive"
         size="sm"
         loading={pending}
         aria-label={`Remove: ${label}`}
-        onClick={(event) => {
-          if (!window.confirm(`Remove ${label}? Patients stop seeing these times straight away.`)) event.preventDefault();
-        }}
+        confirmTitle={`Remove ${label}?`}
+        confirmText="Patients stop seeing these times straight away."
       >
         Remove
-      </Button>
+      </ConfirmButton>
       {state.error ? <FormMessage state={state} /> : null}
     </form>
   );
