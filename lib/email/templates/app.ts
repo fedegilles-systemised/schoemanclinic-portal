@@ -209,3 +209,67 @@ export function resultReadyEmail({
     text: `${hello}\n\nA doctor at The Schoeman Clinic has reviewed one of your tests and shared it with you in your portal.\n\nView in your portal: ${portalUrl}\n\nFor your privacy, we never send results by email. You will be asked to sign in.\n\n${textFooter(reason)}`,
   };
 }
+
+/** The clinic's inbox is told a question is waiting. It carries no name, subject or words of the question. */
+export function questionAlertEmail({ siteUrl, questionsUrl }: Base & { questionsUrl: string }): EmailContent {
+  const reason = "You are receiving this email because this address receives the clinic's portal questions.";
+  const line = "A patient has asked a question in the portal. Sign in to Clinic Hub to read and reply.";
+  return {
+    subject: "A new question is waiting in Clinic Hub",
+    html: renderEmail({
+      siteUrl,
+      preheader: line,
+      eyebrow: "Ask the clinic",
+      title: { before: "A new ", accent: "question" },
+      body: paragraph("Hello,") + paragraph(escapeHtml(line)) + button("Open questions", questionsUrl) + paragraph(SIGN_OFF_HTML),
+      reason,
+    }),
+    text: `Hello,\n\n${line}\n\nOpen questions: ${questionsUrl}\n\n${textFooter(reason)}`,
+  };
+}
+
+/** A patient is told the clinic has replied. The reply itself stays in the portal. */
+export function questionReplyEmail({
+  siteUrl,
+  firstName,
+  portalUrl,
+}: Base & { firstName?: string; portalUrl: string }): EmailContent {
+  const hello = firstName ? `Dear ${firstName},` : "Hello,";
+  const line = "The clinic has replied to your question. For your privacy, the reply is in your portal.";
+  const reason = "You are receiving this email because you asked The Schoeman Clinic a question in your portal.";
+  return {
+    subject: "The clinic has replied to your question",
+    html: renderEmail({
+      siteUrl,
+      preheader: line,
+      eyebrow: "Ask the clinic",
+      title: { before: "The clinic has ", accent: "replied" },
+      body: paragraph(escapeHtml(hello)) + paragraph(escapeHtml(line)) + button("Read the reply", portalUrl) + paragraph(SIGN_OFF_HTML),
+      reason,
+    }),
+    text: `${hello}\n\n${line}\n\nRead the reply: ${portalUrl}\n\n${textFooter(reason)}`,
+  };
+}
+
+/** A patient is told a letter or document has been shared. Never its title, which may name a condition. */
+export function documentSharedEmail({
+  siteUrl,
+  firstName,
+  portalUrl,
+}: Base & { firstName?: string; portalUrl: string }): EmailContent {
+  const hello = firstName ? `Dear ${firstName},` : "Hello,";
+  const line = "The clinic has shared a new letter or document with you in your portal.";
+  const reason = "You are receiving this email because you have an account at The Schoeman Clinic.";
+  return {
+    subject: "A new document is in your portal",
+    html: renderEmail({
+      siteUrl,
+      preheader: line,
+      eyebrow: "Letters and documents",
+      title: { before: "A new ", accent: "document" },
+      body: paragraph(escapeHtml(hello)) + paragraph(escapeHtml(line)) + button("Open your documents", portalUrl) + paragraph(SIGN_OFF_HTML),
+      reason,
+    }),
+    text: `${hello}\n\n${line}\n\nOpen your documents: ${portalUrl}\n\n${textFooter(reason)}`,
+  };
+}

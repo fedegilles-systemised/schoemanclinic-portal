@@ -128,3 +128,95 @@ export async function getGuardians(patientId: string): Promise<GuardianLink[]> {
     canAct: g.can_act,
   }));
 }
+
+export type AllergyRow = { id: string; substance: string; reaction: string | null; severity: string | null; createdAt: string };
+export type DiagnosisRow = {
+  id: string;
+  label: string;
+  icd10Code: string | null;
+  status: Database["public"]["Enums"]["diagnosis_status"];
+  diagnosedOn: string | null;
+  notes: string | null;
+};
+export type MedicationRow = {
+  id: string;
+  name: string;
+  dose: string | null;
+  instructions: string | null;
+  kind: Database["public"]["Enums"]["med_kind"];
+  status: Database["public"]["Enums"]["med_status"];
+  startDate: string;
+};
+export type SafeguardingRow = {
+  id: string;
+  alertType: string;
+  severity: Database["public"]["Enums"]["safeguarding_severity"];
+  note: string;
+  reviewDue: string | null;
+  status: string;
+  createdAt: string;
+  addedByName: string;
+};
+
+/** Allergies, diagnoses and medicines on one patient's record, as row-level security allows. */
+export async function getClinicalSummary(patientId: string): Promise<{ allergies: AllergyRow[]; diagnoses: DiagnosisRow[]; medications: MedicationRow[] }> {
+  const supabase = await createClient();
+  const [allergies, diagnoses, medications] = await Promise.all([
+    supabase.from("patient_allergies").select("id, substance, reaction, severity, created_at").eq("patient_id", patientId).order("created_at", { ascending: false }),
+    supabase
+      .from("diagnoses")
+      .select("id, label, icd10_code, status, diagnosed_on, notes")
+      .eq("patient_id", patientId)
+      .is("archived_at", null)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("medications")
+      .select("id, name, dose, instructions, kind, status, start_date")
+      .eq("patient_id", patientId)
+      .is("archived_at", null)
+      .order("start_date", { ascending: false }),
+  ]);
+  if (allergies.error || diagnoses.error || medications.error) throw new Error("Could not load the patient's record.");
+  return {
+    allergies: allergies.data.map((a) => ({ id: a.id, substance: a.substance, reaction: a.reaction, severity: a.severity, createdAt: a.created_at })),
+    diagnoses: diagnoses.data.map((d) => ({ id: d.id, label: d.label, icd10Code: d.icd10_code, status: d.status, diagnosedOn: d.diagnosed_on, notes: d.notes })),
+    medications: medications.data.map((m) => ({
+      id: m.id,
+      name: m.name,
+      dose: m.dose,
+      instructions: m.instructions,
+      kind: m.kind,
+      status: m.status,
+      startDate: m.start_date,
+    })),
+  };
+}
+
+/**
+ * Safeguarding alerts: doctors only, by row-level security. Pass a patient for one record, or
+ * nothing for every active alert on the doctor's own patients.
+ */
+export async function getSafeguardingAlerts(patientId?: string): Promise<(SafeguardingRow & { patientId: string; patientName: string })[]> {
+  const supabase = await createClient();
+  let query = supabase
+    .from("safeguarding_alerts")
+    .select("id, patient_id, alert_type, severity, note, review_due, status, created_at, added_by, patient:patient_profiles(first_name, last_name)")
+    .order("created_at", { ascending: false })
+    .limit(200);
+  query = patientId ? query.eq("patient_id", patientId) : query.eq("status", "active");
+  const [alerts, directory] = await Promise.all([query, supabase.rpc("get_staff_directory")]);
+  if (alerts.error || directory.error) throw new Error("Could not load the safeguarding alerts.");
+  const names = new Map(directory.data.map((person) => [person.staff_id, person.full_name]));
+  return alerts.data.map((a) => ({
+    id: a.id,
+    patientId: a.patient_id,
+    patientName: a.patient ? `${a.patient.first_name} ${a.patient.last_name}` : "",
+    alertType: a.alert_type,
+    severity: a.severity,
+    note: a.note,
+    reviewDue: a.review_due,
+    status: a.status,
+    createdAt: a.created_at,
+    addedByName: a.added_by ? (names.get(a.added_by) ?? "A former team member") : "Imported",
+  }));
+}

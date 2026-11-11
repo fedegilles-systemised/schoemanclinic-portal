@@ -11,6 +11,7 @@ import { DraftForm, NewNoteForm } from "@/components/notes/note-forms";
 import { CheckRecordingButton, Recorder } from "@/components/recordings/recorder";
 import { RELATIONSHIP_LABELS } from "@/components/patients/care-team-forms";
 import { RemoveGuardianButton } from "@/components/patients/guardian-forms";
+import { ClinicalSummarySection, DocumentsSection, QuestionsSection, SafeguardingSection } from "@/components/record/record-sections";
 import { ReadingsTable } from "@/components/wearables/readings-table";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -20,7 +21,10 @@ import { PageHeader, SectionHeader } from "@/components/ui/page-header";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getUpcomingAppointments } from "@/lib/data/appointments";
 import { getPatientAssignments, getReadings, listCourses } from "@/lib/data/education";
-import { getGuardians, getMyStaffId, getPatientRecord, getRecordings } from "@/lib/data/patient-record";
+import { listDocuments } from "@/lib/data/documents";
+import { getClinicalSummary, getGuardians, getMyStaffId, getPatientRecord, getRecordings, getSafeguardingAlerts } from "@/lib/data/patient-record";
+import { listQuestions } from "@/lib/data/questions";
+import { todayInLondon } from "@/lib/calendar/time";
 import { isTranscriptionConfigured } from "@/lib/env";
 import { RELATIONSHIP_LABELS as GUARDIAN_LABELS } from "@/lib/invitations/constants";
 import { formatDate } from "@/lib/format";
@@ -64,12 +68,19 @@ export default async function PatientRecordPage({
   if (logged.error) throw new Error("Could not write to the activity log.");
 
   const canWrite = user.roles.some((role) => role === "doctor" || role === "nurse" || role === "health_coach");
+  const isDoctor = user.roles.includes("doctor");
+  const canManageDocuments = user.roles.some((role) => role === "doctor" || role === "nurse" || role === "pa");
+  const today = todayInLondon();
   const myStaffId = canWrite ? await getMyStaffId(user.id) : null;
-  const [assignments, library, readings, appointments] = await Promise.all([
+  const [assignments, library, readings, appointments, summary, documents, questions, safeguarding] = await Promise.all([
     getPatientAssignments(record.id),
     listCourses(),
     getReadings(record.id, 30),
     getUpcomingAppointments(record.id),
+    getClinicalSummary(record.id),
+    listDocuments(record.id, { sharedOnly: false }),
+    listQuestions({ patientId: record.id, open: true }),
+    isDoctor ? getSafeguardingAlerts(record.id) : Promise.resolve([]),
   ]);
   const assignable = library.filter((course) => course.published && !assignments.some((a) => a.courseId === course.id));
   const recordings = await getRecordings(record.id);
@@ -104,6 +115,20 @@ export default async function PatientRecordPage({
           </Alert>
         </div>
       ) : null}
+
+      {isDoctor ? <SafeguardingSection patientId={record.id} alerts={safeguarding} today={today} /> : null}
+
+      <ClinicalSummarySection
+        patientId={record.id}
+        allergies={summary.allergies}
+        diagnoses={summary.diagnoses}
+        medications={summary.medications}
+        canAddAllergy={canManageDocuments}
+        canDiagnose={isDoctor}
+        today={today}
+      />
+
+      <QuestionsSection questions={questions} />
 
       <section aria-labelledby="appointments" className="mb-12 flex flex-col gap-4">
         <SectionHeader id="appointments" title="Appointments">
@@ -150,6 +175,8 @@ export default async function PatientRecordPage({
           {readings.length === 0 ? <EmptyState>The patient has not added any readings.</EmptyState> : <ReadingsTable readings={readings} />}
         </section>
       </div>
+
+      <DocumentsSection patientId={record.id} documents={documents} canManage={canManageDocuments} />
 
       {managesGuardians ? (
         <section aria-labelledby="guardians" className="mb-12 flex flex-col gap-4">

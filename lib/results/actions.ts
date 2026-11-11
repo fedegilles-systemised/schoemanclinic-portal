@@ -10,6 +10,7 @@ import { getCurrentUser, type CurrentUser } from "@/lib/auth/session";
 import { allowAuthAttempt } from "@/lib/auth/throttle";
 import { resultReadyEmail } from "@/lib/email/templates/app";
 import { getSiteUrl } from "@/lib/env";
+import { extensionFor, fileKind, MAX_FILE_BYTES } from "@/lib/files";
 import { notifyPatient } from "@/lib/notify/patient";
 import { createClient } from "@/lib/supabase/server";
 
@@ -17,7 +18,6 @@ export type ResultsFormState = { error?: string; saved?: string };
 
 const GENERIC_FAILURE = "We could not do that. Please try again.";
 const TRY_LATER = "Too many attempts. Please wait a few minutes and try again.";
-const MAX_FILE_BYTES = 10 * 1024 * 1024;
 
 /** The database's own messages for a refused entry are written for people. Others are not shown. */
 function friendly(error: { code?: string; message: string }): string {
@@ -28,17 +28,6 @@ async function requireStaff(roles: readonly ("pa" | "doctor" | "nurse")[]): Prom
   const user = await getCurrentUser();
   if (!user || user.isSuspended || !user.roles.some((role) => (roles as readonly string[]).includes(role))) redirect("/clinic");
   return user;
-}
-
-/** Checks the first bytes, so a file's name or declared type is not taken on trust. */
-function fileKind(bytes: Uint8Array): "application/pdf" | "image/jpeg" | "image/png" | null {
-  const head = (n: number) => Array.from(bytes.slice(0, n));
-  const text = String.fromCharCode(...head(5));
-  if (text === "%PDF-") return "application/pdf";
-  const h = head(4);
-  if (h[0] === 0xff && h[1] === 0xd8 && h[2] === 0xff) return "image/jpeg";
-  if (h[0] === 0x89 && h[1] === 0x50 && h[2] === 0x4e && h[3] === 0x47) return "image/png";
-  return null;
 }
 
 // Entering a report ---------------------------------------------------------------------------------------
@@ -105,7 +94,7 @@ export async function enterReport(_state: ResultsFormState, formData: FormData):
     const bytes = new Uint8Array(await file.arrayBuffer());
     const type = fileKind(bytes);
     if (!type) return { error: "Send a PDF, JPEG or PNG file." };
-    const extension = type === "application/pdf" ? "pdf" : type === "image/png" ? "png" : "jpg";
+    const extension = extensionFor(type);
 
     const path = `${input.patientId}/${randomUUID()}.${extension}`;
     const upload = await supabase.storage.from("documents").upload(path, bytes, { contentType: type, upsert: false });
