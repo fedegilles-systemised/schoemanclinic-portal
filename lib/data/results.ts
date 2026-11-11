@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { Database } from "@/lib/database.types";
+import { getPortalPatient } from "@/lib/portal/patient";
 import { createClient } from "@/lib/supabase/server";
 
 type ResultFlag = Database["public"]["Enums"]["result_flag"];
@@ -262,9 +263,7 @@ type MyResultRow = {
  */
 export async function getMyResults(): Promise<{ patientName: string; markers: MarkerTrend[] } | null> {
   const supabase = await createClient();
-  const record = await supabase.rpc("get_my_patient_record");
-  if (record.error) throw new Error("Could not load your record.");
-  const patient = record.data[0];
+  const patient = await getPortalPatient();
   if (!patient) return null;
 
   const { data, error } = await supabase

@@ -6,6 +6,7 @@
 --   PA            priya.shah@example.test, tom.ellis@example.test
 --   Health coach  cecile.moreau@example.test
 --   Admin         admin@example.test
+--   Nurse         nora.price@example.test (no patient access until the clinic decides)
 --   Patient       eleanor.hart@example.test, thomas.reed@example.test, amira.haddad@example.test
 --   Guardian      mark.hart@example.test (can_act), ruth.marlow@example.test (view only)
 --
@@ -57,6 +58,7 @@ select pg_temp.seed_user('a0000000-0000-4000-8000-000000000003', 'priya.shah@exa
 select pg_temp.seed_user('a0000000-0000-4000-8000-000000000004', 'tom.ellis@example.test', 'Tom Ellis');
 select pg_temp.seed_user('a0000000-0000-4000-8000-000000000005', 'cecile.moreau@example.test', 'Cecile Moreau');
 select pg_temp.seed_user('a0000000-0000-4000-8000-000000000006', 'admin@example.test', 'Admin User');
+select pg_temp.seed_user('a0000000-0000-4000-8000-000000000007', 'nora.price@example.test', 'Nora Price');
 select pg_temp.seed_user('a0000000-0000-4000-8000-000000000011', 'eleanor.hart@example.test', 'Eleanor Hart');
 select pg_temp.seed_user('a0000000-0000-4000-8000-000000000012', 'thomas.reed@example.test', 'Thomas Reed');
 select pg_temp.seed_user('a0000000-0000-4000-8000-000000000013', 'amira.haddad@example.test', 'Amira Haddad');
@@ -71,6 +73,7 @@ insert into public.user_roles (user_id, role) values
   ('a0000000-0000-4000-8000-000000000004', 'pa'),
   ('a0000000-0000-4000-8000-000000000005', 'health_coach'),
   ('a0000000-0000-4000-8000-000000000006', 'admin'),
+  ('a0000000-0000-4000-8000-000000000007', 'nurse'),
   ('a0000000-0000-4000-8000-000000000011', 'patient'),
   ('a0000000-0000-4000-8000-000000000012', 'patient'),
   ('a0000000-0000-4000-8000-000000000013', 'patient');
@@ -89,7 +92,8 @@ insert into public.staff_profiles (id, user_id, job_title, clinical_role, gmc_nu
   ('b0000000-0000-4000-8000-000000000003', 'a0000000-0000-4000-8000-000000000003', 'Personal Assistant', 'pa', null, null, 'ghl_user_demo_ps', null),
   ('b0000000-0000-4000-8000-000000000004', 'a0000000-0000-4000-8000-000000000004', 'Personal Assistant', 'pa', null, null, 'ghl_user_demo_te', null),
   ('b0000000-0000-4000-8000-000000000005', 'a0000000-0000-4000-8000-000000000005', 'Health Coach', 'health_coach', null, null, null, null),
-  ('b0000000-0000-4000-8000-000000000006', 'a0000000-0000-4000-8000-000000000006', 'Administrator', 'admin', null, null, null, null);
+  ('b0000000-0000-4000-8000-000000000006', 'a0000000-0000-4000-8000-000000000006', 'Administrator', 'admin', null, null, null, null),
+  ('b0000000-0000-4000-8000-000000000007', 'a0000000-0000-4000-8000-000000000007', 'Nurse', 'nurse', null, null, null, null);
 
 insert into public.staff_locations (staff_id, location_id, is_primary) values
   ('b0000000-0000-4000-8000-000000000001', 'c0000000-0000-4000-8000-000000000001', true),

@@ -1,3 +1,4 @@
+import { contactLineText } from "@/lib/email/contact";
 import {
   button,
   escapeHtml,
@@ -17,8 +18,12 @@ import {
 
 type Base = { siteUrl: string };
 
+/** Every email closes the same way: a sign-off, then phone, email and WhatsApp (added by the layout). */
+const SIGN_OFF_HTML = "Regards,<br />The Schoeman Clinic team";
+const SIGN_OFF_TEXT = "Regards,\nThe Schoeman Clinic team";
+
 function textFooter(reason: string): string {
-  return `${reason}\n\nThe Schoeman Clinic · A private Harley Street and Wimbledon clinic, London.\n`;
+  return `${SIGN_OFF_TEXT}\n\n${contactLineText}\n\n${reason}\n\nThe Schoeman Clinic · A private Harley Street and Wimbledon clinic, London.\n`;
 }
 
 /** A person is invited to create an account. */
@@ -36,7 +41,7 @@ export function invitationEmail({
   acceptUrl: string;
   expiresInDays: number;
 }): EmailContent {
-  const hello = firstName ? `Hello ${firstName},` : "Hello,";
+  const hello = firstName ? `Dear ${firstName},` : "Hello,";
   const who = inviterName ? `${inviterName} at The Schoeman Clinic` : "The Schoeman Clinic";
   const what =
     audience === "patient"
@@ -65,6 +70,7 @@ export function invitationEmail({
         paragraph(`${escapeHtml(who)} has invited you to ${what}. You will choose your own password.`) +
         button("Set up your account", acceptUrl) +
         linkFallback(acceptUrl) +
+        paragraph(SIGN_OFF_HTML) +
         fineprint(`${escapeHtml(expiry)} If you were not expecting this, you can ignore this email.`),
       reason,
     }),
@@ -85,7 +91,7 @@ export function guardianAccessEmail({
   canAct: boolean;
   signInUrl: string;
 }): EmailContent {
-  const hello = guardianFirstName ? `Hello ${guardianFirstName},` : "Hello,";
+  const hello = guardianFirstName ? `Dear ${guardianFirstName},` : "Hello,";
   const scope = canAct
     ? "view their portal, and ask the clinic questions, request repeat prescriptions and pay on their behalf"
     : "view their portal";
@@ -102,10 +108,77 @@ export function guardianAccessEmail({
         paragraph(escapeHtml(hello)) +
         paragraph(`The Schoeman Clinic has confirmed you as a guardian for ${escapeHtml(patientFirstName)}. You can ${scope}.`) +
         button("Sign in", signInUrl) +
+        paragraph(SIGN_OFF_HTML) +
         fineprint("If you did not expect this, please contact the clinic."),
       reason,
     }),
     text: `${hello}\n\nThe Schoeman Clinic has confirmed you as a guardian for ${patientFirstName}. You can ${scope}.\n\nSign in: ${signInUrl}\n\nIf you did not expect this, please contact the clinic.\n\n${textFooter(reason)}`,
+  };
+}
+
+/** The clinic's lead is told that a doctor or an admin has been invited. */
+export function teamInviteAlertEmail({
+  siteUrl,
+  inviterName,
+  invitedEmail,
+  roleLabel,
+  teamUrl,
+}: Base & { inviterName: string; invitedEmail: string; roleLabel: string; teamUrl: string }): EmailContent {
+  const reason = "You are receiving this email because the clinic asked to be told whenever a doctor or an admin is invited.";
+  const line = `${inviterName} invited ${invitedEmail} to join the team as ${roleLabel === "Admin" ? "an admin" : "a doctor"}.`;
+
+  return {
+    subject: `${roleLabel} invitation sent: ${invitedEmail}`,
+    html: renderEmail({
+      siteUrl,
+      preheader: line,
+      eyebrow: "Team",
+      title: { before: "A new ", accent: roleLabel.toLowerCase(), after: " was invited" },
+      body:
+        paragraph("Hello,") +
+        paragraph(escapeHtml(line)) +
+        paragraph("If you did not expect this, cancel the invitation from Team and settings before it is accepted.") +
+        button("Open Team and settings", teamUrl) +
+        paragraph(SIGN_OFF_HTML),
+      reason,
+    }),
+    text: `Hello,\n\n${line}\n\nIf you did not expect this, cancel the invitation from Team and settings before it is accepted.\n\nOpen Team and settings: ${teamUrl}\n\n${textFooter(reason)}`,
+  };
+}
+
+/** A patient's appointment is booked, or cancelled by the team. Time and clinician only: never the type, which may hint at a condition. */
+export function appointmentEmail({
+  siteUrl,
+  firstName,
+  when,
+  clinicianName,
+  cancelled,
+  portalUrl,
+}: Base & { firstName?: string; when: string; clinicianName: string; cancelled: boolean; portalUrl: string }): EmailContent {
+  const hello = firstName ? `Dear ${firstName},` : "Hello,";
+  const line = cancelled
+    ? `Your appointment with ${clinicianName} on ${when} has been cancelled.`
+    : `Your appointment with ${clinicianName} is booked for ${when}.`;
+  const policy = cancelled
+    ? "If you did not expect this, or would like a new time, please contact the clinic."
+    : "If you need to change or cancel it, please contact the clinic at least 48 hours before.";
+  const reason = "You are receiving this email because you have an appointment at The Schoeman Clinic.";
+  return {
+    subject: cancelled ? "Your appointment has been cancelled" : "Your appointment is booked",
+    html: renderEmail({
+      siteUrl,
+      preheader: line,
+      eyebrow: "Appointments",
+      title: cancelled ? { before: "Appointment ", accent: "cancelled" } : { before: "Your appointment is ", accent: "booked" },
+      body:
+        paragraph(escapeHtml(hello)) +
+        paragraph(escapeHtml(line)) +
+        paragraph(escapeHtml(policy)) +
+        button("View your appointments", portalUrl) +
+        paragraph(SIGN_OFF_HTML),
+      reason,
+    }),
+    text: `${hello}\n\n${line}\n\n${policy}\n\nView your appointments: ${portalUrl}\n\n${textFooter(reason)}`,
   };
 }
 
@@ -115,7 +188,7 @@ export function resultReadyEmail({
   firstName,
   portalUrl,
 }: Base & { firstName?: string; portalUrl: string }): EmailContent {
-  const hello = firstName ? `Hello ${firstName},` : "Hello,";
+  const hello = firstName ? `Dear ${firstName},` : "Hello,";
   const reason = "You are receiving this email because you have an account at The Schoeman Clinic.";
 
   return {
@@ -129,9 +202,74 @@ export function resultReadyEmail({
         paragraph(escapeHtml(hello)) +
         paragraph("A doctor at The Schoeman Clinic has reviewed one of your tests and shared it with you in your portal.") +
         button("View in your portal", portalUrl) +
+        paragraph(SIGN_OFF_HTML) +
         fineprint("For your privacy, we never send results by email. You will be asked to sign in."),
       reason,
     }),
     text: `${hello}\n\nA doctor at The Schoeman Clinic has reviewed one of your tests and shared it with you in your portal.\n\nView in your portal: ${portalUrl}\n\nFor your privacy, we never send results by email. You will be asked to sign in.\n\n${textFooter(reason)}`,
+  };
+}
+
+/** The clinic's inbox is told a question is waiting. It carries no name, subject or words of the question. */
+export function questionAlertEmail({ siteUrl, questionsUrl }: Base & { questionsUrl: string }): EmailContent {
+  const reason = "You are receiving this email because this address receives the clinic's portal questions.";
+  const line = "A patient has asked a question in the portal. Sign in to Clinic Hub to read and reply.";
+  return {
+    subject: "A new question is waiting in Clinic Hub",
+    html: renderEmail({
+      siteUrl,
+      preheader: line,
+      eyebrow: "Ask the clinic",
+      title: { before: "A new ", accent: "question" },
+      body: paragraph("Hello,") + paragraph(escapeHtml(line)) + button("Open questions", questionsUrl) + paragraph(SIGN_OFF_HTML),
+      reason,
+    }),
+    text: `Hello,\n\n${line}\n\nOpen questions: ${questionsUrl}\n\n${textFooter(reason)}`,
+  };
+}
+
+/** A patient is told the clinic has replied. The reply itself stays in the portal. */
+export function questionReplyEmail({
+  siteUrl,
+  firstName,
+  portalUrl,
+}: Base & { firstName?: string; portalUrl: string }): EmailContent {
+  const hello = firstName ? `Dear ${firstName},` : "Hello,";
+  const line = "The clinic has replied to your question. For your privacy, the reply is in your portal.";
+  const reason = "You are receiving this email because you asked The Schoeman Clinic a question in your portal.";
+  return {
+    subject: "The clinic has replied to your question",
+    html: renderEmail({
+      siteUrl,
+      preheader: line,
+      eyebrow: "Ask the clinic",
+      title: { before: "The clinic has ", accent: "replied" },
+      body: paragraph(escapeHtml(hello)) + paragraph(escapeHtml(line)) + button("Read the reply", portalUrl) + paragraph(SIGN_OFF_HTML),
+      reason,
+    }),
+    text: `${hello}\n\n${line}\n\nRead the reply: ${portalUrl}\n\n${textFooter(reason)}`,
+  };
+}
+
+/** A patient is told a letter or document has been shared. Never its title, which may name a condition. */
+export function documentSharedEmail({
+  siteUrl,
+  firstName,
+  portalUrl,
+}: Base & { firstName?: string; portalUrl: string }): EmailContent {
+  const hello = firstName ? `Dear ${firstName},` : "Hello,";
+  const line = "The clinic has shared a new letter or document with you in your portal.";
+  const reason = "You are receiving this email because you have an account at The Schoeman Clinic.";
+  return {
+    subject: "A new document is in your portal",
+    html: renderEmail({
+      siteUrl,
+      preheader: line,
+      eyebrow: "Letters and documents",
+      title: { before: "A new ", accent: "document" },
+      body: paragraph(escapeHtml(hello)) + paragraph(escapeHtml(line)) + button("Open your documents", portalUrl) + paragraph(SIGN_OFF_HTML),
+      reason,
+    }),
+    text: `${hello}\n\n${line}\n\nOpen your documents: ${portalUrl}\n\n${textFooter(reason)}`,
   };
 }

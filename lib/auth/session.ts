@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
-const STAFF_ROLES: readonly AppRole[] = ["doctor", "pa", "health_coach", "admin"];
+const STAFF_ROLES: readonly AppRole[] = ["doctor", "pa", "health_coach", "nurse", "admin"];
 
 export type CurrentUser = {
   id: string;

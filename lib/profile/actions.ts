@@ -7,7 +7,8 @@ import { z } from "zod";
 import { newPasswordSchema, PASSWORD_RULES_MESSAGE } from "@/lib/auth/password-rules";
 import { getCurrentUser, type CurrentUser } from "@/lib/auth/session";
 import { allowAuthAttempt } from "@/lib/auth/throttle";
-import { NOTIFICATION_CHANNELS, NOTIFICATION_TOPICS } from "@/lib/profile/notification-options";
+import { isGhlConfigured } from "@/lib/env";
+import { BASE_CHANNELS, defaultFor, GHL_CHANNELS, NOTIFICATION_TOPICS } from "@/lib/profile/notification-options";
 import { bytesMatchType, IMAGE_TYPES } from "@/lib/profile/image-check";
 import { createClient } from "@/lib/supabase/server";
 
@@ -228,14 +229,15 @@ export async function saveNotificationPreferences(
 
   // An unticked box sends nothing, so a missing key means off. Each row is written only
   // if it differs, and only `enabled` can change on an existing row.
+  const channels = isGhlConfigured() ? GHL_CHANNELS : BASE_CHANNELS;
   for (const topic of NOTIFICATION_TOPICS) {
-    for (const channel of NOTIFICATION_CHANNELS) {
+    for (const channel of channels) {
       const key = `${topic}.${channel}`;
       const wanted = formData.has(key);
       const had = current.get(key);
       if (had === wanted) continue;
-      if (had === undefined && wanted) {
-        // A missing row already counts as on, so only an "off" needs saving.
+      if (had === undefined && wanted === defaultFor(channel)) {
+        // A missing row already counts as the default, so only a change from it needs saving.
         continue;
       }
       const result =

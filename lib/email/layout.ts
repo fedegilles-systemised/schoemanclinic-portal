@@ -1,3 +1,4 @@
+import { clinicContact } from "@/lib/email/contact";
 import { emailTheme } from "@/lib/email/theme";
 
 const { colour, font } = emailTheme;
@@ -53,6 +54,13 @@ export function details(rows: { label: string; value: string }[]): string {
   return `<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin:8px 0 8px">${cells}</table>`;
 }
 
+/** The same closing contact line in every email: phone, email, WhatsApp. */
+function contactBlock(): string {
+  const link = (label: string, href: string) =>
+    `<a href="${attribute(href)}" style="color:${colour.secondary};text-decoration:underline">${escapeHtml(label)}</a>`;
+  return `<p style="margin:32px 0 0;padding-top:20px;border-top:1px solid ${colour.border};font-family:${font.sans};font-size:13px;line-height:20px;color:${colour.muted}">We are here if you need us. Phone ${link(clinicContact.phone.label, clinicContact.phone.href)}, email ${link(clinicContact.email.label, clinicContact.email.href)} or WhatsApp ${link(clinicContact.whatsapp.label, clinicContact.whatsapp.href)}.</p>`;
+}
+
 type RenderOptions = {
   /** The site's address, or a template placeholder, for the logo. */
   siteUrl: string;
@@ -99,6 +107,7 @@ export function renderEmail({ siteUrl, preheader, eyebrow, title, body, reason }
                 <p style="margin:40px 0 0;font-family:${font.sans};font-size:11px;line-height:16px;font-weight:500;letter-spacing:0.18em;text-transform:uppercase;color:${colour.muted}">${escapeHtml(eyebrow)}</p>
                 <h1 style="margin:6px 0 24px;font-family:${font.display};font-size:34px;line-height:38px;font-weight:300;letter-spacing:-0.02em;color:${colour.content}">${heading}</h1>
                 ${body}
+                ${contactBlock()}
               </td>
             </tr>
             <tr>

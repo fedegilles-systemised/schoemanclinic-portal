@@ -2,10 +2,13 @@
 
 import {
   Activity,
+  Briefcase,
   CalendarDays,
   ClipboardList,
+  Clock,
   FileText,
   FlaskConical,
+  GraduationCap,
   Home,
   Inbox,
   LayoutGrid,
@@ -15,6 +18,7 @@ import {
   Shield,
   Upload,
   Users,
+  Watch,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -49,27 +53,45 @@ const NAV: Record<PortalKind, NavGroup[]> = {
         { label: "Lab orders", icon: FlaskConical },
         { label: "My results", icon: Activity, href: "/portal/results" },
         { label: "Upload results", icon: Upload },
+        { label: "Education", icon: GraduationCap, href: "/portal/education" },
+        { label: "Wearables", icon: Watch, href: "/portal/wearables" },
         { label: "Prescriptions", icon: Pill },
-        { label: "Appointments", icon: CalendarDays },
-        { label: "Ask the clinic", icon: MessageSquare },
-        { label: "Letters and documents", icon: FileText },
-        { label: "Privacy and consent", icon: Shield },
+        { label: "Appointments", icon: CalendarDays, href: "/portal/appointments" },
+        { label: "Ask the clinic", icon: MessageSquare, href: "/portal/questions" },
+        { label: "Letters and documents", icon: FileText, href: "/portal/documents" },
+        { label: "Privacy and consent", icon: Shield, href: "/portal/privacy" },
       ],
     },
   ],
   clinic: [
-    { eyebrow: "Today", items: [{ label: "Dashboard", icon: LayoutGrid, href: "/clinic" }] },
+    {
+      eyebrow: "Today",
+      items: [
+        { label: "Dashboard", icon: LayoutGrid, href: "/clinic" },
+        { label: "Calendar", icon: CalendarDays, href: "/clinic/calendar" },
+        { label: "Booking settings", icon: Clock, href: "/clinic/booking" },
+      ],
+    },
     {
       eyebrow: "Patients",
       items: [
-        { label: "Patient list", icon: Users },
+        { label: "Patient list", icon: Users, href: "/clinic/patients" },
+        { label: "Questions", icon: MessageSquare, href: "/clinic/questions" },
         { label: "Results review", icon: ClipboardList, href: "/clinic/results", countKey: "review" },
-        { label: "Import queue", icon: Inbox, href: "/clinic/results#imports", countKey: "imports", roles: ["pa", "doctor"] },
+        { label: "Import queue", icon: Inbox, href: "/clinic/results#imports", countKey: "imports", roles: ["pa", "doctor", "nurse", "admin"] },
         { label: "Lab orders", icon: FlaskConical },
       ],
     },
-    { eyebrow: "Clinical", items: [{ label: "Safeguarding alerts", icon: Shield }] },
-    { eyebrow: "Clinic", items: [{ label: "Team and settings", icon: Settings, href: "/clinic/team", roles: ["pa", "admin"] }] },
+    { eyebrow: "Clinical", items: [{ label: "Safeguarding alerts", icon: Shield, href: "/clinic/safeguarding", roles: ["doctor"] }] },
+    {
+      eyebrow: "Clinic",
+      items: [
+        { label: "Team and settings", icon: Settings, href: "/clinic/team", roles: ["pa", "admin", "doctor"] },
+        { label: "Education", icon: GraduationCap, href: "/clinic/education" },
+        { label: "Activity", icon: Activity, href: "/clinic/activity", roles: ["admin"] },
+        { label: "BrightHR", icon: Briefcase, href: "/clinic/hr" },
+      ],
+    },
   ],
 };
 
@@ -105,7 +127,7 @@ function NavRows({ kind, counts, roles }: { kind: PortalKind; counts?: NavCounts
                 </ComingSoon>
               );
             }
-            const current = item.href === pathname;
+            const current = item.href === pathname || (item.href !== "/clinic" && item.href !== "/portal" && pathname.startsWith(`${item.href}/`));
             return (
               <Link
                 key={item.label}

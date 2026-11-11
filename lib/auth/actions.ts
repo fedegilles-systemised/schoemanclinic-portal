@@ -9,6 +9,7 @@ import { parseReturnPath } from "@/lib/auth/next-path";
 import { newPasswordSchema, PASSWORD_RULES_MESSAGE } from "@/lib/auth/password-rules";
 import { allowAuthAttempt } from "@/lib/auth/throttle";
 import { createClient } from "@/lib/supabase/server";
+import { PORTAL_PATIENT_COOKIE } from "@/lib/portal/constants";
 import { LAST_SEEN_COOKIE, SESSION_KIND_COOKIE } from "@/lib/supabase/session-cookies";
 import { startSessionCookies } from "@/lib/auth/session-start";
 
@@ -99,5 +100,6 @@ export async function signOut(): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.delete(LAST_SEEN_COOKIE);
   cookieStore.delete(SESSION_KIND_COOKIE);
+  cookieStore.delete(PORTAL_PATIENT_COOKIE);
   redirect("/login");
 }

@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "Add results · The Schoeman Clinic" 
 /** PAs and doctors only. The entry function checks again, in the database. */
 export default async function NewResultsPage({ searchParams }: { searchParams: Promise<{ import?: string }> }) {
   const user = await getCurrentUser();
-  if (!user || user.isSuspended || !user.roles.some((role) => role === "pa" || role === "doctor")) redirect("/clinic");
+  if (!user || user.isSuspended || !user.roles.some((role) => role === "pa" || role === "doctor" || role === "nurse")) redirect("/clinic");
 
   const { import: importParam } = await searchParams;
   const importId = z.uuid().safeParse(importParam);

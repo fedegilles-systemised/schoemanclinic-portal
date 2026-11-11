@@ -6,7 +6,7 @@ import { getClinicNavCounts } from "@/lib/data/clinic";
 import { getAvatarUrl } from "@/lib/data/profile";
 import { getLocations, getNotifications } from "@/lib/data/shell";
 
-const ROLE_LABELS = { doctor: "Doctor", pa: "PA", health_coach: "Health coach", admin: "Admin", patient: "Patient" } as const;
+const ROLE_LABELS = { doctor: "Doctor", pa: "PA", health_coach: "Health coach", nurse: "Nurse", admin: "Admin", patient: "Patient" } as const;
 
 export default async function ClinicLayout({ children }: { children: React.ReactNode }) {
   const user = await getCurrentUser();

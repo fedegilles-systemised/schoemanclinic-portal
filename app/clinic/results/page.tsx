@@ -54,10 +54,10 @@ function ReportsTable({ rows, released }: { rows: ReportRow[]; released?: boolea
   );
 }
 
-/** Row-level security decides what each role sees: a health coach reads released reports only. */
+/** Row-level security decides what each role sees: staff see the reports of patients they can open (care team for doctors, nurses and coaches; everyone for PAs and admins). */
 export default async function ResultsPage() {
   const user = await getCurrentUser();
-  const canEnter = Boolean(user?.roles.some((role) => role === "pa" || role === "doctor"));
+  const canEnter = Boolean(user?.roles.some((role) => role === "pa" || role === "doctor" || role === "nurse"));
   const queue = await getResultsQueue();
 
   return (

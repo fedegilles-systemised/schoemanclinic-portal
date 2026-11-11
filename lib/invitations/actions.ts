@@ -8,11 +8,12 @@ import { getCurrentUser, type CurrentUser } from "@/lib/auth/session";
 import { allowAuthAttempt } from "@/lib/auth/throttle";
 import { getEmailEnv } from "@/lib/env";
 import { sendEmail } from "@/lib/email/send";
-import { invitationEmail } from "@/lib/email/templates/app";
+import { invitationEmail, teamInviteAlertEmail } from "@/lib/email/templates/app";
 import {
   INVITATION_DAYS,
   kindsFor,
   RELATIONSHIPS,
+  TEAM_INVITE_ALERT_TO_DEFAULT,
   TEAM_ROLES,
   type InvitationKind,
 } from "@/lib/invitations/constants";
@@ -138,6 +139,32 @@ async function deliver(params: {
   return null;
 }
 
+/**
+ * Tells the clinic's lead that a doctor or an admin was invited. Never blocks the invitation: a
+ * failure is logged, and the portal bell notice to the other admins still stands.
+ */
+async function alertTeamInvite(params: { inviterName: string; invitedEmail: string; role: "doctor" | "admin" }): Promise<void> {
+  // Only the live site emails the clinic's lead: test and preview invitations must never reach her.
+  if (process.env.VERCEL_ENV !== "production") return;
+  try {
+    const env = getEmailEnv();
+    const siteUrl = env.SITE_URL.replace(/\/$/, "");
+    const result = await sendEmail({
+      to: process.env.TEAM_INVITE_ALERT_TO || TEAM_INVITE_ALERT_TO_DEFAULT,
+      ...teamInviteAlertEmail({
+        siteUrl,
+        inviterName: params.inviterName || "A colleague",
+        invitedEmail: params.invitedEmail,
+        roleLabel: params.role === "admin" ? "Admin" : "Doctor",
+        teamUrl: `${siteUrl}/clinic/team`,
+      }),
+    });
+    if (!result.ok) console.error(`Team invitation alert failed: ${result.error}`);
+  } catch {
+    console.error("Team invitation alert not sent: the email settings are missing.");
+  }
+}
+
 function firstWord(name: string | undefined): string | undefined {
   return name?.split(/\s+/)[0] || undefined;
 }
@@ -193,6 +220,9 @@ export async function sendInvitation(_state: InvitationFormState, formData: Form
     inviterName: user.fullName,
     token,
   });
+  if (input.kind === "team" && (input.role === "doctor" || input.role === "admin")) {
+    await alertTeamInvite({ inviterName: user.fullName, invitedEmail: input.email, role: input.role });
+  }
   return problem ? { error: problem } : { saved: `Invitation sent to ${input.email}.` };
 }
 

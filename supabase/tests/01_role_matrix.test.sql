@@ -82,7 +82,7 @@ select is(t.n(t.eleanor(), 'select * from public.medications'), 3, 'a patient re
 select is(t.n(t.eleanor(), 'select * from public.patient_profiles'), 0, 'a patient has no direct read of patient_profiles');
 select is(t.n(t.eleanor(), 'select * from public.staff_profiles'), 0, 'a patient has no direct read of staff_profiles');
 select is(t.n(t.eleanor(), 'select * from public.get_my_patient_record()'), 1, 'get_my_patient_record returns the patient''s own row');
-select is(t.n(t.eleanor(), 'select * from public.get_staff_directory()'), 6, 'get_staff_directory returns the active team');
+select is(t.n(t.eleanor(), 'select * from public.get_staff_directory()'), 7, 'get_staff_directory returns the active team');
 select hasnt_function('public', 'staff_directory', 'no staff_directory function');
 select is(
   (select count(*)::int from pg_proc p join pg_namespace n on n.oid = p.pronamespace
@@ -198,7 +198,8 @@ select throws_ok($$ select t.n(t.priya(), 'select * from public.audit_log') $$, 
 
 -- doctor -----------------------------------------------------------------------------
 
-select is(t.n(t.gina(), 'select * from public.safeguarding_alerts'), 3, 'a doctor reads safeguarding alerts');
+-- Since 11 November a doctor sees only the patients on her care team (09_care_team_access covers the rest).
+select is(t.n(t.gina(), 'select * from public.safeguarding_alerts'), 2, 'a doctor reads safeguarding alerts for her care-team patients only');
 select is(t.n(t.gina(), 'select * from public.lab_reports where released_at is null'), 6, 'a doctor reads unreleased reports');
 select throws_ok($$ select t.run(t.gina(), $q$insert into public.medications (patient_id, name, kind, prescriber_id, start_date, supply_days) values ('d0000000-0000-4000-8000-000000000001', 'X', 'supplement', 'b0000000-0000-4000-8000-000000000002', current_date, 1)$q$) $$, '42501', null, 'a doctor cannot prescribe in a colleague''s name');
 select throws_ok($$ select t.run(t.gina(), $q$update public.staff_profiles set signature_path = 'a0000000-0000-4000-8000-000000000002/x.png' where user_id = 'a0000000-0000-4000-8000-000000000001'$q$) $$, '23514', null, 'a signature path must be the person''s own');
@@ -212,14 +213,15 @@ select throws_ok($$ select t.run(t.gina(), $q$update public.profiles set status 
 
 -- A doctor who is also a patient.
 select is(t.n(t.laura(), 'select * from public.get_my_patient_record() where is_self'), 1, 'a doctor who is a patient has a patient record');
-select is(t.n(t.laura(), 'select * from public.safeguarding_alerts'), 3, 'and keeps doctor access');
+select is(t.n(t.laura(), 'select * from public.safeguarding_alerts'), 1, 'and keeps doctor access to her own care-team patient');
 
 -- health coach -----------------------------------------------------------------------
 
 select is(t.n(t.coach(), 'select * from public.safeguarding_alerts'), 0, 'a health coach cannot read safeguarding alerts');
-select is(t.n(t.coach(), 'select * from public.lab_reports where released_at is null'), 0, 'a health coach reads no unreleased report');
-select is(t.n(t.coach(), $q$select * from public.results where lab_report_id = '14000000-0000-4000-8000-000000000004'$q$), 0, 'a health coach reads no unreleased result');
-select cmp_ok(t.n(t.coach(), 'select * from public.results'), '>', 0, 'a health coach reads released results');
+-- The seeded coach is on no care team, so sees no patient's data at all.
+select is(t.n(t.coach(), 'select * from public.lab_reports where released_at is null'), 0, 'a health coach on no care team reads no unreleased report');
+select is(t.n(t.coach(), $q$select * from public.results where lab_report_id = '14000000-0000-4000-8000-000000000004'$q$), 0, 'a health coach on no care team reads no unreleased result');
+select is(t.n(t.coach(), 'select * from public.results'), 0, 'or any result');
 select is(t.n(t.coach(), $q$select * from public.documents where id = '13000000-0000-4000-8000-000000000005'$q$), 0, 'a health coach reads no unreleased lab PDF');
 select is(t.n(t.coach(), 'select * from public.result_imports'), 0, 'a health coach cannot read the import queue');
 select is(t.n(t.coach(), 'select * from public.care_team'), 0, 'a health coach cannot read team-only tables');
@@ -227,11 +229,12 @@ select is(t.n(t.coach(), 'select * from public.staff_profiles'), 1, 'a health co
 
 -- admin ------------------------------------------------------------------------------
 
-select is(t.n(t.admin(), 'select * from public.patient_profiles'), 0, 'an admin cannot read patient profiles');
-select is(t.n(t.admin(), 'select * from public.results'), 0, 'an admin cannot read results');
+-- Decided 11 November: admins read every patient's clinical record.
+select is(t.n(t.admin(), 'select * from public.patient_profiles'), (select count(*)::int from public.patient_profiles), 'an admin reads every patient profile');
+select cmp_ok(t.n(t.admin(), 'select * from public.results'), '>', 0, 'and results');
 select is(t.n(t.admin(), 'select * from public.safeguarding_alerts'), 0, 'an admin cannot read safeguarding alerts');
 select cmp_ok(t.n(t.admin(), 'select * from public.user_roles'), '>', 1, 'an admin reads all roles');
-select is(t.n(t.admin(), 'select * from public.staff_profiles'), 6, 'an admin reads staff profiles');
+select is(t.n(t.admin(), 'select * from public.staff_profiles'), 7, 'an admin reads staff profiles');
 select throws_ok($$ select t.run(t.admin(), $q$insert into public.user_roles (user_id, role) values ('a0000000-0000-4000-8000-000000000006', 'doctor')$q$) $$, '42501', null, 'an admin cannot change their own role from the client');
 select is(t.run(t.admin(), $q$update public.profiles set status = 'suspended' where id = 'a0000000-0000-4000-8000-000000000022'$q$), 1, 'an admin can suspend an account');
 select throws_ok($$ select t.run(t.admin(), $q$update public.profiles set full_name = 'X' where id = 'a0000000-0000-4000-8000-000000000012'$q$) $$, '42501', null, 'an admin cannot rewrite someone else''s details');
@@ -297,7 +300,12 @@ insert into storage.objects (bucket_id, name) values
 select is(t.n(t.eleanor(), $q$select * from storage.objects where bucket_id = 'documents' and name not like '%/my-upload.pdf'$q$), 1, 'a patient reads only the released file of their own');
 select is(t.n(t.thomas(), $q$select * from storage.objects where bucket_id = 'documents'$q$), 0, 'another patient reads none of those files');
 select is(t.n(t.gina(), $q$select * from storage.objects where bucket_id = 'documents' and name not like '%/my-upload.pdf'$q$), 4, 'a doctor reads the files');
-select is(t.n(t.eleanor(), $q$select * from storage.objects where bucket_id = 'avatars'$q$), 1, 'a patient sees staff photos but not another patient''s');
+-- Decided 11 November (question 23): patients see only their own photo, never staff or other patients'.
+select is(t.n(t.eleanor(), $q$select * from storage.objects where bucket_id = 'avatars'$q$), 0, 'a patient sees no staff photo and no other patient''s');
+select is(t.n(t.thomas(), $q$select * from storage.objects where bucket_id = 'avatars'$q$), 1, 'a patient sees their own photo');
+select is(t.n(t.gina(), $q$select * from storage.objects where bucket_id = 'avatars'$q$), 2, 'a doctor sees staff photos and her patients'' photos');
+select is(t.n(t.coach(), $q$select * from storage.objects where bucket_id = 'avatars'$q$), 1, 'a health coach on no care team sees staff photos only');
+select is(t.n(t.eleanor(), 'select * from public.get_staff_directory() where avatar_path is not null'), 0, 'the directory gives patients no photo paths');
 select throws_ok($$ select t.run(t.eleanor(), $q$insert into storage.objects (bucket_id, name) values ('documents', 'd0000000-0000-4000-8000-000000000002/x.pdf')$q$) $$, '42501', null, 'a patient cannot upload to another patient''s folder');
 select lives_ok($$ select t.run(t.eleanor(), $q$insert into storage.objects (bucket_id, name) values ('documents', 'd0000000-0000-4000-8000-000000000001/mine.pdf')$q$) $$, 'a patient can upload to their own folder');
 select throws_ok($$ select t.run(t.eleanor(), $q$insert into storage.objects (bucket_id, name) values ('avatars', 'a0000000-0000-4000-8000-000000000012/x.png')$q$) $$, '42501', null, 'a person cannot upload another person''s avatar');

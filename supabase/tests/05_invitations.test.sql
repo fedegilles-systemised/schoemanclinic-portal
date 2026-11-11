@@ -25,7 +25,8 @@ update public.patient_profiles set contact_email = null where id in (
 select lives_ok($$ select private.create_invitation('a0000000-0000-4000-8000-000000000003', 'patient', 'newpatient@example.test', null, 'patient', 'd0000000-0000-4000-8000-000000000005', null, null, null, pg_temp.hash('t1')) $$, 'a PA can invite a patient');
 select lives_ok($$ select private.create_invitation('a0000000-0000-4000-8000-000000000003', 'guardian', 'guardian1@example.test', 'Pat Guardian', null, 'd0000000-0000-4000-8000-000000000005', 'parent', true, null, pg_temp.hash('t2')) $$, 'a PA can invite a guardian');
 select throws_ok($$ select private.create_invitation('a0000000-0000-4000-8000-000000000003', 'team', 'newpa@example.test', null, 'pa', null, null, null, 'PA', pg_temp.hash('t3')) $$, '42501', null, 'a PA cannot invite team members');
-select throws_ok($$ select private.create_invitation('a0000000-0000-4000-8000-000000000001', 'patient', 'doc@example.test', null, 'patient', 'd0000000-0000-4000-8000-000000000006', null, null, null, pg_temp.hash('t4')) $$, '42501', null, 'a doctor cannot invite anyone');
+-- Since 11 November a doctor invites patients, but only their own (10_doctor_invitations covers the rest).
+select throws_ok($$ select private.create_invitation('a0000000-0000-4000-8000-000000000001', 'patient', 'doc@example.test', null, 'patient', 'd0000000-0000-4000-8000-000000000009', null, null, null, pg_temp.hash('t4')) $$, '42501', null, 'a doctor cannot invite a patient she does not look after');
 select throws_ok($$ select private.create_invitation('a0000000-0000-4000-8000-000000000011', 'patient', 'pat@example.test', null, 'patient', 'd0000000-0000-4000-8000-000000000006', null, null, null, pg_temp.hash('t5')) $$, '42501', null, 'a patient cannot invite anyone');
 select lives_ok($$ select private.create_invitation('a0000000-0000-4000-8000-000000000006', 'team', 'newdoc@example.test', null, 'doctor', null, null, null, 'Doctor', pg_temp.hash('t6')) $$, 'an admin can invite a team member');
 select lives_ok($$ select private.create_invitation('a0000000-0000-4000-8000-000000000006', 'patient', 'p2@example.test', null, 'patient', 'd0000000-0000-4000-8000-000000000006', null, null, null, pg_temp.hash('t7')) $$, 'an admin can invite a patient');
@@ -120,12 +121,12 @@ select pg_temp.become('a0000000-0000-4000-8000-000000000006');
 select ok((select count(*) from public.invitations where kind = 'team') > 0, 'an admin reads team invitations');
 select ok((select count(*) from public.invitations where kind = 'patient') > 0, 'and patient ones');
 select ok((select count(*) from public.get_invitable_patients()) > 0, 'an admin gets the patient list for the form');
-select is((select count(*)::int from public.patient_profiles), 0, 'yet reads no patient record');
+select ok((select count(*) from public.patient_profiles) > 0, 'and, since 11 November, every patient record');
 reset role;
 
 select pg_temp.become('a0000000-0000-4000-8000-000000000001');
-select is((select count(*)::int from public.invitations), 0, 'a doctor reads no invitations');
-select is((select count(*)::int from public.get_invitable_patients()), 0, 'and gets no patient list');
+select is((select count(*)::int from public.invitations), 0, 'a doctor who sent none reads no invitations');
+select is((select count(*)::int from public.get_invitable_patients()), (select count(*)::int from public.care_team ct join public.patient_profiles p on p.id = ct.patient_id where ct.staff_id = 'b0000000-0000-4000-8000-000000000001' and ct.until is null and p.archived_at is null), 'and gets only her own patients for the form');
 reset role;
 select pg_temp.become('a0000000-0000-4000-8000-000000000011');
 select is((select count(*)::int from public.invitations), 0, 'a patient reads no invitations');
