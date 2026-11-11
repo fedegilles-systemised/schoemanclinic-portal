@@ -1049,6 +1049,9 @@ isOneToOne: false
 "remove_google_calendar_connection":
 { Args: { "_user": string }; Returns: undefined
                            },
+"set_patient_ghl_contact":
+{ Args: { "_contact": string,"_patient": string }; Returns: undefined
+                           },
 "sign_clinical_note":
 { Args: { "_note": string }; Returns: undefined
                            },

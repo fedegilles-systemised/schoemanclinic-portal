@@ -16,12 +16,14 @@ const TOPICS = [
   { id: "messages", label: "Messages", help: "Replies from the clinic" },
 ] as const;
 
-const CHANNELS = [
-  { id: "email", label: "Email" },
-  { id: "portal", label: "Portal" },
-] as const;
+const CHANNEL_LABELS = { email: "Email", whatsapp: "WhatsApp", portal: "Portal" } as const;
 
+/** The channels shown come from the saved values: WhatsApp appears only once GoHighLevel is connected. */
 export function NotificationsForm({ values }: { values: Record<string, boolean> }) {
+  const CHANNELS = (["email", "whatsapp", "portal"] as const)
+    .filter((id) => `results.${id}` in values)
+    .map((id) => ({ id, label: CHANNEL_LABELS[id] }));
+  const columns = CHANNELS.length === 3 ? "grid-cols-[minmax(0,1fr)_72px_72px_72px]" : "grid-cols-[minmax(0,1fr)_72px_72px]";
   const [state, action, pending] = useActionState(saveNotificationPreferences, initial);
   // Held here, not in the switches: a form reset after saving would put uncontrolled switches
   // back to how they were when the page first loaded.
@@ -30,7 +32,7 @@ export function NotificationsForm({ values }: { values: Record<string, boolean> 
   return (
     <form action={action} className="flex flex-col gap-6">
       <div className="border border-surface-border">
-        <div className="grid grid-cols-[minmax(0,1fr)_72px_72px] items-center gap-3 border-b border-surface-border bg-surface-sunken px-4 py-2.5">
+        <div className={`grid ${columns} items-center gap-3 border-b border-surface-border bg-surface-sunken px-4 py-2.5`}>
           <span className="type-eyebrow text-content-muted">Topic</span>
           {CHANNELS.map((channel) => (
             <span key={channel.id} className="type-eyebrow text-center text-content-muted">
@@ -41,7 +43,7 @@ export function NotificationsForm({ values }: { values: Record<string, boolean> 
         {TOPICS.map((topic) => (
           <div
             key={topic.id}
-            className="grid grid-cols-[minmax(0,1fr)_72px_72px] items-center gap-3 border-b border-surface-border px-4 py-3.5 last:border-b-0"
+            className={`grid ${columns} items-center gap-3 border-b border-surface-border px-4 py-3.5 last:border-b-0`}
           >
             <div>
               <div className="type-card-title">{topic.label}</div>
@@ -50,11 +52,11 @@ export function NotificationsForm({ values }: { values: Record<string, boolean> 
             {CHANNELS.map((channel) => (
               <div key={channel.id} className="flex justify-center">
                 <Switch
-                  checked={checked[`${topic.id}.${channel.id}`] ?? true}
+                  checked={checked[`${topic.id}.${channel.id}`] ?? false}
                   onCheckedChange={(value) => setChecked((current) => ({ ...current, [`${topic.id}.${channel.id}`]: value }))}
                   aria-label={`${topic.label} by ${channel.label.toLowerCase()}`}
                 />
-                {(checked[`${topic.id}.${channel.id}`] ?? true) ? (
+                {(checked[`${topic.id}.${channel.id}`] ?? false) ? (
                   <input type="hidden" name={`${topic.id}.${channel.id}`} value="on" />
                 ) : null}
               </div>

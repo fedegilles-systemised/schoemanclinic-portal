@@ -8,10 +8,9 @@ import { z } from "zod";
 
 import { getCurrentUser, type CurrentUser } from "@/lib/auth/session";
 import { allowAuthAttempt } from "@/lib/auth/throttle";
-import { sendEmail } from "@/lib/email/send";
 import { resultReadyEmail } from "@/lib/email/templates/app";
 import { getEmailEnv } from "@/lib/env";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { notifyPatient } from "@/lib/notify/patient";
 import { createClient } from "@/lib/supabase/server";
 
 export type ResultsFormState = { error?: string; saved?: string };
@@ -202,57 +201,38 @@ export async function releaseReport(_state: ResultsFormState, formData: FormData
 }
 
 /**
- * Sends the "a new result is ready" email once a report is released. The email carries no value or
- * verdict, only a link to sign in. A failure never undoes the release: the portal notice is already
- * saved, so the doctor is told and the patient still finds the result.
- * The service role is used only to read the patient's sign-in address, after the release has passed
- * the database's own checks.
+ * Tells the patient a new result is ready: by email, and by WhatsApp if they turned it on. Neither
+ * carries a value or verdict, only a link to sign in. A failure never undoes the release: the
+ * portal notice is already saved, so the doctor is told and the patient still finds the result.
  */
 async function tellPatientByEmail(
   supabase: Awaited<ReturnType<typeof createClient>>,
   reportId: string,
 ): Promise<string | null> {
-  const failure = "The email could not be sent, so they have not been emailed.";
+  const failure = "The message could not be sent, so they have not been emailed.";
   try {
     const report = await supabase
       .from("lab_reports")
-      .select("patient:patient_profiles(user_id, first_name)")
+      .select("patient_id, patient:patient_profiles(user_id, first_name)")
       .eq("id", reportId)
       .maybeSingle();
-    if (report.error) return failure;
-    const patient = report.data?.patient;
+    if (report.error || !report.data) return failure;
+    const patient = report.data.patient;
     if (!patient?.user_id) return "They have no account yet, so they have not been emailed.";
-
-    const admin = createAdminClient();
-    const account = await admin.from("profiles").select("email, status").eq("id", patient.user_id).maybeSingle();
-    if (account.error) return failure;
-    if (!account.data || account.data.status === "suspended") return "Their account is not active, so they have not been emailed.";
-
-    // The patient's own choice for results by email. A choice never saved counts as on, but a
-    // choice that could not be read is not taken as a yes.
-    const choice = await admin
-      .from("notification_preferences")
-      .select("enabled")
-      .eq("user_id", patient.user_id)
-      .eq("topic", "results")
-      .eq("channel", "email")
-      .maybeSingle();
-    if (choice.error) return failure;
-    if (choice.data?.enabled === false) return "They have switched results emails off, so they have not been emailed.";
-
     const siteUrl = getEmailEnv().SITE_URL.replace(/\/$/, "");
-    const sent = await sendEmail({
-      to: account.data.email,
-      ...resultReadyEmail({ siteUrl, firstName: patient.first_name, portalUrl: `${siteUrl}/portal/results` }),
+    const portalUrl = `${siteUrl}/portal/results`;
+    const delivery = await notifyPatient(report.data.patient_id, {
+      topic: "results",
+      email: resultReadyEmail({ siteUrl, firstName: patient.first_name, portalUrl }),
+      whatsapp: `Hello ${patient.first_name}, a doctor at The Schoeman Clinic has shared a new result with you. Sign in to see it: ${portalUrl}`,
     });
-    if (!sent.ok) {
-      console.error(`Result email failed: ${sent.error}`);
-      return failure;
-    }
+    if (delivery.email === "off") return "They have switched results emails off, so they have not been emailed.";
+    if (delivery.email === "no-address") return "There is no email address for them, so they have not been emailed.";
+    if (delivery.email !== "sent") return failure;
     return null;
   } catch {
     // Nothing here may undo or hide a release that has already happened.
-    console.error("Result email not sent: something went wrong before it could be sent.");
+    console.error("Result message not sent: something went wrong before it could be sent.");
     return failure;
   }
 }
