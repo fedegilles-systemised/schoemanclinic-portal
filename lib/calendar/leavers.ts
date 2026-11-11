@@ -15,7 +15,7 @@ export async function revokeLeaverTokens(): Promise<{ revoked: number; waiting: 
   const admin = createAdminClient();
   const { data, error } = await admin
     .from("google_revocations")
-    .select("id, user_id, refresh_token_encrypted, attempts")
+    .select("id, user_id, refresh_token_encrypted")
     .is("revoked_at", null)
     .lt("attempts", MAX_ATTEMPTS)
     .order("queued_at")
@@ -35,11 +35,9 @@ export async function revokeLeaverTokens(): Promise<{ revoked: number; waiting: 
         done = false;
       }
     }
-    const update = done
-      ? { revoked_at: new Date().toISOString(), refresh_token_encrypted: null }
-      : { attempts: row.attempts + 1 };
-    const saved = await admin.from("google_revocations").update(update).eq("id", row.id);
+    const saved = await admin.rpc("mark_google_revocation", { _id: row.id, _revoked: done });
     if (!saved.error && done) revoked += 1;
   }
+  if (data.length > revoked) console.error(`Google revocation: ${data.length - revoked} token(s) not revoked this run.`);
   return { revoked, waiting: data.length - revoked };
 }

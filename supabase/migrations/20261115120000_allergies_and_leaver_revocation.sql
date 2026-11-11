@@ -45,6 +45,7 @@ begin
     insert into public.google_revocations (user_id, refresh_token_encrypted)
     select c.user_id, c.refresh_token_encrypted from public.google_calendar_connections c where c.user_id = new.user_id;
     delete from public.google_calendar_connections where user_id = new.user_id;
+    perform set_config('app.system_actor', '', true);
   end if;
   return new;
 end;
@@ -76,6 +77,7 @@ begin
     insert into public.google_revocations (user_id, refresh_token_encrypted)
     select c.user_id, c.refresh_token_encrypted from public.google_calendar_connections c where c.user_id = new.id;
     delete from public.google_calendar_connections where user_id = new.id;
+    perform set_config('app.system_actor', '', true);
   end if;
   return new;
 end;
@@ -84,3 +86,49 @@ comment on function private.drop_suspended_connections() is 'Trigger: a suspende
 revoke all on function private.drop_suspended_connections() from public, anon, authenticated;
 create trigger profiles_drop_suspended_connections after update of status on public.profiles
   for each row execute function private.drop_suspended_connections();
+
+-- The time an allergy is removed is the database's, not the caller's.
+create function private.stamp_allergy_archive()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if new.archived_at is not null and old.archived_at is null then
+    new.archived_at := now();
+  end if;
+  return new;
+end;
+$$;
+create trigger patient_allergies_stamp_archive before update of archived_at on public.patient_allergies
+  for each row execute function private.stamp_allergy_archive();
+
+-- The server marks queue rows through one function that names itself in the audit log, instead of
+-- updating the table directly. A cleared token can only be cleared: never set to something else.
+alter table public.google_revocations add constraint google_revocations_cleared_when_revoked
+  check (revoked_at is null or refresh_token_encrypted is null);
+create trigger google_revocations_write_audit_log after insert or update or delete on public.google_revocations
+  for each row execute function private.write_audit_log();
+revoke update on public.google_revocations from service_role;
+
+create function private.mark_google_revocation(_id uuid, _revoked boolean)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  perform set_config('app.system_actor', 'google-revocation', true);
+  if _revoked then
+    update public.google_revocations set revoked_at = now(), refresh_token_encrypted = null where id = _id and revoked_at is null;
+  else
+    update public.google_revocations set attempts = attempts + 1 where id = _id and revoked_at is null;
+  end if;
+  perform set_config('app.system_actor', '', true);
+end;
+$$;
+comment on function private.mark_google_revocation(uuid, boolean) is 'Server only: marks a queued Google token revoked (and clears it), or counts a failed try.';
+create function public.mark_google_revocation(_id uuid, _revoked boolean)
+returns void language sql security invoker set search_path = '' as $$ select private.mark_google_revocation(_id, _revoked); $$;
+revoke all on function private.mark_google_revocation(uuid, boolean), public.mark_google_revocation(uuid, boolean) from public, anon, authenticated;
+grant execute on function private.mark_google_revocation(uuid, boolean), public.mark_google_revocation(uuid, boolean) to service_role;

@@ -1168,6 +1168,9 @@ isOneToOne: false
 "reply_to_question":
 { Args: { "_body": string,"_question": string }; Returns: boolean
                            },
+"mark_google_revocation":
+{ Args: { "_id": string,"_revoked": boolean }; Returns: undefined
+                           },
 "log_record_view":
 { Args: { "_entity": string,"_entity_id"?: string,"_patient": string }; Returns: undefined
                            },
