@@ -5,7 +5,7 @@ import { ArrowLeft, Lock } from "lucide-react";
 import { z } from "zod";
 
 import { AssignCourseForm, UnassignButton } from "@/components/education/forms";
-import { CorrectNote, DraftForm, NewNoteForm } from "@/components/notes/note-forms";
+import { DraftForm, NewNoteForm } from "@/components/notes/note-forms";
 import { RELATIONSHIP_LABELS } from "@/components/patients/care-team-forms";
 import { ReadingsTable } from "@/components/wearables/readings-table";
 import { Badge } from "@/components/ui/badge";
@@ -115,7 +115,7 @@ export default async function PatientRecordPage({ params }: { params: Promise<{ 
             <CardHeader>
               <div className="flex flex-wrap items-center gap-2">
                 <CardTitle>{note.title}</CardTitle>
-                <Badge variant="outline">Draft{note.version > 1 ? `, version ${note.version}` : ""}</Badge>
+                <Badge variant="outline">Draft</Badge>
                 {note.source === "recording" ? <Badge variant="neutral">From a recording</Badge> : null}
               </div>
               <div className="type-small text-content-muted">
@@ -140,20 +140,16 @@ export default async function PatientRecordPage({ params }: { params: Promise<{ 
               <div className="flex flex-wrap items-center gap-2">
                 <CardTitle>{note.title}</CardTitle>
                 <Badge variant="neutral">
-                  <Lock className="size-3" aria-hidden /> Signed{note.version > 1 ? `, version ${note.version}` : ""}
+                  <Lock className="size-3" aria-hidden /> Signed, final
                 </Badge>
-                {note.correctedBy ? <Badge variant="outline">Corrected by a later version</Badge> : null}
                 {note.source === "recording" ? <Badge variant="neutral">From a recording</Badge> : null}
               </div>
               <div className="type-small text-content-muted">
                 {note.authorName} · signed {note.signedAt ? dateTime(note.signedAt) : ""}
               </div>
             </CardHeader>
-            <CardContent className="flex flex-col gap-4">
+            <CardContent>
               <p className="type-body whitespace-pre-wrap">{note.body}</p>
-              {canWrite && myStaffId && !note.correctedBy ? (
-                <CorrectNote patientId={record.id} noteId={note.id} title={note.title} body={note.body} />
-              ) : null}
             </CardContent>
           </Card>
         ))}

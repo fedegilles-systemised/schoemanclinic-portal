@@ -300,7 +300,12 @@ insert into storage.objects (bucket_id, name) values
 select is(t.n(t.eleanor(), $q$select * from storage.objects where bucket_id = 'documents' and name not like '%/my-upload.pdf'$q$), 1, 'a patient reads only the released file of their own');
 select is(t.n(t.thomas(), $q$select * from storage.objects where bucket_id = 'documents'$q$), 0, 'another patient reads none of those files');
 select is(t.n(t.gina(), $q$select * from storage.objects where bucket_id = 'documents' and name not like '%/my-upload.pdf'$q$), 4, 'a doctor reads the files');
-select is(t.n(t.eleanor(), $q$select * from storage.objects where bucket_id = 'avatars'$q$), 1, 'a patient sees staff photos but not another patient''s');
+-- Decided 11 November (question 23): patients see only their own photo, never staff or other patients'.
+select is(t.n(t.eleanor(), $q$select * from storage.objects where bucket_id = 'avatars'$q$), 0, 'a patient sees no staff photo and no other patient''s');
+select is(t.n(t.thomas(), $q$select * from storage.objects where bucket_id = 'avatars'$q$), 1, 'a patient sees their own photo');
+select is(t.n(t.gina(), $q$select * from storage.objects where bucket_id = 'avatars'$q$), 2, 'a doctor sees staff photos and her patients'' photos');
+select is(t.n(t.coach(), $q$select * from storage.objects where bucket_id = 'avatars'$q$), 1, 'a health coach on no care team sees staff photos only');
+select is(t.n(t.eleanor(), 'select * from public.get_staff_directory() where avatar_path is not null'), 0, 'the directory gives patients no photo paths');
 select throws_ok($$ select t.run(t.eleanor(), $q$insert into storage.objects (bucket_id, name) values ('documents', 'd0000000-0000-4000-8000-000000000002/x.pdf')$q$) $$, '42501', null, 'a patient cannot upload to another patient''s folder');
 select lives_ok($$ select t.run(t.eleanor(), $q$insert into storage.objects (bucket_id, name) values ('documents', 'd0000000-0000-4000-8000-000000000001/mine.pdf')$q$) $$, 'a patient can upload to their own folder');
 select throws_ok($$ select t.run(t.eleanor(), $q$insert into storage.objects (bucket_id, name) values ('avatars', 'a0000000-0000-4000-8000-000000000012/x.png')$q$) $$, '42501', null, 'a person cannot upload another person''s avatar');

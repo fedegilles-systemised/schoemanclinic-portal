@@ -142,5 +142,14 @@ select cmp_ok(t.n(t.priya(), 'select * from public.patient_profiles'), '>', 1, '
 -- The care team list follows the same rule: a doctor sees only her own patients' teams.
 select is(t.n(t.laura(), $q$select * from public.care_team where patient_id = 'd0000000-0000-4000-8000-000000000001'$q$), 0, 'a doctor does not read the care team of a patient she does not look after');
 
+-- Unmatched files: PAs and admins only (decided 12 November) ----------------------------------------
+
+insert into public.documents (id, patient_id, kind, title, storage_path) values ('f0000000-0000-4000-8000-0000000000aa', null, 'lab_report', 'Emailed in', 'unmatched/x.pdf');
+select is(t.n(t.priya(), $q$select * from public.documents where patient_id is null$q$), (select count(*)::int from public.documents where patient_id is null), 'a PA reads unmatched files');
+select is(t.n(t.admin(), $q$select * from public.documents where patient_id is null$q$), (select count(*)::int from public.documents where patient_id is null), 'so does an admin');
+select is(t.n(t.gina(), $q$select * from public.documents where patient_id is null$q$), 0, 'a doctor does not');
+select is(t.n(t.nora(), $q$select * from public.documents where patient_id is null$q$), 0, 'nor does a nurse');
+select throws_ok($$ select t.run(t.gina(), $q$insert into storage.objects (bucket_id, name) values ('documents', 'unmatched/y.pdf')$q$) $$, '42501', null, 'a doctor cannot file an unmatched upload');
+
 select * from finish();
 rollback;

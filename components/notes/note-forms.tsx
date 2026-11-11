@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState } from "react";
 
 import { FormMessage } from "@/components/profile/form-message";
 import { Button } from "@/components/ui/button";
@@ -26,34 +26,17 @@ function Fields({ idPrefix, title, body }: { idPrefix: string; title: string; bo
   );
 }
 
-/** A new note, or a correction of a signed note (then supersedesId is set and the text starts from it). */
-export function NewNoteForm({
-  patientId,
-  supersedesId,
-  title = "",
-  body = "",
-  onDone,
-}: {
-  patientId: string;
-  supersedesId?: string;
-  title?: string;
-  body?: string;
-  onDone?: () => void;
-}) {
-  const [state, action, pending] = useActionState(async (previous: NoteFormState, formData: FormData) => {
-    const result = await createNote(previous, formData);
-    if (result.saved) onDone?.();
-    return result;
-  }, initial);
+/** A new draft note. */
+export function NewNoteForm({ patientId }: { patientId: string }) {
+  const [state, action, pending] = useActionState(createNote, initial);
   return (
     <form action={action} className="flex flex-col gap-4">
       <input type="hidden" name="patientId" value={patientId} />
-      {supersedesId ? <input type="hidden" name="supersedesId" value={supersedesId} /> : null}
-      <Fields idPrefix={supersedesId ? `correct-${supersedesId}` : "new-note"} title={title} body={body} />
+      <Fields idPrefix="new-note" title="" body="" />
       <FormMessage state={state} />
       <div>
         <Button type="submit" loading={pending}>
-          {supersedesId ? "Save correction as a draft" : "Save draft"}
+          Save draft
         </Button>
       </div>
     </form>
@@ -82,7 +65,7 @@ export function DraftForm({ patientId, noteId, title, body }: { patientId: strin
             formAction={signAction}
             loading={signing}
             onClick={(event) => {
-              if (!window.confirm("Sign this note? Once signed it cannot be changed; a correction becomes a new version.")) event.preventDefault();
+              if (!window.confirm("Sign this note? Once signed it is final: nobody can change or correct it.")) event.preventDefault();
             }}
           >
             Sign and lock
@@ -98,20 +81,8 @@ export function DraftForm({ patientId, noteId, title, body }: { patientId: strin
           </Button>
         </form>
       </div>
-      <p className="type-small text-content-muted">Signing saves what is on screen and locks it. A correction becomes a new version.</p>
+      <p className="type-small text-content-muted">Signing saves what is on screen and makes it final. Nobody can change or correct a signed note.</p>
       <FormMessage state={state} />
     </div>
   );
-}
-
-export function CorrectNote({ patientId, noteId, title, body }: { patientId: string; noteId: string; title: string; body: string }) {
-  const [open, setOpen] = useState(false);
-  if (!open) {
-    return (
-      <Button variant="ghost" size="sm" onClick={() => setOpen(true)}>
-        Write a correction
-      </Button>
-    );
-  }
-  return <NewNoteForm patientId={patientId} supersedesId={noteId} title={title} body={body} onDone={() => setOpen(false)} />;
 }
