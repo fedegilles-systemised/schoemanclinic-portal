@@ -155,6 +155,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"google_calendar_connections": {
+                  Row: {
+                    "calendar_id": string,"connected_at": string,"created_at": string,"google_email": string,"refresh_token_encrypted": string,"scope": string,"updated_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "calendar_id"?: string,"connected_at"?: string,"created_at"?: string,"google_email": string,"refresh_token_encrypted": string,"scope": string,"updated_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "calendar_id"?: string,"connected_at"?: string,"created_at"?: string,"google_email"?: string,"refresh_token_encrypted"?: string,"scope"?: string,"updated_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "google_calendar_connections_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: true
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"import_items": {
                   Row: {
                     "confidence": Database["public"]['Enums']["import_confidence"],"created_at": string,"decided_by": string | null,"decision": Database["public"]['Enums']["import_decision"],"id": string,"import_id": string,"marker_id": string | null,"raw_name": string,"ref_range_text": string | null,"unit": string | null,"value": string | null
@@ -875,6 +895,12 @@ isOneToOne: false
                            },
 "register_import":
 { Args: { "_document_id": string }; Returns: string
+                           },
+"remove_google_calendar_connection":
+{ Args: { "_user": string }; Returns: undefined
+                           },
+"save_google_calendar_connection":
+{ Args: { "_google_email": string,"_refresh_token_encrypted": string,"_scope": string,"_user": string }; Returns: undefined
                            },
 "release_report":
 { Args: { "_comment"?: string,"_report": string }; Returns: undefined
