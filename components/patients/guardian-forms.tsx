@@ -19,7 +19,7 @@ export function RemoveGuardianButton({ patientId, linkId, name }: { patientId: s
         variant="destructive"
         size="sm"
         loading={pending}
-        aria-label={`Remove ${name} as a guardian`}
+        aria-label={`Remove guardian: ${name}`}
         onClick={(event) => {
           if (!window.confirm(`Remove ${name} as a guardian? They will lose access to this patient's account straight away.`)) event.preventDefault();
         }}

@@ -17,6 +17,7 @@ export function BookSlotButton(props: {
   locationId: string | null;
   back: "portal" | "clinic";
   label: string;
+  ariaLabel: string;
   confirmText: string;
 }) {
   const [state, action, pending] = useActionState(bookAppointment, initial);
@@ -33,6 +34,7 @@ export function BookSlotButton(props: {
         variant="outline"
         size="sm"
         loading={pending}
+        aria-label={props.ariaLabel}
         onClick={(event) => {
           if (!window.confirm(props.confirmText)) event.preventDefault();
         }}
@@ -55,9 +57,9 @@ export function CancelAppointmentButton({ appointmentId, patientId, label }: { a
         variant="destructive"
         size="sm"
         loading={pending}
-        aria-label={`Cancel ${label}`}
+        aria-label={`Cancel appointment: ${label}`}
         onClick={(event) => {
-          if (!window.confirm(`Cancel ${label}? The patient will be told.`)) event.preventDefault();
+          if (!window.confirm(`Cancel ${label}? A message goes to the patient where their choices allow.`)) event.preventDefault();
         }}
       >
         Cancel appointment

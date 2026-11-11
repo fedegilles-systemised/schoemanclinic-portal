@@ -34,8 +34,8 @@ export function BookingPicker({
     return (
       <EmptyState>
         {options.clinicians.length === 0
-          ? "There is no clinician to book with yet. Please contact the clinic."
-          : "No appointments can be booked online yet. Please contact the clinic."}
+          ? back === "portal" ? "There is no clinician to book with yet. Please contact the clinic." : "No clinician can be booked yet. Add clinicians' hours in Booking settings."
+          : back === "portal" ? "No appointments can be booked online yet. Please contact the clinic." : "No appointment types yet. An admin adds them in Booking settings."}
       </EmptyState>
     );
   }
@@ -75,16 +75,16 @@ export function BookingPicker({
 
       {type && clinician && days ? (
         days.every((d) => d.slots.length === 0) ? (
-          <EmptyState>No free times in the next two weeks. Please contact the clinic.</EmptyState>
+          <EmptyState>{back === "portal" ? "No free times in the next two weeks. Please contact the clinic." : "No free times in the next two weeks for this clinician."}</EmptyState>
         ) : (
           <div className="flex flex-col gap-6">
             {days
               .filter((d) => d.slots.length > 0)
               .map((d) => (
                 <section key={d.day} aria-labelledby={`slots-${d.day}`} className="flex flex-col gap-3">
-                  <h3 id={`slots-${d.day}`} className="type-card-title">
+                  <h2 id={`slots-${d.day}`} className="type-card-title">
                     {dayHeading(d.day)}
-                  </h3>
+                  </h2>
                   <div className="flex flex-wrap gap-2">
                     {d.slots.map((slot) => {
                       const time = londonParts(slot.startsAt).time ?? "";
@@ -98,7 +98,8 @@ export function BookingPicker({
                           locationId={slot.locationId}
                           back={back}
                           label={time}
-                          confirmText={`Book ${type.name.toLowerCase()} with ${clinician.name} on ${dayHeading(d.day)} at ${time}?`}
+                          ariaLabel={`${time}, ${dayHeading(d.day)}`}
+                          confirmText={`Book ${type.name} with ${clinician.name} on ${dayHeading(d.day)} at ${time}?`}
                         />
                       );
                     })}

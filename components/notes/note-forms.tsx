@@ -76,7 +76,14 @@ export function DraftForm({ patientId, noteId, title, body }: { patientId: strin
         <form action={discardAction}>
           <input type="hidden" name="patientId" value={patientId} />
           <input type="hidden" name="noteId" value={noteId} />
-          <Button type="submit" variant="ghost" loading={discarding}>
+          <Button
+            type="submit"
+            variant="destructive"
+            loading={discarding}
+            onClick={(event) => {
+              if (!window.confirm("Discard this draft? It is kept in the record's history but no longer shown.")) event.preventDefault();
+            }}
+          >
             Discard draft
           </Button>
         </form>

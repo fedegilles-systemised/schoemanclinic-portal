@@ -4,7 +4,8 @@
 --   clinician may set their own. A patient (or a guardian who can act) books a free slot with a
 --   clinician on their care team; staff book for any patient they can open, with any clinician. A
 --   slot is free when it sits inside the clinician's hours in London time and overlaps none of their
---   live appointments. The server also checks the clinician's Google Calendar before it books.
+--   live appointments. The server checks the clinician's Google Calendar, if connected, when it lists
+--   free times and again just before it books.
 --   Patients cannot cancel or move a booking: the team does (the clinic's 48-hour policy).
 
 create table public.appointment_types (

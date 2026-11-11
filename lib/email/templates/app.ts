@@ -158,8 +158,8 @@ export function appointmentEmail({
 }: Base & { firstName?: string; when: string; typeName: string; clinicianName: string; cancelled: boolean; portalUrl: string }): EmailContent {
   const hello = firstName ? `Dear ${firstName},` : "Hello,";
   const line = cancelled
-    ? `Your ${typeName.toLowerCase()} with ${clinicianName} on ${when} has been cancelled.`
-    : `Your ${typeName.toLowerCase()} with ${clinicianName} is booked for ${when}.`;
+    ? `Your appointment (${typeName}) with ${clinicianName} on ${when} has been cancelled.`
+    : `Your appointment (${typeName}) with ${clinicianName} is booked for ${when}.`;
   const policy = cancelled
     ? "If you did not expect this, or would like a new time, please contact the clinic."
     : "If you need to change or cancel it, please contact the clinic at least 48 hours before.";

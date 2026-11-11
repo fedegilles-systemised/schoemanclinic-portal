@@ -143,10 +143,10 @@ export function Recorder({ patientId }: { patientId: string }) {
       ) : null}
       {phase === "recording" ? (
         <div className="flex flex-wrap items-center gap-4">
-          <span className="type-value tabular-nums" aria-live="polite">
+          <span className="type-value tabular-nums">
             Recording {clock(seconds)}
           </span>
-          <Button type="button" variant="destructive" onClick={stop}>
+          <Button type="button" onClick={stop}>
             <Square aria-hidden />
             Stop and save
           </Button>
@@ -154,8 +154,8 @@ export function Recorder({ patientId }: { patientId: string }) {
       ) : null}
       {phase === "uploading" ? <p className="type-small text-content-muted">Saving the recording. Keep this page open.</p> : null}
       <p className="type-small text-content-muted">
-        Tell the patient you are recording. For a video call, share the call&apos;s tab with &quot;Share tab audio&quot; ticked. The audio is kept privately and only
-        staff who can open this record can reach it.
+        Tell the patient you are recording. For a video call, share the call&apos;s tab with &quot;Share tab audio&quot; ticked. The audio is kept privately: only staff
+        who can open this record can reach it, and a short-lived link is sent to the transcription service (AssemblyAI, EU).
       </p>
       <FormMessage state={message} />
     </div>

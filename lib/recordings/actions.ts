@@ -91,5 +91,5 @@ export async function checkRecording(_state: { error?: string; saved?: string },
   revalidatePath(`/clinic/patients/${patientId.data}`);
   if (outcome === "done") return { saved: "The transcript is ready as a draft note." };
   if (outcome === "working") return { saved: "Still being transcribed. It usually takes a few minutes." };
-  return { error: "The transcription failed. Check again to send it once more." };
+  return { error: "The transcription failed. Use Send again to try once more." };
 }

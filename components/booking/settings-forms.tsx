@@ -53,7 +53,7 @@ export function TypeActiveButton({ id, active, name }: { id: string; active: boo
     <form action={action}>
       <input type="hidden" name="id" value={id} />
       <input type="hidden" name="active" value={active ? "false" : "true"} />
-      <Button type="submit" variant="ghost" size="sm" loading={pending} aria-label={`${active ? "Stop offering" : "Offer"} ${name}`}>
+      <Button type="submit" variant="ghost" size="sm" loading={pending} aria-label={`${active ? "Stop offering" : "Offer again"}: ${name}`}>
         {active ? "Stop offering" : "Offer again"}
       </Button>
       {state.error ? <FormMessage state={state} /> : null}
@@ -124,7 +124,16 @@ export function RemoveHoursButton({ id, label }: { id: string; label: string }) 
   return (
     <form action={action}>
       <input type="hidden" name="id" value={id} />
-      <Button type="submit" variant="ghost" size="sm" loading={pending} aria-label={`Remove ${label}`}>
+      <Button
+        type="submit"
+        variant="destructive"
+        size="sm"
+        loading={pending}
+        aria-label={`Remove: ${label}`}
+        onClick={(event) => {
+          if (!window.confirm(`Remove ${label}? Patients stop seeing these times straight away.`)) event.preventDefault();
+        }}
+      >
         Remove
       </Button>
       {state.error ? <FormMessage state={state} /> : null}

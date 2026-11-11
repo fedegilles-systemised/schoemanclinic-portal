@@ -12,6 +12,7 @@ import { CheckRecordingButton, Recorder } from "@/components/recordings/recorder
 import { RELATIONSHIP_LABELS } from "@/components/patients/care-team-forms";
 import { RemoveGuardianButton } from "@/components/patients/guardian-forms";
 import { ReadingsTable } from "@/components/wearables/readings-table";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -39,8 +40,15 @@ function dateTime(value: string): string {
 }
 
 /** A patient's record for the clinic: who looks after them, and their clinical notes. */
-export default async function PatientRecordPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function PatientRecordPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ booked?: string }>;
+}) {
   const { id } = await params;
+  const { booked } = await searchParams;
   if (!z.uuid().safeParse(id).success) notFound();
   const user = await getCurrentUser();
   if (!user) redirect("/login");
@@ -86,6 +94,14 @@ export default async function PatientRecordPage({ params }: { params: Promise<{ 
           record.careTeam.length ? record.careTeam.map((m) => `${m.name} (${RELATIONSHIP_LABELS[m.relationship]})`).join(", ") : "nobody yet"
         }.`}
       />
+
+      {booked ? (
+        <div className="mb-6">
+          <Alert variant="success">
+            <AlertDescription>Appointment booked. A confirmation goes to the patient where their choices allow.</AlertDescription>
+          </Alert>
+        </div>
+      ) : null}
 
       <section aria-labelledby="appointments" className="mb-12 flex flex-col gap-4">
         <SectionHeader id="appointments" title="Appointments">

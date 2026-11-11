@@ -35,7 +35,7 @@ export default async function PortalAppointmentsPage({ searchParams }: { searchP
       {params.booked ? (
         <div className="mb-6">
           <Alert variant="success">
-            <AlertDescription>Your appointment is booked. We have sent you a confirmation.</AlertDescription>
+            <AlertDescription>The appointment is booked. A confirmation goes out by the routes chosen in your notification settings.</AlertDescription>
           </Alert>
         </div>
       ) : null}

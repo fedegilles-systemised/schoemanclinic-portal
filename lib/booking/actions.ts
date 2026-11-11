@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { getCurrentUser } from "@/lib/auth/session";
-import { createEvent, deleteEvent, googleSessionFor } from "@/lib/calendar/google";
+import { createEvent, deleteEvent, googleSessionFor, listEvents } from "@/lib/calendar/google";
 import { londonParts } from "@/lib/calendar/time";
 import { appointmentEmail } from "@/lib/email/templates/app";
 import { getEmailEnv } from "@/lib/env";
@@ -46,6 +46,9 @@ export async function bookAppointment(_state: BookingFormState, formData: FormDa
   if (!parsed.success) return { error: GENERIC_FAILURE };
   const input = parsed.data;
   const supabase = await createClient();
+  if (await busyInGoogle(input.staffId, input.typeId, input.startsAt)) {
+    return { error: "That time is no longer free in the clinician's calendar. Please choose another." };
+  }
   const { data: appointmentId, error } = await supabase.rpc("book_appointment", {
     _patient: input.patientId,
     _staff: input.staffId,
@@ -64,6 +67,30 @@ export async function bookAppointment(_state: BookingFormState, formData: FormDa
   redirect(`/clinic/patients/${input.patientId}?booked=1`);
 }
 
+/**
+ * Checks the clinician's Google Calendar again at the moment of booking, because a free time listed a
+ * few minutes ago may have been filled there since. A calendar that cannot be read does not block.
+ */
+async function busyInGoogle(staffId: string, typeId: string, startsAt: string): Promise<boolean> {
+  try {
+    const supabase = await createClient();
+    const [{ data: type }, { data: directory }] = await Promise.all([
+      supabase.from("appointment_types").select("duration_min").eq("id", typeId).maybeSingle(),
+      supabase.rpc("get_staff_directory"),
+    ]);
+    const clinician = directory?.find((d) => d.staff_id === staffId);
+    if (!type || !clinician) return false;
+    const session = await googleSessionFor(clinician.profile_id);
+    if (!session) return false;
+    const start = Date.parse(startsAt);
+    const end = start + type.duration_min * 60000;
+    const events = await listEvents(session, new Date(start).toISOString(), new Date(end).toISOString());
+    return events.some((e) => !e.allDay && Date.parse(e.start) < end && Date.parse(e.end) > start);
+  } catch {
+    return false;
+  }
+}
+
 /** The team cancels. Patients contact the clinic instead (48-hour policy). */
 export async function cancelAppointment(_state: BookingFormState, formData: FormData): Promise<BookingFormState> {
   const user = await getCurrentUser();
@@ -78,7 +105,7 @@ export async function cancelAppointment(_state: BookingFormState, formData: Form
   if (error) return { error: friendly(error) };
   await afterChange(parsed.data.appointmentId, true);
   revalidatePath(`/clinic/patients/${parsed.data.patientId}`);
-  return { saved: "Appointment cancelled. The patient has been told." };
+  return { saved: "Appointment cancelled. A message to the patient has been sent where their choices allow." };
 }
 
 /**
@@ -128,8 +155,8 @@ async function afterChange(appointmentId: string, cancelled: boolean): Promise<v
       topic: "appointments",
       email: appointmentEmail({ siteUrl, firstName: a.patient?.first_name, when, typeName: a.type, clinicianName, cancelled, portalUrl }),
       whatsapp: cancelled
-        ? `Hello ${a.patient?.first_name ?? ""}, your ${a.type.toLowerCase()} on ${when} has been cancelled. Please contact the clinic if you would like a new time.`
-        : `Hello ${a.patient?.first_name ?? ""}, your ${a.type.toLowerCase()} with ${clinicianName} is booked for ${when}. To change it, please contact the clinic at least 48 hours before.`,
+        ? `Hello ${a.patient?.first_name ?? ""}, your appointment (${a.type}) on ${when} has been cancelled. Please contact the clinic if you would like a new time.`
+        : `Hello ${a.patient?.first_name ?? ""}, your appointment (${a.type}) with ${clinicianName} is booked for ${when}. To change it, please contact the clinic at least 48 hours before.`,
     });
   } catch {
     console.error("Booking follow-up not completed.");
