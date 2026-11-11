@@ -78,7 +78,7 @@ const NAV: Record<PortalKind, NavGroup[]> = {
     {
       eyebrow: "Clinic",
       items: [
-        { label: "Team and settings", icon: Settings, href: "/clinic/team", roles: ["pa", "admin"] },
+        { label: "Team and settings", icon: Settings, href: "/clinic/team", roles: ["pa", "admin", "doctor"] },
         { label: "Activity", icon: Activity, href: "/clinic/activity", roles: ["admin"] },
       ],
     },
