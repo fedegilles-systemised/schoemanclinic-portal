@@ -68,9 +68,9 @@ const NAV: Record<PortalKind, NavGroup[]> = {
     {
       eyebrow: "Patients",
       items: [
-        { label: "Patient list", icon: Users },
+        { label: "Patient list", icon: Users, href: "/clinic/patients" },
         { label: "Results review", icon: ClipboardList, href: "/clinic/results", countKey: "review" },
-        { label: "Import queue", icon: Inbox, href: "/clinic/results#imports", countKey: "imports", roles: ["pa", "doctor"] },
+        { label: "Import queue", icon: Inbox, href: "/clinic/results#imports", countKey: "imports", roles: ["pa", "doctor", "nurse"] },
         { label: "Lab orders", icon: FlaskConical },
       ],
     },

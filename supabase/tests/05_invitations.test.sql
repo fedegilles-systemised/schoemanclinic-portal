@@ -120,7 +120,7 @@ select pg_temp.become('a0000000-0000-4000-8000-000000000006');
 select ok((select count(*) from public.invitations where kind = 'team') > 0, 'an admin reads team invitations');
 select ok((select count(*) from public.invitations where kind = 'patient') > 0, 'and patient ones');
 select ok((select count(*) from public.get_invitable_patients()) > 0, 'an admin gets the patient list for the form');
-select is((select count(*)::int from public.patient_profiles), 0, 'yet reads no patient record');
+select ok((select count(*) from public.patient_profiles) > 0, 'and, since 11 November, every patient record');
 reset role;
 
 select pg_temp.become('a0000000-0000-4000-8000-000000000001');

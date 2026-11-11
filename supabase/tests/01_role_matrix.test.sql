@@ -198,7 +198,8 @@ select throws_ok($$ select t.n(t.priya(), 'select * from public.audit_log') $$, 
 
 -- doctor -----------------------------------------------------------------------------
 
-select is(t.n(t.gina(), 'select * from public.safeguarding_alerts'), 3, 'a doctor reads safeguarding alerts');
+-- Since 11 November a doctor sees only the patients on her care team (09_care_team_access covers the rest).
+select is(t.n(t.gina(), 'select * from public.safeguarding_alerts'), 2, 'a doctor reads safeguarding alerts for her care-team patients only');
 select is(t.n(t.gina(), 'select * from public.lab_reports where released_at is null'), 6, 'a doctor reads unreleased reports');
 select throws_ok($$ select t.run(t.gina(), $q$insert into public.medications (patient_id, name, kind, prescriber_id, start_date, supply_days) values ('d0000000-0000-4000-8000-000000000001', 'X', 'supplement', 'b0000000-0000-4000-8000-000000000002', current_date, 1)$q$) $$, '42501', null, 'a doctor cannot prescribe in a colleague''s name');
 select throws_ok($$ select t.run(t.gina(), $q$update public.staff_profiles set signature_path = 'a0000000-0000-4000-8000-000000000002/x.png' where user_id = 'a0000000-0000-4000-8000-000000000001'$q$) $$, '23514', null, 'a signature path must be the person''s own');
@@ -212,14 +213,15 @@ select throws_ok($$ select t.run(t.gina(), $q$update public.profiles set status 
 
 -- A doctor who is also a patient.
 select is(t.n(t.laura(), 'select * from public.get_my_patient_record() where is_self'), 1, 'a doctor who is a patient has a patient record');
-select is(t.n(t.laura(), 'select * from public.safeguarding_alerts'), 3, 'and keeps doctor access');
+select is(t.n(t.laura(), 'select * from public.safeguarding_alerts'), 1, 'and keeps doctor access to her own care-team patient');
 
 -- health coach -----------------------------------------------------------------------
 
 select is(t.n(t.coach(), 'select * from public.safeguarding_alerts'), 0, 'a health coach cannot read safeguarding alerts');
-select is(t.n(t.coach(), 'select * from public.lab_reports where released_at is null'), 0, 'a health coach reads no unreleased report');
-select is(t.n(t.coach(), $q$select * from public.results where lab_report_id = '14000000-0000-4000-8000-000000000004'$q$), 0, 'a health coach reads no unreleased result');
-select cmp_ok(t.n(t.coach(), 'select * from public.results'), '>', 0, 'a health coach reads released results');
+-- The seeded coach is on no care team, so sees no patient's data at all.
+select is(t.n(t.coach(), 'select * from public.lab_reports where released_at is null'), 0, 'a health coach on no care team reads no unreleased report');
+select is(t.n(t.coach(), $q$select * from public.results where lab_report_id = '14000000-0000-4000-8000-000000000004'$q$), 0, 'a health coach on no care team reads no unreleased result');
+select is(t.n(t.coach(), 'select * from public.results'), 0, 'or any result');
 select is(t.n(t.coach(), $q$select * from public.documents where id = '13000000-0000-4000-8000-000000000005'$q$), 0, 'a health coach reads no unreleased lab PDF');
 select is(t.n(t.coach(), 'select * from public.result_imports'), 0, 'a health coach cannot read the import queue');
 select is(t.n(t.coach(), 'select * from public.care_team'), 0, 'a health coach cannot read team-only tables');
@@ -227,8 +229,9 @@ select is(t.n(t.coach(), 'select * from public.staff_profiles'), 1, 'a health co
 
 -- admin ------------------------------------------------------------------------------
 
-select is(t.n(t.admin(), 'select * from public.patient_profiles'), 0, 'an admin cannot read patient profiles');
-select is(t.n(t.admin(), 'select * from public.results'), 0, 'an admin cannot read results');
+-- Decided 11 November: admins read every patient's clinical record.
+select is(t.n(t.admin(), 'select * from public.patient_profiles'), (select count(*)::int from public.patient_profiles), 'an admin reads every patient profile');
+select cmp_ok(t.n(t.admin(), 'select * from public.results'), '>', 0, 'and results');
 select is(t.n(t.admin(), 'select * from public.safeguarding_alerts'), 0, 'an admin cannot read safeguarding alerts');
 select cmp_ok(t.n(t.admin(), 'select * from public.user_roles'), '>', 1, 'an admin reads all roles');
 select is(t.n(t.admin(), 'select * from public.staff_profiles'), 7, 'an admin reads staff profiles');

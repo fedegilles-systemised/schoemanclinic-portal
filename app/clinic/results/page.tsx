@@ -57,7 +57,7 @@ function ReportsTable({ rows, released }: { rows: ReportRow[]; released?: boolea
 /** Row-level security decides what each role sees: a health coach reads released reports only. */
 export default async function ResultsPage() {
   const user = await getCurrentUser();
-  const canEnter = Boolean(user?.roles.some((role) => role === "pa" || role === "doctor"));
+  const canEnter = Boolean(user?.roles.some((role) => role === "pa" || role === "doctor" || role === "nurse"));
   const queue = await getResultsQueue();
 
   return (
