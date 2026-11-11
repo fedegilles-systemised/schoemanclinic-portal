@@ -35,11 +35,11 @@ There are six roles, plus the guardian, who is a link to a patient rather than a
 | --- | --- | --- | --- |
 | Patient | A patient of the clinic | Sees their own record and released results, orders and pays for bloods, uploads results, requests repeat prescriptions, asks the clinic questions, reads shared letters | Patient portal |
 | Guardian | A person verified by the clinic as able to see or act for a patient, for example a parent | Sees the patient's portal, and acts for them (pays, requests, asks) only if the clinic ticked "can act" | Patient portal, viewing that patient |
-| Doctor | A clinician | Reviews and releases results, comments on values, writes letters, sees safeguarding alerts, orders bloods | Clinic portal |
+| Doctor | A clinician | For the patients on their care team: reviews and releases results, comments on values, writes and signs notes, writes letters, sees safeguarding alerts, orders bloods, invites the patient | Clinic portal |
 | PA | A personal assistant or practice administrator | Matches and confirms imported PDFs, manages orders and repeat requests, invites patients and verifies guardians | Clinic portal |
-| Health coach | A coaching team member | Sees released results only, and no team-only information | Clinic portal |
-| Nurse | A nurse at the clinic | Can sign in and has a profile. Sees no patient records until the clinic decides what a nurse may do (question 7) | Clinic portal |
-| Admin | A clinic or system administrator | Manages the team, roles and settings, reads the activity logs; sees no clinical records | Clinic portal |
+| Health coach | A coaching team member | Sees everything about the patients on their care team except safeguarding alerts, and writes and signs coaching notes | Clinic portal |
+| Nurse | A nurse at the clinic | Works like a doctor on the patients of their care team: reads the record, enters results, records allergies, writes and signs notes. Does not record diagnoses, prescribe, see safeguarding alerts or release results | Clinic portal |
+| Admin | A clinic or system administrator | Manages the team, roles, settings, care teams and the education library, reads the activity logs, and reads every patient's clinical record | Clinic portal |
 
 **Rules that apply to every role**
 
@@ -49,7 +49,7 @@ There are six roles, plus the guardian, who is a link to a patient rather than a
 - Records are archived, never deleted. People are suspended, never removed.
 - Nobody can change their own role.
 
-**How accounts are created.** By invitation. A PA invites patients and guardians, and an admin invites anyone, from the Team and settings page. The person gets an email with a link that works for 3 days, chooses a password, and lands on their home page. Someone who already has an account signs in and accepts, and the new access is added to that same account.
+**How accounts are created.** By invitation. A PA invites patients and guardians, a doctor invites their own patients, and an admin invites anyone, from the Team and settings page. The person gets an email with a link that works for 3 days, chooses a password, and lands on their home page. Someone who already has an account signs in and accepts, and the new access is added to that same account.
 
 **Questions**
 
@@ -58,44 +58,46 @@ There are six roles, plus the guardian, who is a link to a patient rather than a
 
 ## Access by role
 
-This table is what the database enforces today. "Read" means can see; "add" and "change" mean can create or edit. A dash means no access at all. Guardian columns assume a verified link; where a guardian needs "can act", the cell says so.
+This table is what the database enforces since the clinic's decisions of 11 November. "Read" means can see; "add" and "change" mean can create or edit. A dash means no access at all. Guardian columns assume a verified link; where a guardian needs "can act", the cell says so.
 
-| Information | Patient | Guardian | Doctor | PA | Health coach | Admin |
-| --- | --- | --- | --- | --- | --- | --- |
-| Own account and contact details | Read, change | Read, change | Read, change | Read, change | Read, change | Read, change |
-| Profile photo | Own: add, replace, remove. Sees staff photos | Same as patient | Own: change. Sees everyone's | Own: change. Sees everyone's | Own: change. Sees staff photos | Own: change. Sees everyone's |
-| Signature for letters | - | - | Own: add, replace | - | - | - |
-| Other people's accounts (name, email, status) | - | - | Read | Read | - | Read, change |
-| Roles of every account | Own only | Own only | Own only | Own only | Own only | Read all |
-| Team directory (names and job titles) | Read | Read | Read | Read | Read | Read |
-| Team staff profiles (work details) | - | - | Read | Read | - | Read, add, change |
-| Patient details (name, date of birth, contact) | Own, read | Read | Read | Read, add, change | Read | - |
-| Allergies | Read | Read | Read, add, change | Read, add, change | Read | - |
-| Diagnoses | Read | Read | Read, add, change | Read | Read | - |
-| Medications | Read | Read | Read, add, change | Read | Read | - |
-| Consents | Read, add | Read, add if can act | Read | Read | Read | - |
-| Care team (who looks after whom) | - | - | Read, add, change | Read, add, change | - | Read |
-| Safeguarding alerts | - | - | Read, add, change | - | - | - |
-| Invitations | - | - | - | Patient and guardian invitations | - | All invitations |
-| Appointments | Read | Read | Read | Read | Read | - |
-| Lab orders | Read | Read | Read, add, change | Read, add, change | Read | - |
-| Lab reports and results | Released only | Released only | Read all, comment, release | Read all | Released only | - |
-| Imported PDFs and extracted values | - | - | Read, decide | Read, decide | - | - |
-| Letters and documents | What the clinic shared, upload own | Same, upload if can act | Read, add, change | Read, add, change | Read (lab PDFs once released) | - |
-| Questions to the clinic | Read, ask | Read, ask if can act | Read, change status | Read, change status | Read | - |
-| Repeat prescription requests | Read, request | Read, request if can act | Read, change status | Read, request for a patient, change status | Read | - |
-| Own notifications and preferences | Read, change | Read, change | Read, change | Read, change | Read, change | Read, change |
-| Reference data (tests, markers, prices, lab partners, locations) | Read | Read | Read | Read | Read | Read, add, change |
-| Activity and integration logs | - | - | - | - | - | Read the activity log on the Activity screen |
+| Information | Patient | Guardian | Doctor | Nurse | PA | Health coach | Admin |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Own account and contact details | Read, change | Read, change | Read, change | Read, change | Read, change | Read, change | Read, change |
+| Profile photo | Own: add, replace, remove. Sees staff photos | Same as patient | Own: change. Sees everyone's | Own: change. Sees staff photos | Own: change. Sees everyone's | Own: change. Sees staff photos | Own: change. Sees everyone's |
+| Signature for letters | - | - | Own: add, replace | - | - | - | - |
+| Other people's accounts (name, email, status) | - | - | Read | - | Read | - | Read, change |
+| Roles of every account | Own only | Own only | Own only | Own only | Own only | Own only | Read all |
+| Team directory (names and job titles) | Read | Read | Read | Read | Read | Read | Read |
+| Team staff profiles (work details) | - | - | Read | Own only | Read | Own only | Read, add, change |
+| Patient details (name, date of birth, contact) | Own, read | Read | Read | Read | Read, add, change | Read | Read |
+| Allergies | Read | Read | Read, add, change | Read, add, change | Read, add, change | Read | Read |
+| Diagnoses | Read | Read | Read, add, change | Read | Read | Read | Read |
+| Medications | Read | Read | Read, add, change | Read | Read | Read | Read |
+| Consents | Read, add | Read, add if can act | Read | Read | Read | Read | Read |
+| Care team (who looks after whom) | - | - | Read, add, change | Read | Read, add, change | Read | Read, add, change |
+| Clinical notes | - | - | Read; write and sign their own | Read; write and sign their own | Read | Read; write and sign their own | Read |
+| Safeguarding alerts | - | - | Read, add, change | - | - | - | - |
+| Invitations | - | - | Patient invitations they sent | - | Patient and guardian invitations | - | All invitations |
+| Appointments | Read | Read | Read | Read | Read | Read | Read |
+| Lab orders | Read | Read | Read, add, change | Read | Read, add, change | Read | Read |
+| Lab reports and results | Released only | Released only | Read all, comment, release | Read all, enter | Read all, enter | Read all | Read all |
+| Imported PDFs and extracted values | - | - | Read, decide | Read, decide | Read, decide | - | - |
+| Letters and documents | What the clinic shared, upload own | Same, upload if can act | Read, add, change | Read, add, change | Read, add, change | Read | Read |
+| Questions to the clinic | Read, ask | Read, ask if can act | Read, change status | Read | Read, change status | Read | Read, change status |
+| Repeat prescription requests | Read, request | Read, request if can act | Read, change status | Read | Read, request for a patient, change status | Read | Read |
+| Education courses | Courses added to their portal | Same | Read the library, add to a patient's portal | Same as doctor | Same as doctor | Same as doctor | Read, build and publish courses, add to any patient's portal |
+| Wearable readings | Read, add, remove their own | Read, add if can act | Read | Read | Read | Read | Read |
+| Own notifications and preferences | Read, change | Read, change | Read, change | Read, change | Read, change | Read, change | Read, change |
+| Reference data (tests, markers, prices, lab partners, locations) | Read | Read | Read | Read | Read | Read | Read, add, change |
+| Activity and integration logs | - | - | - | - | - | - | Read the activity log on the Activity screen |
 
 **Points the table does not show**
 
-- Today every doctor, PA and health coach can open every patient. The database is already prepared to narrow this to a patient's own care team, but it is switched to "everyone" until the clinic decides.
+- Doctors, nurses and health coaches see only the patients whose care team they are on: everything in their columns applies to those patients only. PAs and admins see every patient. The care team is kept on the Patient list by PAs, admins and doctors; taking someone off ends their access the same day.
 - Appointments and payments are never entered by hand: they arrive from the booking system and from Stripe.
 - Patients and guardians never reach unreleased results, safeguarding alerts, imports or the care team, however they ask. This is tested.
 - Every change to a clinical record is written to a permanent log: who, what and when. The log never stores the clinical values themselves.
 - Opening a patient's report is written to the same log: who, which record, which patient and when, once every ten minutes at most. Admins read it on the Activity screen. Other record screens will do the same as they are built.
-- The nurse role exists, but a nurse has no access to patient information until the clinic decides (question 7).
 
 **Questions**
 
@@ -512,17 +514,9 @@ Every message has a template in the clinic's look. The sign-in emails (reset, ch
 
 ## Open questions for the clinic
 
-Fourteen questions remain open, grouped by topic and ordered within each topic by how much they block. They keep their original numbers. Under each one is what we heard on the call on 6 November, if anything, what we have learned since, and what we assume until the clinic answers. If an assumption is wrong, please tell the project team.
+Seven questions remain open, to be revisited with the clinic: 8, 9, 10, 11, 12, 29 and 31. They keep their original numbers. Under each one is what we heard on the call on 6 November, what we have learned since, and what we assume until the clinic answers.
 
-On 11 November the project team settled nineteen questions (1, 2, 3, 4, 6, 7, 11, 14, 18, 21, 22, 23, 24, 25, 26, 27, 28, 30 and 33) by assumption, to keep the build moving. They are listed under Decisions already taken, and the clinic can still change any of them. The short question lists earlier in this document may still mention them.
-
-**5. Guardians.** What age and consent rules apply? Can one PA create a link that lets a guardian act, or is a second approver needed? Can a patient see and remove a guardian?
-
-*What it decides: Guardian screens and checks.*
-
-> **Seen in the clinic's current plan.** The clinic sees patients under 18. Its plan has a guardian route at registration, and its own retention rules for under 18s.
->
-> **What we assume.** One PA creates the link, as in flow 11. No age rule yet. A patient cannot remove a guardian; the clinic does.
+The clinic answered the rest on 11 November. Those answers are under Decisions already taken, each marked as built or not built yet. The short question lists earlier in this document may still mention questions that are now answered.
 
 **8. Bloods.** How are barcodes made, where are samples taken, are prices fixed, and what happens to an unpaid order or a refund?
 
@@ -556,6 +550,12 @@ On 11 November the project team settled nineteen questions (1, 2, 3, 4, 6, 7, 11
 >
 > **What we assume.** A patient's own upload takes PDF only, up to 5 files each time. For now a PA enters every value by hand, and a doctor reviews before release. The AI reading comes later, and it will only suggest values that a PA confirms. Provider, inbox and retention are still to be decided (see question 19).
 
+**11. Bloods.** Who may release results, is a second doctor needed for critical values, and do some markers need a hold-back?
+
+*What it decides: The release rules.*
+
+> **What we assume.** Only a doctor releases. One doctor is enough. No hold-backs yet. To be revisited with the clinic.
+
 **12. Bloods.** Which markers do you test, and what are your base units and ranges in UK units? When a lab's range differs from the clinic's, which one does the patient see? Is it right to call a value borderline when it is inside the range but within 5% of an edge?
 
 *What it decides: How results are shown.*
@@ -565,66 +565,6 @@ On 11 November the project team settled nineteen questions (1, 2, 3, 4, 6, 7, 11
 > **Seen in the clinic's current plan (patient flow V8 and the emails since).** Results are due two weeks before the appointment (about three weeks for Randox). The doctor's own limits for an abnormal result are still to come and may differ from the lab's range. HbA1c is held in mmol/mol, so "HbA1c above 6%" means above 42. Panels in use include GS5 (female hormone and metabolic, fasting), GS10 (male hormone, no fasting) and GS11 (comprehensive male health, fasting).
 >
 > **What we assume.** All values are converted to UK units when entered, and the original value and unit are kept. The conversions in use are the standard factors, and they are replaced by the clinic's list when it arrives. The patient sees the range held for each marker, with a status: low or high against the range, borderline within 5% of an edge, and critical only when a doctor sets it.
-
-**13. Requests.** For repeat prescriptions: the fee, refunds, which medicines and how often. How does an approval reach SignatureRx and the pharmacy? Is a prescription alert three weeks before it runs out right for every medicine?
-
-*What it decides: The repeat flow.*
-
-> **Heard on the call, 6 November.** A prescription usually covers one month more than the follow-up, for example four months for a three-month follow-up. After that the patient pays for a new one. Three weeks is the alert time, because compounded medicines take time to make and ship, for example to Qatar. We will show a banner and send an email. Reworded after the call.
->
-> **Seen in the clinic's current plan (patient flow V8 and the emails since).** The £30 repeat request replaces the Typeform form. Prescribing goes through SignatureRx, and the doctor signs with a PIN as now.
->
-> **Update, November.** The clinic has asked SignatureRx and PCCA for a new token for each doctor, so Clinic Hub can send prescriptions.
->
-> **What we assume.** The fee is £30, as in the data model. An approval is passed on by the team by hand at first.
-
-**15. Systems.** Until we can show how notes, prescriptions and rescheduling would work in GoHighLevel, which system holds the truth for bookings, contact details and notes? How often do we copy bookings? Which appointment types need bloods?
-
-*What it decides: The sync.*
-
-> **Heard on the call, 6 November.** Notes are written in Semble, and that needs an appointment in the Semble calendar, so going fully to GoHighLevel is hard to picture. The clinic wants to see what it would look like first. GoHighLevel is quicker to connect. Reworded after the call.
->
-> **What we assume.** Semble keeps notes, prescribing and bookings for now. The portal shows a copy of the bookings (flow 10). There is no reschedule or cancel button. The page asks the patient to contact the team and shows the 48-hour policy, as in the clinic's patient flow.
-
-**16. Systems.** What is Fathom used for? Which accounts will the clinic own: GitHub, Supabase, Resend, Vercel and its domain?
-
-*What it decides: The connections.*
-
-> **Heard on the call, 6 November.** Stripe, GoHighLevel and Semble are the clinic's. The clinic is asked to open or share GitHub, Supabase, Resend, Vercel, GoDaddy and Semble. Vercel already exists. Patient data is stored in London. Nothing was said about Fathom.
->
-> **Seen in the clinic's current plan (patient flow V8 and the emails since).** Fathom turns a consultation transcript and the doctor's notes into a letter in the clinic's style, which the doctor approves before it is sent. It replaces a custom letter tool.
->
-> **Update, November.** The clinic has shared GitHub, Resend, Cloudflare, GoDaddy and Semble, and invited us to its own Stripe account. Supabase and Vercel in the clinic's name are still to come.
->
-> **What we assume.** Every account is in the clinic's name. Reworded after the call.
-
-**17. Emails.** Which sender address should patients see, and which address should receive their replies? Do they want WhatsApp as well as email? Who approves each message? May a critical result override a patient's choices?
-
-*What it decides: Resend and the message list.*
-
-> **Heard on the call, 6 November.** Reminders go by email and WhatsApp through GoHighLevel, whose automatic WhatsApp replaces SMS. Staff can answer from GoHighLevel, so many people can handle messages while fewer share the WhatsApp phone. Nothing was said about the sender address or who approves wording.
->
-> **Seen in the clinic's current plan (patient flow V8 and the emails since).** Every email ends with phone, email and WhatsApp. WhatsApp goes only to patients who agreed to it, and always alongside an alert to the PAs. Mary Anne rewrites the wording and Gina approves it.
->
-> **What we assume.** Emails come from The Schoeman Clinic on the subdomain already set up, until the clinic chooses another. The clinic approves each message. Emails from Clinic Hub close with the clinic's phone, email and WhatsApp. A critical result does not override a patient's choices.
-
-**19. Compliance.** What retention periods apply to records, uploads and the activity log?
-
-*What it decides: Archive and purge rules.*
-
-> **Heard on the call, 6 November.** Not discussed. We confirmed that patient data is stored in London.
->
-> **Seen in the clinic's current plan (patient flow V8 and the emails since).** The clinic needs retention rules for CQC, including its own rules for patients under 18.
->
-> **What we assume.** Nothing is deleted. Records are archived and accounts suspended until the clinic sets periods.
-
-**20. Compliance.** Who is the clinic's data protection lead? How are patient requests to see or erase data handled, given records are archived and not deleted? Does the privacy notice mention page-speed and visit counts?
-
-*What it decides: Legal readiness.*
-
-> **Heard on the call, 6 November.** The privacy and consent page was shown, with a switch for using data in research. No comment was made.
->
-> **What we assume.** The clinic writes the privacy notice. Requests are handled by hand until a process is agreed.
 
 **29. Identity.** Please share the registration and consent forms. Must a PA check the ID before the patient gets in, or does uploading it open the portal? Where should the ID be kept? What happens if a patient cannot upload it? The clinic's registration form in Semble already asks for ID and consent too. Which of the two is the record that counts, and can one of them be dropped? New after the call.
 
@@ -646,13 +586,6 @@ On 11 November the project team settled nineteen questions (1, 2, 3, 4, 6, 7, 11
 >
 > **What we assume.** Nothing moves until we know what Semble can export.
 
-**32. Notes.** The clinic needs clinical notes locked and versioned once a doctor signs them off, for CQC. Which system holds them, Semble or Clinic Hub? Who may reopen a signed note, and what is kept of each version? New after reading the clinic's plan.
-
-*What it decides: Whether Clinic Hub takes on notes.*
-
-> **Decided, 11 November.** Doctors see locked notes for the patients on their care team. Admins see them for every patient. Not built yet. Which system holds the notes is still open.
->
-> **What we assume.** Semble keeps the notes, as today. Clinic Hub does not hold them until the clinic decides.
 ## Decisions already taken
 
 - Agreed on the call, 6 November: a banner and an email three weeks before a prescription runs out.
@@ -660,8 +593,8 @@ On 11 November the project team settled nineteen questions (1, 2, 3, 4, 6, 7, 11
 - Agreed on the call, 6 November: at the first sign-in a patient uploads photo ID and signs the consent form. The clinic will share the form (question 29).
 - Agreed on the call, 6 November: questions from patients go to info@theschoemanclinic.com, where staff triage them.
 - Agreed on the call, 6 November: reminders go by email and by WhatsApp through GoHighLevel's automatic WhatsApp, in place of SMS.
-- The first release is the bloods loop. Messaging, reminders, calendar, invoices and marketing stay in GoHighLevel. Consultation notes stay in Semble. Prescribing goes through SignatureRx.
-- Least privilege: health coaches see released results only. Admins: see the decision of 11 November below.
+- The first release is the bloods loop. Messaging, reminders, invoices and marketing stay in GoHighLevel. Clinical notes and appointments move into Clinic Hub (11 November, question 15), and Semble is retired in stages. Prescribing goes through SignatureRx.
+- Who sees which patient was decided on 11 November (questions 1 to 3, below).
 - A patient sees a result only after a doctor releases it. Safeguarding alerts are for doctors only.
 - Sign-in is by email and password. There is no public sign-up.
 - Staff sessions end after 12 hours, or 30 minutes idle. Patient sessions end after 7 days, or 2 hours idle.
@@ -670,7 +603,7 @@ On 11 November the project team settled nineteen questions (1, 2, 3, 4, 6, 7, 11
 - Every email closes with the clinic's phone, email and WhatsApp. WhatsApp only goes to patients who agreed to it.
 - Clinic Hub sends the portal's own emails through Resend. Anything GoHighLevel sends, the clinic's team manage there.
 - Sex at birth and gender identity are both kept. Sex at birth decides blood panels and cycle guidance. If it is missing, those steps stop and a PA is told. It is never guessed.
-- A nurse role exists. A nurse has no access to patient records until the clinic decides what a nurse may do.
+- A nurse role exists. Since 11 November a nurse works like a doctor on the patients of their care team (question 7, below).
 - Opening a patient's report is written to the activity log, and admins read it on the Activity screen.
 - Until go-live, the clinic can try the platform with fictional patients and results. Before the clinic goes live, the test data will be cleared once, so the live system holds only real patients and nothing from testing. This is a one-off clean-up, not a way to delete records once the clinic is live.
 - Every change to a clinical record is logged with who made it, and the log cannot be edited.
@@ -681,31 +614,37 @@ On 11 November the project team settled nineteen questions (1, 2, 3, 4, 6, 7, 11
 - Changing a password needs the current one and signs out other devices. Changing the sign-in email needs the password and a confirmation link, and the old address is told.
 - For now, notification choices cover email and the portal only. WhatsApp and SMS wait for the messaging connection.
 - A doctor's signature is private to that doctor. Letters read it on the server.
-- Invitations: PAs invite patients and guardians, admins invite anyone, and nobody else invites. A link works for 3 days. Doctors and admins can be invited without a second approval, and everything is logged.
+- Invitations: PAs invite patients and guardians, admins invite anyone, and doctors invite their own patients (since 11 November). A link works for 3 days. Doctors and admins can be invited without a second approval, and everything is logged.
 - Patient and guardian invitations ask for the patient's date of birth when accepted. Five wrong dates cancel the link and tell the sender.
 - A patient invitation should go to the address in the patient's record. If it is different, the sender sees a warning and has to confirm.
 - Other admins are told when a doctor or admin is invited, and other PAs when a guardian who can act is invited. These are notices only, not approvals (see question 28).
 - Someone who already has an account accepts an invitation by signing in. The new access is added to that account, and the person always has to press accept.
-- Admins see every invitation and the names of patients for the invitation form. Full clinical access for admins was decided on 11 November (below) and is not built yet.
+- Admins see every invitation and the names of patients for the invitation form, and since 11 November every patient's clinical record.
 
-**Settled by assumption on 11 November.** The project team took these to keep the build moving. Each was an open question, shown with its old number. If any is wrong, please tell the project team.
+**Decided by the clinic on 11 November.** Answers to the open questions, shown with their old numbers. "Built" means it is in Clinic Hub now; "not built yet" means it is agreed and still to do.
 
-- Doctors see the patients on their care team. PAs and admins keep the care team up to date. Not built yet: today every clinical staff member sees every patient. (Question 1)
-- Admins can read every patient's clinical records, including locked notes. Not built yet: today admins see no clinical records. (Questions 2 and 27)
-- The health coach sees released results only. (Question 3)
-- A doctor who is also a patient sees, as a patient, only what any patient sees. (Question 4)
-- Inviting a doctor or an admin needs no second approval. Other admins get a notice in the portal bell. Doctors invite nobody. (Question 6)
-- The roles are doctor, PA, health coach, nurse, admin, patient and guardian. A nurse sees no patient records until the clinic says what a nurse may do. (Question 7)
-- Only a doctor releases results. One doctor is enough, including for critical values. No markers are held back. (Question 11)
-- Replies to questions show in the portal with a status. The page says it is not for emergencies. Response times are agreed later. (Question 14)
-- Session lengths stay as built. Staff have no second sign-in step yet. Staff reset their own password. (Question 18)
-- The bloods loop comes first, then the other planned pages in the order of this document. (Question 21)
-- The clinic keeps a patient's contact details. (Question 22)
-- Staff see patients' photos. Patients do not see staff photos. (Question 23)
-- Only doctors sign letters. A signature is private to that doctor. (Question 24)
-- Notification choices are email and the portal for now. WhatsApp is added with the GoHighLevel connection, off until the patient turns it on. (Question 25)
-- The email confirmation is enough for a staff member to change their sign-in email, and the old address is told. (Question 26)
-- When a doctor, an admin or a guardian who can act is invited, other admins or PAs get a notice in the portal bell only. The date of birth, and for patients the ID at first sign-in, are the checks. (Question 28)
-- Education content and wearables come after the bloods loop and are not in the first release. (Question 30)
-- Clinic Hub follows the clinic's four choices for bloods: the clinic's own lab, TDL, a TDL home kit, or the patient's own results. Only TDL and the home kit are paid through Stripe and get a barcode. (Question 33)
-- Doctors see locked notes for the patients on their care team, and admins see them for every patient. Which system holds the notes is still open. (Question 32)
+- PAs and admins see every patient. Doctors, nurses and health coaches see only the patients whose care team they are on. PAs, admins and doctors keep the care team up to date on the Patient list. Built. (Question 1)
+- Admins can read every patient's clinical record, including locked notes. Built. (Questions 2 and 27)
+- A health coach sees everything about the patients on their care team, except safeguarding alerts. Built. (Question 3)
+- A doctor who is also a patient sees, as a patient, only what any patient sees. Built. (Question 4)
+- A PA can create a link that lets a guardian act, with no second approver. A patient cannot remove a guardian; a PA or an admin does. Built for PAs; removal by an admin is not built yet. Age and consent rules for under-18s are still to be set. (Question 5)
+- Doctors invite their own patients. A new patient a doctor invites joins that doctor's care team as primary doctor. Whenever a doctor or an admin is invited, drgina@theschoemanclinic.com is emailed, as well as the notice in the portal bell. No second approval. Built. (Question 6)
+- The roles are doctor, nurse, health coach, PA and admin, plus patients and guardians. A nurse works like a doctor on the patients of their care team: reads the record, enters results, records allergies and writes notes. Diagnoses, prescribing, safeguarding alerts and releasing results stay with doctors. Built. (Question 7)
+- Repeat prescriptions are requested three weeks before they run out. When the patient has paid, the admins, the PAs and the doctor are told that payment is made and the prescription is to be offered. Not built yet: needs payments and prescriptions. (Question 13)
+- Replies to questions show in the portal with a status. The page says it is not for emergencies. Response times are agreed later. Not built yet. (Question 14)
+- Everything moves into Clinic Hub. Clinical notes are written here: built, locked once signed, and corrected only by a new version. Staff connect their own Google Calendar to see and add appointments: built, on its own branch. Patient booking inside Clinic Hub is not built yet. (Questions 15 and 32)
+- Fathom is replaced. From a patient's record, a team member records the call: everything said on both sides is transcribed and saved as a draft note on the patient's record, which the author checks and signs. The clinic already has patients' consent to record. Not built yet: needs a transcription service. Every account is in the clinic's name. (Question 16)
+- Messages go by email and WhatsApp through GoHighLevel, which the clinic connects with a private integration key. Not built yet. (Question 17)
+- Session lengths stay as built. Staff have no second sign-in step yet. Staff reset their own password. Built. (Question 18)
+- Nothing is deleted. Records are archived and accounts suspended. Built. (Question 19)
+- Privacy follows the clinic's policy at https://theschoemanclinic.com/privacy/, and questions go to info@theschoemanclinic.com. (Question 20)
+- Everything heard on the call matters. The Christmas prescription email is separate and is sent from GoHighLevel. Education content and wearables are part of the build. (Question 21)
+- Education: admins build courses of sections and modules, with text and video links, and staff add them to a patient's portal. Built, starting empty for the clinic's content. (Questions 21 and 30)
+- Wearables: patients type in their readings until the device connections are built, which come next. Manual entry is built. (Question 21)
+- The clinic keeps a patient's contact details. A patient who wants one changed messages the clinic. Built; messaging the clinic is not built yet. (Question 22)
+- Staff see patients' photos. Patients do not see staff photos. Built. (Question 23)
+- Only doctors sign letters, and prescribing will go through SignatureRx. Signatures are built; SignatureRx is not built yet. (Question 24)
+- WhatsApp goes through GoHighLevel: a plug-in diverts GoHighLevel's text messages to WhatsApp, so a message sent as a text arrives as a WhatsApp. Email and the portal for now; WhatsApp is offered once GoHighLevel is connected, off until the patient turns it on. Not built yet. (Question 25)
+- The email confirmation is enough for a staff member to change their sign-in email, and the old address is told. Built. (Question 26)
+- When a doctor, an admin or a guardian who can act is invited, other admins or PAs get a notice in the portal bell, and for doctors and admins an email to Dr Gina Schoeman. The date of birth, and for patients the ID at first sign-in, are the checks. Built. (Question 28)
+- Clinic Hub follows the clinic's four choices for bloods: the clinic's own lab, TDL, a TDL home kit, or the patient's own results. Only TDL and the home kit are paid through Stripe and get a barcode. Not built yet. (Question 33)
