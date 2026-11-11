@@ -58,7 +58,13 @@ const NAV: Record<PortalKind, NavGroup[]> = {
     },
   ],
   clinic: [
-    { eyebrow: "Today", items: [{ label: "Dashboard", icon: LayoutGrid, href: "/clinic" }] },
+    {
+      eyebrow: "Today",
+      items: [
+        { label: "Dashboard", icon: LayoutGrid, href: "/clinic" },
+        { label: "Calendar", icon: CalendarDays, href: "/clinic/calendar" },
+      ],
+    },
     {
       eyebrow: "Patients",
       items: [

@@ -113,7 +113,7 @@ export async function updateSession(request: NextRequest) {
 
   const expired = isSessionExpired({
     // The clinic area always has staff limits, whatever the cookie says.
-    kind: pathname === "/clinic" || pathname.startsWith("/clinic/") || pathname === "/knowledge-base" || pathname.startsWith("/knowledge-base/") ? "staff" : parseSessionKind(kindValue),
+    kind: pathname === "/clinic" || pathname.startsWith("/clinic/") || pathname === "/knowledge-base" || pathname.startsWith("/knowledge-base/") || pathname.startsWith("/api/google/") ? "staff" : parseSessionKind(kindValue),
     authenticatedAt: authenticatedAt(claims, now),
     lastSeen,
     now,
