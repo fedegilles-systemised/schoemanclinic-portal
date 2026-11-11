@@ -2,9 +2,10 @@ import "server-only";
 
 import type { Database } from "@/lib/database.types";
 import { daysBetween, londonDate } from "@/lib/format";
+import { getPortalPatient, type PortalRecord } from "@/lib/portal/patient";
 import { createClient } from "@/lib/supabase/server";
 
-type PatientRecord = Database["public"]["Functions"]["get_my_patient_record"]["Returns"][number];
+type PatientRecord = PortalRecord;
 type ResultFlag = Database["public"]["Enums"]["result_flag"];
 type OrderStatus = Database["public"]["Enums"]["order_status"];
 
@@ -52,9 +53,7 @@ const GLANCE_COUNT = 4;
 export async function getPortalHome(): Promise<PortalHome | null> {
   const supabase = await createClient();
 
-  const records = await supabase.rpc("get_my_patient_record");
-  if (records.error) throw new Error("Could not load your record.");
-  const patient = records.data[0];
+  const patient = await getPortalPatient();
   if (!patient) return null;
 
   const [directory, appointments, orders, results, letters, medications] = await Promise.all([

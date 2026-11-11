@@ -64,6 +64,26 @@ export async function addAllergy(_state: RecordFormState, formData: FormData): P
   return { saved: "Allergy recorded.", sentAt: Date.now() };
 }
 
+/** Doctors, nurses and PAs remove an allergy entered by mistake. It is archived, not deleted. */
+export async function removeAllergy(_state: RecordFormState, formData: FormData): Promise<RecordFormState> {
+  await requireRoleAndStaffId(["doctor", "nurse", "pa"]);
+  const parsed = z
+    .object({ patientId: z.uuid(), allergyId: z.uuid() })
+    .safeParse({ patientId: value(formData, "patientId"), allergyId: value(formData, "allergyId") });
+  if (!parsed.success) return { error: GENERIC_FAILURE };
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("patient_allergies")
+    .update({ archived_at: new Date().toISOString() })
+    .eq("id", parsed.data.allergyId)
+    .eq("patient_id", parsed.data.patientId)
+    .is("archived_at", null)
+    .select("id");
+  if (error || !data?.length) return { error: NOT_YOURS };
+  revalidatePath(`/clinic/patients/${parsed.data.patientId}`);
+  return { saved: "Allergy removed." };
+}
+
 /** Doctors record a diagnosis. */
 export async function addDiagnosis(_state: RecordFormState, formData: FormData): Promise<RecordFormState> {
   const staffId = await requireRoleAndStaffId(["doctor"]);

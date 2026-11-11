@@ -162,7 +162,12 @@ export type SafeguardingRow = {
 export async function getClinicalSummary(patientId: string): Promise<{ allergies: AllergyRow[]; diagnoses: DiagnosisRow[]; medications: MedicationRow[] }> {
   const supabase = await createClient();
   const [allergies, diagnoses, medications] = await Promise.all([
-    supabase.from("patient_allergies").select("id, substance, reaction, severity, created_at").eq("patient_id", patientId).order("created_at", { ascending: false }),
+    supabase
+      .from("patient_allergies")
+      .select("id, substance, reaction, severity, created_at")
+      .eq("patient_id", patientId)
+      .is("archived_at", null)
+      .order("created_at", { ascending: false }),
     supabase
       .from("diagnoses")
       .select("id, label, icd10_code, status, diagnosed_on, notes")

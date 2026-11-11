@@ -12,6 +12,7 @@ import { LocationSwitcher } from "./location-switcher";
 import { MobileNav } from "./mobile-nav";
 import type { NavCounts, PortalKind } from "./nav";
 import { NotificationsBell } from "./notifications-bell";
+import { PatientSwitcher, type SwitcherPatient } from "./patient-switcher";
 import { SidebarContent, type ShellUser } from "./sidebar-content";
 import { Crumb } from "./crumb";
 import { SessionGuard } from "./session-guard";
@@ -25,6 +26,8 @@ type AppShellProps = {
   counts?: NavCounts;
   /** Clinic only. */
   locations?: ShellLocation[];
+  /** Portal only, when the person can see more than one patient. */
+  patients?: { list: SwitcherPatient[]; currentId: string };
   /** The other area, for a person with both a staff role and a patient view. */
   switchTo?: { href: string; label: string };
   /** Which session limits apply: staff, or a patient or guardian with no staff role. */
@@ -36,7 +39,7 @@ type AppShellProps = {
   children: React.ReactNode;
 };
 
-function AppShell({ kind, crumb, user, notifications, counts, locations, switchTo, sessionKind, roles, avatarUrl, children }: AppShellProps) {
+function AppShell({ kind, crumb, user, notifications, counts, locations, patients, switchTo, sessionKind, roles, avatarUrl, children }: AppShellProps) {
   const demo = getPublicEnv().NEXT_PUBLIC_DEMO === "true";
   const profileHref = kind === "patient" ? "/portal/profile" : "/clinic/profile";
   const sidebar = <SidebarContent kind={kind} counts={counts} roles={roles} />;
@@ -58,6 +61,7 @@ function AppShell({ kind, crumb, user, notifications, counts, locations, switchT
                 <Link href={switchTo.href}>{switchTo.label}</Link>
               </Button>
             ) : null}
+            {patients && patients.list.length > 1 ? <PatientSwitcher patients={patients.list} currentId={patients.currentId} /> : null}
             {locations ? (
               <Suspense>
                 <LocationSwitcher locations={locations} />

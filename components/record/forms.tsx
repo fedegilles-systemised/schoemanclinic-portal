@@ -13,6 +13,7 @@ import {
   addAllergy,
   addDiagnosis,
   addSafeguardingAlert,
+  removeAllergy,
   resolveSafeguardingAlert,
   setDiagnosisStatus,
   type RecordFormState,
@@ -59,6 +60,28 @@ export function AllergyForm({ patientId }: { patientId: string }) {
           Add allergy
         </Button>
       </div>
+    </form>
+  );
+}
+
+export function RemoveAllergyButton({ patientId, allergyId, substance }: { patientId: string; allergyId: string; substance: string }) {
+  const [state, action, pending] = useActionState(removeAllergy, initial);
+  return (
+    <form action={action} className="flex flex-col items-end gap-1">
+      <input type="hidden" name="patientId" value={patientId} />
+      <input type="hidden" name="allergyId" value={allergyId} />
+      <ConfirmButton
+        variant="ghost"
+        size="sm"
+        loading={pending}
+        aria-label={`Remove allergy: ${substance}`}
+        confirmVariant="destructive"
+        confirmTitle={`Remove ${substance}?`}
+        confirmText="Only remove an allergy entered by mistake. It is kept in the record's history but no longer shown. To change one, remove it and add it again."
+      >
+        Remove
+      </ConfirmButton>
+      {state.error ? <FormMessage state={state} /> : null}
     </form>
   );
 }
