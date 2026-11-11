@@ -4,6 +4,7 @@ import { useActionState } from "react";
 
 import { FormMessage } from "@/components/profile/form-message";
 import { Button } from "@/components/ui/button";
+import { ConfirmButton } from "@/components/ui/confirm-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
@@ -69,9 +70,14 @@ export function CloseQuestionButton({ questionId }: { questionId: string }) {
     <form action={action} className="flex flex-col gap-2">
       <input type="hidden" name="questionId" value={questionId} />
       <div>
-        <Button type="submit" variant="outline" loading={pending}>
+        <ConfirmButton
+          variant="outline"
+          loading={pending}
+          confirmTitle="Close this conversation?"
+          confirmText="Nobody can reply to it after this. The patient can still read it and ask a new question."
+        >
           Close conversation
-        </Button>
+        </ConfirmButton>
       </div>
       {state.error ? <FormMessage state={state} /> : null}
     </form>

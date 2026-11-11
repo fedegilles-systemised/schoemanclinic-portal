@@ -4,6 +4,7 @@ import { useActionState } from "react";
 
 import { FormMessage } from "@/components/profile/form-message";
 import { Button } from "@/components/ui/button";
+import { ConfirmButton } from "@/components/ui/confirm-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
@@ -169,9 +170,15 @@ export function ResolveAlertButton({ patientId, alertId }: { patientId: string; 
     <form action={action} className="flex flex-col items-end gap-1">
       <input type="hidden" name="patientId" value={patientId} />
       <input type="hidden" name="alertId" value={alertId} />
-      <Button type="submit" variant="ghost" size="sm" loading={pending}>
+      <ConfirmButton
+        variant="ghost"
+        size="sm"
+        loading={pending}
+        confirmTitle="Mark this alert resolved?"
+        confirmText="It stays on the record but no longer shows as active."
+      >
         Mark resolved
-      </Button>
+      </ConfirmButton>
       {state.error ? <FormMessage state={state} /> : null}
     </form>
   );

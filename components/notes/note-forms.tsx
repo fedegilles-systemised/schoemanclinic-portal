@@ -4,6 +4,7 @@ import { useActionState } from "react";
 
 import { FormMessage } from "@/components/profile/form-message";
 import { Button } from "@/components/ui/button";
+import { ConfirmButton } from "@/components/ui/confirm-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -60,32 +61,28 @@ export function DraftForm({ patientId, noteId, title, body }: { patientId: strin
             Save draft
           </Button>
           {/* Signs exactly what is on screen: the action saves this text first. */}
-          <Button
-            type="submit"
+          <ConfirmButton
             formAction={signAction}
             loading={signing}
-            onClick={(event) => {
-              if (!window.confirm("Sign this note? Once signed it is final: nobody can change or correct it.")) event.preventDefault();
-            }}
+            confirmTitle="Sign this note?"
+            confirmText="Once signed it is final: nobody can change or correct it."
           >
             Sign and lock
-          </Button>
+          </ConfirmButton>
         </div>
       </form>
       <div className="flex flex-wrap gap-2">
         <form action={discardAction}>
           <input type="hidden" name="patientId" value={patientId} />
           <input type="hidden" name="noteId" value={noteId} />
-          <Button
-            type="submit"
+          <ConfirmButton
             variant="destructive"
             loading={discarding}
-            onClick={(event) => {
-              if (!window.confirm("Discard this draft? It is kept in the record's history but no longer shown.")) event.preventDefault();
-            }}
+            confirmTitle="Discard this draft?"
+            confirmText="It is kept in the record's history but no longer shown."
           >
             Discard draft
-          </Button>
+          </ConfirmButton>
         </form>
       </div>
       <p className="type-small text-content-muted">Signing saves what is on screen and makes it final. Nobody can change or correct a signed note.</p>

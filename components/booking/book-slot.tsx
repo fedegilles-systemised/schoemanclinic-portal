@@ -3,7 +3,7 @@
 import { useActionState } from "react";
 
 import { FormMessage } from "@/components/profile/form-message";
-import { Button } from "@/components/ui/button";
+import { ConfirmButton } from "@/components/ui/confirm-button";
 import { bookAppointment, cancelAppointment, type BookingFormState } from "@/lib/booking/actions";
 
 const initial: BookingFormState = {};
@@ -29,18 +29,17 @@ export function BookSlotButton(props: {
       <input type="hidden" name="startsAt" value={props.startsAt} />
       {props.locationId ? <input type="hidden" name="locationId" value={props.locationId} /> : null}
       <input type="hidden" name="back" value={props.back} />
-      <Button
-        type="submit"
+      <ConfirmButton
         variant="outline"
         size="sm"
         loading={pending}
         aria-label={props.ariaLabel}
-        onClick={(event) => {
-          if (!window.confirm(props.confirmText)) event.preventDefault();
-        }}
+        confirmTitle="Book this appointment?"
+        confirmText={props.confirmText}
+        confirmLabel="Book"
       >
         {props.label}
-      </Button>
+      </ConfirmButton>
       {state.error ? <FormMessage state={state} /> : null}
     </form>
   );
@@ -52,18 +51,16 @@ export function CancelAppointmentButton({ appointmentId, patientId, label }: { a
     <form action={action} className="flex flex-col items-end gap-2">
       <input type="hidden" name="appointmentId" value={appointmentId} />
       <input type="hidden" name="patientId" value={patientId} />
-      <Button
-        type="submit"
+      <ConfirmButton
         variant="destructive"
         size="sm"
         loading={pending}
         aria-label={`Cancel appointment: ${label}`}
-        onClick={(event) => {
-          if (!window.confirm(`Cancel ${label}? A message goes to the patient where their choices allow.`)) event.preventDefault();
-        }}
+        confirmTitle={`Cancel ${label}?`}
+        confirmText="A message goes to the patient where their choices allow."
       >
         Cancel appointment
-      </Button>
+      </ConfirmButton>
       <FormMessage state={state} />
     </form>
   );

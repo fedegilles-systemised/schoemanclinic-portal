@@ -4,6 +4,7 @@ import { useActionState } from "react";
 
 import { FormMessage } from "@/components/profile/form-message";
 import { Button } from "@/components/ui/button";
+import { ConfirmButton } from "@/components/ui/confirm-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
@@ -72,9 +73,15 @@ export function ArchiveDocumentButton({ documentId, patientId }: { documentId: s
     <form action={action} className="flex flex-col items-end gap-1">
       <input type="hidden" name="documentId" value={documentId} />
       <input type="hidden" name="patientId" value={patientId} />
-      <Button type="submit" variant="ghost" size="sm" loading={pending}>
+      <ConfirmButton
+        variant="ghost"
+        size="sm"
+        loading={pending}
+        confirmTitle="Remove this document?"
+        confirmText="It is archived, not deleted, and the patient no longer sees it."
+      >
         Remove
-      </Button>
+      </ConfirmButton>
       {state.error ? <FormMessage state={state} /> : null}
     </form>
   );
