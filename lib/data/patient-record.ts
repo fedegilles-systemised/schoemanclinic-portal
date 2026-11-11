@@ -94,6 +94,21 @@ export async function getMyStaffId(userId: string): Promise<string | null> {
   return data?.id ?? null;
 }
 
+export type RecordingRow = { id: string; status: "uploading" | "transcribing" | "transcribed" | "failed"; createdAt: string; recordedBy: string };
+
+/** Recent call recordings of one patient, newest first. */
+export async function getRecordings(patientId: string): Promise<RecordingRow[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("call_recordings")
+    .select("id, status, created_at, recorded_by")
+    .eq("patient_id", patientId)
+    .order("created_at", { ascending: false })
+    .limit(20);
+  if (error) throw new Error("Could not load the recordings.");
+  return data.map((r) => ({ id: r.id, status: r.status, createdAt: r.created_at, recordedBy: r.recorded_by }));
+}
+
 export type GuardianLink = { id: string; name: string; email: string; relationship: string; canAct: boolean };
 
 /** The guardians who can currently see this patient's portal. For PAs and admins, who manage them. */

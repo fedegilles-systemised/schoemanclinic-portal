@@ -8,6 +8,7 @@ import { AssignCourseForm, UnassignButton } from "@/components/education/forms";
 import { AppointmentsTable } from "@/components/booking/appointments-table";
 import { CancelAppointmentButton } from "@/components/booking/book-slot";
 import { DraftForm, NewNoteForm } from "@/components/notes/note-forms";
+import { CheckRecordingButton, Recorder } from "@/components/recordings/recorder";
 import { RELATIONSHIP_LABELS } from "@/components/patients/care-team-forms";
 import { RemoveGuardianButton } from "@/components/patients/guardian-forms";
 import { ReadingsTable } from "@/components/wearables/readings-table";
@@ -18,7 +19,8 @@ import { PageHeader, SectionHeader } from "@/components/ui/page-header";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getUpcomingAppointments } from "@/lib/data/appointments";
 import { getPatientAssignments, getReadings, listCourses } from "@/lib/data/education";
-import { getGuardians, getMyStaffId, getPatientRecord } from "@/lib/data/patient-record";
+import { getGuardians, getMyStaffId, getPatientRecord, getRecordings } from "@/lib/data/patient-record";
+import { isTranscriptionConfigured } from "@/lib/env";
 import { RELATIONSHIP_LABELS as GUARDIAN_LABELS } from "@/lib/invitations/constants";
 import { formatDate } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
@@ -62,6 +64,9 @@ export default async function PatientRecordPage({ params }: { params: Promise<{ 
     getUpcomingAppointments(record.id),
   ]);
   const assignable = library.filter((course) => course.published && !assignments.some((a) => a.courseId === course.id));
+  const recordings = await getRecordings(record.id);
+  const canRecord = canWrite && Boolean(myStaffId) && isTranscriptionConfigured();
+  const RECORDING_STATUS = { uploading: "Not uploaded", transcribing: "Being transcribed", transcribed: "Transcript in notes", failed: "Transcription failed" } as const;
   const managesGuardians = user.roles.some((role) => role === "pa" || role === "admin");
   const guardians = managesGuardians ? await getGuardians(record.id) : [];
   const drafts = record.notes.filter((note) => note.status === "draft");
@@ -156,6 +161,35 @@ export default async function PatientRecordPage({ params }: { params: Promise<{ 
 
       <section aria-labelledby="notes" className="flex flex-col gap-6">
         <SectionHeader id="notes" title="Clinical " accent="notes" />
+
+        {canRecord ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>Record a call</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Recorder patientId={record.id} />
+            </CardContent>
+          </Card>
+        ) : null}
+
+        {recordings.some((r) => r.status !== "transcribed") ? (
+          <ul className="flex flex-col divide-y divide-surface-border border border-surface-border">
+            {recordings
+              .filter((r) => r.status !== "transcribed")
+              .map((r) => (
+                <li key={r.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-2">
+                  <span>
+                    Call recorded {dateTime(r.createdAt)}
+                    <span className="type-small text-content-muted"> · {RECORDING_STATUS[r.status]}</span>
+                  </span>
+                  {r.recordedBy === myStaffId && r.status !== "uploading" ? (
+                    <CheckRecordingButton recordingId={r.id} patientId={record.id} failed={r.status === "failed"} />
+                  ) : null}
+                </li>
+              ))}
+          </ul>
+        ) : null}
 
         {canWrite && myStaffId ? (
           <Card>

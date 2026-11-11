@@ -57,6 +57,14 @@ const ghlSchema = z.object({
   GHL_LOCATION_ID: z.string().min(1),
 });
 
+const transcriptionSchema = z.object({
+  // AssemblyAI, EU region: call recordings are transcribed there. Needs a data processing agreement.
+  ASSEMBLYAI_API_KEY: z.string().min(1),
+  // Sent back by AssemblyAI with each finished transcript, so nobody else can post one. 32+ characters.
+  TRANSCRIPTION_WEBHOOK_SECRET: z.string().min(32),
+  SITE_URL: z.url(),
+});
+
 export type PublicEnv = z.infer<typeof publicSchema>;
 
 function assertServer(): void {
@@ -158,6 +166,29 @@ export function isGhlConfigured(): boolean {
   return ghlSchema.safeParse({
     GHL_PRIVATE_TOKEN: process.env.GHL_PRIVATE_TOKEN,
     GHL_LOCATION_ID: process.env.GHL_LOCATION_ID,
+  }).success;
+}
+
+/** Server-only transcription variables, for lib/transcription/. */
+export function getTranscriptionEnv(): z.infer<typeof transcriptionSchema> {
+  assertServer();
+  const parsed = transcriptionSchema.safeParse({
+    ASSEMBLYAI_API_KEY: process.env.ASSEMBLYAI_API_KEY,
+    TRANSCRIPTION_WEBHOOK_SECRET: process.env.TRANSCRIPTION_WEBHOOK_SECRET,
+    SITE_URL: process.env.SITE_URL,
+  });
+  if (!parsed.success) {
+    throw new Error(`Invalid transcription environment: ${formatIssues(parsed.error)}`);
+  }
+  return parsed.data;
+}
+
+export function isTranscriptionConfigured(): boolean {
+  assertServer();
+  return transcriptionSchema.safeParse({
+    ASSEMBLYAI_API_KEY: process.env.ASSEMBLYAI_API_KEY,
+    TRANSCRIPTION_WEBHOOK_SECRET: process.env.TRANSCRIPTION_WEBHOOK_SECRET,
+    SITE_URL: process.env.SITE_URL,
   }).success;
 }
 
