@@ -9,7 +9,7 @@ import { z } from "zod";
 import { getCurrentUser, type CurrentUser } from "@/lib/auth/session";
 import { allowAuthAttempt } from "@/lib/auth/throttle";
 import { resultReadyEmail } from "@/lib/email/templates/app";
-import { getEmailEnv } from "@/lib/env";
+import { getSiteUrl } from "@/lib/env";
 import { notifyPatient } from "@/lib/notify/patient";
 import { createClient } from "@/lib/supabase/server";
 
@@ -219,13 +219,15 @@ async function tellPatientByEmail(
     if (report.error || !report.data) return failure;
     const patient = report.data.patient;
     if (!patient?.user_id) return "They have no account yet, so they have not been emailed.";
-    const siteUrl = getEmailEnv().SITE_URL.replace(/\/$/, "");
+    const siteUrl = getSiteUrl();
     const portalUrl = `${siteUrl}/portal/results`;
+    // The bell notice for a release is written by release_report itself, so none is added here.
     const delivery = await notifyPatient(report.data.patient_id, {
       topic: "results",
       email: resultReadyEmail({ siteUrl, firstName: patient.first_name, portalUrl }),
       whatsapp: `Hello ${patient.first_name}, a doctor at The Schoeman Clinic has shared a new result with you. Sign in to see it: ${portalUrl}`,
     });
+    if (delivery.email === "suspended") return "Their account is not active, so they have not been emailed.";
     if (delivery.email === "off") return "They have switched results emails off, so they have not been emailed.";
     if (delivery.email === "no-address") return "There is no email address for them, so they have not been emailed.";
     if (delivery.email !== "sent") return failure;

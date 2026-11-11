@@ -9,9 +9,9 @@ import { allowAuthAttempt } from "@/lib/auth/throttle";
 import { createEvent, deleteEvent, googleSessionFor, listEvents } from "@/lib/calendar/google";
 import { londonParts } from "@/lib/calendar/time";
 import { appointmentEmail } from "@/lib/email/templates/app";
-import { getEmailEnv } from "@/lib/env";
+import { getSiteUrl } from "@/lib/env";
 import { formatDayDate } from "@/lib/format";
-import { notifyPatient } from "@/lib/notify/patient";
+import { notifyPatient, type Delivery } from "@/lib/notify/patient";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -60,13 +60,14 @@ export async function bookAppointment(_state: BookingFormState, formData: FormDa
   });
   if (error) return { error: friendly(error) };
 
-  await afterChange(appointmentId, false);
+  const delivery = await afterChange(appointmentId, false);
   if (input.back === "portal") {
     revalidatePath("/portal/appointments");
     redirect("/portal/appointments?booked=1");
   }
   revalidatePath(`/clinic/patients/${input.patientId}`);
-  redirect(`/clinic/patients/${input.patientId}?booked=1`);
+  const told = delivery?.email === "sent" || delivery?.whatsapp === "sent" ? "told" : "not-told";
+  redirect(`/clinic/patients/${input.patientId}?booked=${told}`);
 }
 
 /**
@@ -105,9 +106,9 @@ export async function cancelAppointment(_state: BookingFormState, formData: Form
   const supabase = await createClient();
   const { error } = await supabase.rpc("cancel_appointment", { _appointment: parsed.data.appointmentId });
   if (error) return { error: friendly(error) };
-  await afterChange(parsed.data.appointmentId, true);
+  const delivery = await afterChange(parsed.data.appointmentId, true);
   revalidatePath(`/clinic/patients/${parsed.data.patientId}`);
-  return { saved: "Appointment cancelled. A message to the patient has been sent where their choices allow." };
+  return { saved: `Appointment cancelled. ${deliveryLine(delivery)}` };
 }
 
 /**
@@ -115,7 +116,7 @@ export async function cancelAppointment(_state: BookingFormState, formData: Form
  * clinic reference only, never the patient's name) and tell the patient. Nothing here can undo the
  * booking itself; failures are logged.
  */
-async function afterChange(appointmentId: string, cancelled: boolean): Promise<void> {
+async function afterChange(appointmentId: string, cancelled: boolean): Promise<Delivery | null> {
   try {
     const admin = createAdminClient();
     const { data: a } = await admin
@@ -123,7 +124,7 @@ async function afterChange(appointmentId: string, cancelled: boolean): Promise<v
       .select("id, patient_id, starts_at, duration_min, type, external_id, source, clinician:staff_profiles(user_id, profile:profiles(full_name)), patient:patient_profiles(clinic_ref, first_name)")
       .eq("id", appointmentId)
       .maybeSingle();
-    if (!a) return;
+    if (!a) return null;
     const clinicianUser = a.clinician?.user_id;
     const clinicianName = a.clinician?.profile?.full_name ?? "your clinician";
 
@@ -149,18 +150,32 @@ async function afterChange(appointmentId: string, cancelled: boolean): Promise<v
       }
     }
 
-    const siteUrl = getEmailEnv().SITE_URL.replace(/\/$/, "");
+    const siteUrl = getSiteUrl();
     const portalUrl = `${siteUrl}/portal/appointments`;
     const time = londonParts(a.starts_at).time;
     const when = `${formatDayDate(a.starts_at)} at ${time}`;
-    await notifyPatient(a.patient_id, {
+    return await notifyPatient(a.patient_id, {
       topic: "appointments",
-      email: appointmentEmail({ siteUrl, firstName: a.patient?.first_name, when, typeName: a.type, clinicianName, cancelled, portalUrl }),
+      notice: cancelled
+        ? { title: "An appointment was cancelled", body: `Your appointment on ${when} has been cancelled.`, link: "/portal/appointments" }
+        : { title: "Appointment booked", body: `Your appointment on ${when} is booked.`, link: "/portal/appointments" },
+      email: appointmentEmail({ siteUrl, firstName: a.patient?.first_name, when, clinicianName, cancelled, portalUrl }),
       whatsapp: cancelled
-        ? `Hello ${a.patient?.first_name ?? ""}, your appointment (${a.type}) on ${when} has been cancelled. Please contact the clinic if you would like a new time.`
-        : `Hello ${a.patient?.first_name ?? ""}, your appointment (${a.type}) with ${clinicianName} is booked for ${when}. To change it, please contact the clinic at least 48 hours before.`,
+        ? `Hello ${a.patient?.first_name ?? ""}, your appointment on ${when} has been cancelled. Please contact the clinic if you would like a new time.`
+        : `Hello ${a.patient?.first_name ?? ""}, your appointment with ${clinicianName} is booked for ${when}. To change it, please contact the clinic at least 48 hours before.`,
     });
   } catch {
     console.error("Booking follow-up not completed.");
+    return null;
   }
+}
+
+/** What staff are told about the messages after a booking or a cancellation. */
+function deliveryLine(delivery: Delivery | null): string {
+  if (!delivery) return "The patient could not be messaged; please let them know.";
+  if (delivery.email === "suspended") return "The patient's account is not active, so no message was sent.";
+  const sent = [delivery.email === "sent" ? "email" : null, delivery.whatsapp === "sent" ? "WhatsApp" : null].filter(Boolean);
+  if (sent.length) return `The patient was told by ${sent.join(" and ")}.`;
+  if (delivery.email === "failed" || delivery.whatsapp === "failed") return "The message to the patient failed; please let them know.";
+  return "The patient has messages switched off for appointments; please let them know.";
 }

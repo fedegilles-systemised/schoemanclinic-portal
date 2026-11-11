@@ -192,6 +192,17 @@ export function isTranscriptionConfigured(): boolean {
   }).success;
 }
 
+/**
+ * The site's public address, for links in messages. Read on its own, so a message through
+ * GoHighLevel does not depend on Resend being set up.
+ */
+export function getSiteUrl(): string {
+  assertServer();
+  const parsed = z.url().safeParse(process.env.SITE_URL);
+  if (!parsed.success) throw new Error("Invalid environment: SITE_URL");
+  return parsed.data.replace(/\/$/, "");
+}
+
 /** Server-only session variables, for lib/supabase/session-cookies.ts. */
 export function getSessionEnv(): z.infer<typeof sessionSchema> {
   assertServer();

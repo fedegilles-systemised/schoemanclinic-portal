@@ -13,7 +13,7 @@ import {
   INVITATION_DAYS,
   kindsFor,
   RELATIONSHIPS,
-  TEAM_INVITE_ALERT_TO,
+  TEAM_INVITE_ALERT_TO_DEFAULT,
   TEAM_ROLES,
   type InvitationKind,
 } from "@/lib/invitations/constants";
@@ -150,7 +150,7 @@ async function alertTeamInvite(params: { inviterName: string; invitedEmail: stri
     const env = getEmailEnv();
     const siteUrl = env.SITE_URL.replace(/\/$/, "");
     const result = await sendEmail({
-      to: TEAM_INVITE_ALERT_TO,
+      to: process.env.TEAM_INVITE_ALERT_TO || TEAM_INVITE_ALERT_TO_DEFAULT,
       ...teamInviteAlertEmail({
         siteUrl,
         inviterName: params.inviterName || "A colleague",

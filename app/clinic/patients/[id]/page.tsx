@@ -74,7 +74,7 @@ export default async function PatientRecordPage({
   const assignable = library.filter((course) => course.published && !assignments.some((a) => a.courseId === course.id));
   const recordings = await getRecordings(record.id);
   const canRecord = canWrite && Boolean(myStaffId) && isTranscriptionConfigured();
-  const RECORDING_STATUS = { uploading: "Not uploaded", transcribing: "Being transcribed", transcribed: "Transcript in notes", failed: "Transcription failed" } as const;
+  const RECORDING_STATUS = { uploading: "Upload did not finish; record again", transcribing: "Being transcribed", transcribed: "Transcript in notes", failed: "Transcription failed" } as const;
   const managesGuardians = user.roles.some((role) => role === "pa" || role === "admin");
   const guardians = managesGuardians ? await getGuardians(record.id) : [];
   const drafts = record.notes.filter((note) => note.status === "draft");
@@ -98,7 +98,9 @@ export default async function PatientRecordPage({
       {booked ? (
         <div className="mb-6">
           <Alert variant="success">
-            <AlertDescription>Appointment booked. A confirmation goes to the patient where their choices allow.</AlertDescription>
+            <AlertDescription>
+              {booked === "told" ? "Appointment booked, and the patient has been sent a confirmation." : "Appointment booked. The patient could not be messaged, so please let them know."}
+            </AlertDescription>
           </Alert>
         </div>
       ) : null}
