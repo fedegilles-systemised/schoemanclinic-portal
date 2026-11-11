@@ -42,6 +42,7 @@ select public.save_google_calendar_connection('a0000000-0000-4000-8000-000000000
 reset role;
 update public.staff_profiles set active = false where user_id = 'a0000000-0000-4000-8000-000000000001';
 select is((select count(*)::int from public.google_calendar_connections where user_id = 'a0000000-0000-4000-8000-000000000001'), 0, 'switching a team member off removes their Google connection');
+select is((select count(*)::int from public.google_revocations where user_id = 'a0000000-0000-4000-8000-000000000001' and revoked_at is null and refresh_token_encrypted = 'v1.x'), 1, 'and queues the token to be revoked at Google');
 update public.staff_profiles set active = true where user_id = 'a0000000-0000-4000-8000-000000000001';
 
 -- S-126: a recording file needs its own open recording row, at exactly its path.

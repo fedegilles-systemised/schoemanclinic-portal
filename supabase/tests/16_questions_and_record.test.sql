@@ -58,6 +58,8 @@ select pg_temp.become('a0000000-0000-4000-8000-000000000003');
 select lives_ok($$ insert into public.patient_allergies (patient_id, substance, recorded_by) values ('d0000000-0000-4000-8000-000000000001', 'Penicillin', 'b0000000-0000-4000-8000-000000000003') $$, 'a PA records an allergy');
 select throws_ok($$ insert into public.diagnoses (patient_id, label, recorded_by) values ('d0000000-0000-4000-8000-000000000001', 'Test', 'b0000000-0000-4000-8000-000000000003') $$, '42501', null, 'a PA cannot add a diagnosis');
 select is((select count(*)::int from public.safeguarding_alerts), 0, 'a PA sees no safeguarding alert');
+select lives_ok($$ update public.patient_allergies set archived_at = now() where substance = 'Penicillin' and recorded_by = 'b0000000-0000-4000-8000-000000000003' $$, 'and can remove an allergy entered by mistake');
+select is((select count(*)::int from public.patient_allergies where patient_id = 'd0000000-0000-4000-8000-000000000001' and archived_at is not null), 1, 'which is archived, not deleted');
 reset role;
 
 -- Her doctor raises a safeguarding alert; the patient never sees it.
@@ -66,7 +68,10 @@ select lives_ok($$ insert into public.safeguarding_alerts (patient_id, alert_typ
 reset role;
 select pg_temp.become('a0000000-0000-4000-8000-000000000011');
 select is((select count(*)::int from public.safeguarding_alerts), 0, 'the patient sees no safeguarding alert');
+update public.patient_allergies set archived_at = now() where patient_id = 'd0000000-0000-4000-8000-000000000001';
+select throws_ok($$ select count(*) from public.google_revocations $$, '42501', null, 'a patient never sees the Google queue');
 reset role;
+select is((select count(*)::int from public.patient_allergies where patient_id = 'd0000000-0000-4000-8000-000000000001' and archived_at is not null), 1, 'and a patient cannot remove an allergy');
 
 -- Letters: hidden from the patient until shared.
 insert into public.documents (patient_id, kind, title, storage_path, source, uploaded_by, shared_with_patient)
