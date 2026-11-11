@@ -64,8 +64,8 @@ function fullName(p: { first_name: string; last_name: string }): string {
 
 /**
  * Everything on the clinic home, read through the signed-in person's session, so each
- * role sees what row-level security allows: an admin sees no patients, and a health
- * coach sees no unreleased results.
+ * role sees what row-level security allows: PAs and admins see every patient, doctors,
+ * nurses and health coaches the patients on their care team.
  */
 export async function getClinicHome(locationId: string | null): Promise<ClinicHome> {
   const supabase = await createClient();

@@ -126,7 +126,7 @@ function NavRows({ kind, counts, roles }: { kind: PortalKind; counts?: NavCounts
                 </ComingSoon>
               );
             }
-            const current = item.href === pathname;
+            const current = item.href === pathname || (item.href !== "/clinic" && item.href !== "/portal" && pathname.startsWith(`${item.href}/`));
             return (
               <Link
                 key={item.label}

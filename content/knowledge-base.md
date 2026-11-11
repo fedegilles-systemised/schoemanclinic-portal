@@ -23,7 +23,7 @@ Clinic Hub is a patient portal and a clinic portal built around one journey, the
 6. **Doctor review and release.** A doctor reviews the report, adds a comment if needed, and releases it.
 7. **Patient view.** Only now can the patient see the results, with a trend against their earlier values.
 
-Two other systems stay in charge of what they do today: GoHighLevel keeps messaging, reminders, tasks, calendar, invoices and marketing, Semble keeps consultation notes, and SignatureRx handles prescribing. Clinic Hub reads from them where a screen needs the information. The section on integrations lists every connection.
+Since 11 November, Clinic Hub also holds clinical notes, patient booking, call recordings with transcripts, education and wearables. GoHighLevel sends patient email and WhatsApp and keeps tasks, invoices and marketing; Semble is retired in stages; SignatureRx handles prescribing. The section on integrations lists every connection.
 
 **Status today:** the database for every step above exists and is protected, and both home screens are built. Steps 1 to 7 as screens, and every connection to Stripe, the labs, GoHighLevel and Semble, are planned.
 
@@ -454,19 +454,20 @@ Clinic Hub connects to nine systems. Supabase and Resend are in place (Resend on
 | Vercel | Hosting, page-speed measures, visit counts | Out | Page address (without query), device and performance data. No cookies | Set-up in progress |
 | Stripe | Payments for bloods and repeat-request fees | Both | Payment amounts and a reference. The clinic never holds card details | Planned |
 | Lab partners (TDL is named) | Results by electronic feed; barcodes | In (and out, proposed) | Results per marker, with the barcode that links them to an order | Planned |
-| GoHighLevel | Messaging, reminders, tasks, calendar, invoices, marketing | Both | Tasks and conversations out; bookings and replies in; reads each person's notification choices | Planned |
-| Semble | Consultation notes, bookings and invoices | In | Bookings | Planned |
+| GoHighLevel | Patient email and WhatsApp (as texts its plug-in diverts), tasks, invoices, marketing | Out | Contact details and message text; never a result value | Built; needs the clinic's key |
+| Semble | Being retired in stages: notes and bookings now live in Clinic Hub | In | Records to move across | Migration planned |
 | SignatureRx | Prescribing, signed by the doctor with a PIN | Out | Repeat prescriptions (proposed) | Planned |
 | Resend | Email from Clinic Hub and the sign-in emails (invitations, password reset, security notices) | Out | Only links and neutral wording. No clinical values | In place on a test domain. It moves to the clinic's own domain later |
 | AI document reader | Reads values from imported PDFs | Both | The PDF's content out; proposed values back | Planned. Provider not chosen |
-| Fathom | Named as a source in the data model | To confirm | To confirm | Purpose to be confirmed |
+| AssemblyAI (EU) | Transcribes call recordings; replaces Fathom | Out and back | A short-lived link to the audio out; the transcript back, then deleted there | Built; needs the clinic's key and data agreement |
+| Google Calendar | Each staff member's own calendar, and bookings added to it | Both | Event times and titles with the clinic reference, never a name | Built; needs the Google keys |
 
 **How incoming messages are handled.** Stripe, the labs and GoHighLevel push messages to Clinic Hub. Each message is stored first, then processed, and its unique number stops it being applied twice. A failed message can be retried.
 
 **Questions**
 
 1. Which lab partners will send results, and in which format? Is TDL the first?
-2. What is Fathom used for, and should it connect to Clinic Hub?
+2. Answered: Fathom is replaced by call recording in Clinic Hub (decision 16).
 3. Which system is the source of truth for bookings, and for patient contact details, GoHighLevel, Semble or Clinic Hub?
 4. Which AI provider, where is it hosted, and does the clinic accept its data terms?
 5. Does the clinic have an existing Stripe account, and is the lab fee passed through or invoiced separately?

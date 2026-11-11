@@ -1,6 +1,6 @@
 # Clinic Hub
 
-The patient and clinic portals for The Schoeman Clinic (hormone, longevity and functional medicine, London). The MVP is built around the bloods loop: order, Stripe payment and barcode, results by lab feed or PDF import with PA review, doctor review and release, then the patient sees the trend. GoHighLevel keeps messaging, reminders, tasks, calendar, invoices and marketing. Semble keeps consultation notes for now. Prescribing goes through SignatureRx, where the doctor signs with a PIN.
+The patient and clinic portals for The Schoeman Clinic (hormone, longevity and functional medicine, London). The MVP is built around the bloods loop: order, Stripe payment and barcode, results by lab feed or PDF import with PA review, doctor review and release, then the patient sees the trend. Since the clinic's decisions of 11 and 12 November 2026, Clinic Hub also holds clinical notes (final once signed), patient booking, call recording with transcription (AssemblyAI, replacing Fathom), education and wearables; access follows each patient's care team. GoHighLevel sends patient email and WhatsApp and keeps tasks, invoices and marketing. Semble is being retired in stages. Prescribing goes through SignatureRx, where the doctor signs with a PIN. The authoritative list of decisions is the end of `content/knowledge-base.md`.
 
 **Stack:** Next.js (App Router, `proxy.ts`), React, TypeScript strict, Tailwind v4, shadcn/ui (restyled), Supabase (Postgres, Auth, Storage) through `@supabase/ssr`, Resend, Zod, pnpm.
 
