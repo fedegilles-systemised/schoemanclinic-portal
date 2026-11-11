@@ -4,13 +4,16 @@ import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, Lock } from "lucide-react";
 import { z } from "zod";
 
+import { AssignCourseForm, UnassignButton } from "@/components/education/forms";
 import { CorrectNote, DraftForm, NewNoteForm } from "@/components/notes/note-forms";
 import { RELATIONSHIP_LABELS } from "@/components/patients/care-team-forms";
+import { ReadingsTable } from "@/components/wearables/readings-table";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader, SectionHeader } from "@/components/ui/page-header";
 import { getCurrentUser } from "@/lib/auth/session";
+import { getPatientAssignments, getReadings, listCourses } from "@/lib/data/education";
 import { getMyStaffId, getPatientRecord } from "@/lib/data/patient-record";
 import { formatDate } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
@@ -47,6 +50,8 @@ export default async function PatientRecordPage({ params }: { params: Promise<{ 
 
   const canWrite = user.roles.some((role) => role === "doctor" || role === "nurse" || role === "health_coach");
   const myStaffId = canWrite ? await getMyStaffId(user.id) : null;
+  const [assignments, library, readings] = await Promise.all([getPatientAssignments(record.id), listCourses(), getReadings(record.id, 30)]);
+  const assignable = library.filter((course) => course.published && !assignments.some((a) => a.courseId === course.id));
   const drafts = record.notes.filter((note) => note.status === "draft");
   const signed = record.notes.filter((note) => note.status === "signed");
 
@@ -64,6 +69,32 @@ export default async function PatientRecordPage({ params }: { params: Promise<{ 
           record.careTeam.length ? record.careTeam.map((m) => `${m.name} (${RELATIONSHIP_LABELS[m.relationship]})`).join(", ") : "nobody yet"
         }.`}
       />
+
+      <div className="mb-12 grid gap-6 lg:grid-cols-2">
+        <section aria-labelledby="education" className="flex flex-col gap-4">
+          <SectionHeader id="education" title="Education " accent="courses" />
+          {assignments.length === 0 ? (
+            <EmptyState>No courses on their portal yet.</EmptyState>
+          ) : (
+            <ul className="flex flex-col divide-y divide-surface-border border border-surface-border">
+              {assignments.map((a) => (
+                <li key={a.id} className="flex items-center justify-between gap-3 px-4 py-2">
+                  <span>
+                    {a.title}
+                    {a.published ? null : <span className="type-small text-content-muted"> · draft, not visible yet</span>}
+                  </span>
+                  <UnassignButton patientId={record.id} assignmentId={a.id} title={a.title} />
+                </li>
+              ))}
+            </ul>
+          )}
+          <AssignCourseForm patientId={record.id} courses={assignable.map((c) => ({ id: c.id, title: c.title }))} />
+        </section>
+        <section aria-labelledby="wearables" className="flex flex-col gap-4">
+          <SectionHeader id="wearables" title="Wearable " accent="readings" />
+          {readings.length === 0 ? <EmptyState>The patient has not added any readings.</EmptyState> : <ReadingsTable readings={readings} />}
+        </section>
+      </div>
 
       <section aria-labelledby="notes" className="flex flex-col gap-6">
         <SectionHeader id="notes" title="Clinical " accent="notes" />

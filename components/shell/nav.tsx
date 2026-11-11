@@ -6,6 +6,7 @@ import {
   ClipboardList,
   FileText,
   FlaskConical,
+  GraduationCap,
   Home,
   Inbox,
   LayoutGrid,
@@ -15,6 +16,7 @@ import {
   Shield,
   Upload,
   Users,
+  Watch,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -49,6 +51,8 @@ const NAV: Record<PortalKind, NavGroup[]> = {
         { label: "Lab orders", icon: FlaskConical },
         { label: "My results", icon: Activity, href: "/portal/results" },
         { label: "Upload results", icon: Upload },
+        { label: "Education", icon: GraduationCap, href: "/portal/education" },
+        { label: "Wearables", icon: Watch, href: "/portal/wearables" },
         { label: "Prescriptions", icon: Pill },
         { label: "Appointments", icon: CalendarDays },
         { label: "Ask the clinic", icon: MessageSquare },
@@ -79,6 +83,7 @@ const NAV: Record<PortalKind, NavGroup[]> = {
       eyebrow: "Clinic",
       items: [
         { label: "Team and settings", icon: Settings, href: "/clinic/team", roles: ["pa", "admin", "doctor"] },
+        { label: "Education", icon: GraduationCap, href: "/clinic/education" },
         { label: "Activity", icon: Activity, href: "/clinic/activity", roles: ["admin"] },
       ],
     },
