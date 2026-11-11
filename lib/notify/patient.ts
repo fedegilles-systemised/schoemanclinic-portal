@@ -52,13 +52,26 @@ export async function notifyPatient(patientId: string, message: PatientMessage):
     const wantsEmail = choice("email") ?? true;
     const wantsWhatsApp = choice("whatsapp") ?? false;
 
-    const ghl = isGhlConfigured();
-    let contactId = p.ghl_contact_id;
+    let ghl = isGhlConfigured();
+    // The GoHighLevel contact is looked up afresh on every send with today's details, so a changed
+    // email or phone is used at once. Only the details the chosen channels need are sent. If that
+    // contact already belongs to another patient (a family sharing an email or phone), GoHighLevel is
+    // not used for this patient: email goes through Resend and WhatsApp is not sent.
+    let contactId: string | null = null;
     const contact = async () => {
       if (contactId) return contactId;
-      contactId = await upsertContact({ firstName: p.first_name, lastName: p.last_name, email, phone });
-      await admin.rpc("set_patient_ghl_contact", { _patient: p.id, _contact: contactId });
-      return contactId;
+      const found = await upsertContact({
+        firstName: p.first_name,
+        lastName: p.last_name,
+        email: wantsEmail ? email : null,
+        phone: wantsWhatsApp ? phone : null,
+      });
+      if (found !== p.ghl_contact_id) {
+        const linked = await admin.rpc("set_patient_ghl_contact", { _patient: p.id, _contact: found });
+        if (linked.error) throw new SharedContactError();
+      }
+      contactId = found;
+      return found;
     };
 
     // Email.
@@ -66,8 +79,15 @@ export async function notifyPatient(patientId: string, message: PatientMessage):
     else if (!email) delivery.email = "no-address";
     else {
       try {
-        if (ghl) await sendGhlEmail(await contact(), message.email.subject, message.email.html);
-        else {
+        if (ghl) {
+          try {
+            await sendGhlEmail(await contact(), message.email.subject, message.email.html);
+          } catch (error) {
+            if (!(error instanceof SharedContactError)) throw error;
+            ghl = false;
+          }
+        }
+        if (!ghl) {
           const sent = await sendResendEmail({ to: email, ...message.email });
           if (!sent.ok) throw new Error("Resend refused the email");
         }
@@ -97,6 +117,9 @@ export async function notifyPatient(patientId: string, message: PatientMessage):
     return delivery;
   }
 }
+
+/** GoHighLevel matched this patient to a contact that belongs to another patient. */
+class SharedContactError extends Error {}
 
 async function log(admin: ReturnType<typeof createAdminClient>, patientId: string, system: "ghl" | null, outcome: string) {
   if (system !== "ghl") return;

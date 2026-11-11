@@ -3,6 +3,10 @@
 -- the id on the patient record. Only the server writes it, as the named background job 'ghl-sync',
 -- so the audit log says what changed it.
 
+-- One GoHighLevel contact per patient: family members who share an email or phone must never share a
+-- contact, or one would receive the other's messages. A clash is refused and the server falls back to email.
+create unique index patient_profiles_ghl_contact_unique on public.patient_profiles (ghl_contact_id) where ghl_contact_id is not null;
+
 create function private.set_patient_ghl_contact(_patient uuid, _contact text)
 returns void
 language plpgsql

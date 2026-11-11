@@ -50,6 +50,20 @@ export type Transcript =
   | { state: "failed"; error: string }
   | { state: "done"; text: string };
 
+/**
+ * Deletes the transcript and its audio at AssemblyAI once Clinic Hub has its own copy, so no recorded
+ * consultation stays with the processor. Best effort: a failure is logged and can be retried.
+ */
+export async function deleteTranscription(jobId: string): Promise<boolean> {
+  try {
+    await call(`/transcript/${encodeURIComponent(jobId)}`, { method: "DELETE" });
+    return true;
+  } catch {
+    console.error("Transcript not yet deleted at the transcription service.");
+    return false;
+  }
+}
+
 /** The transcript as lines like "Speaker A: ...", or its state if it is not ready. */
 export async function fetchTranscript(jobId: string): Promise<Transcript> {
   const result = await call<{

@@ -73,8 +73,29 @@ create policy "Admins change appointment types" on public.appointment_types
 
 -- Hours: everyone signed in reads them (patients need them to see free slots). Admins and PAs set
 -- anyone's; a clinician sets their own.
-create policy "Anyone signed in reads clinician hours" on public.clinician_availability
-  for select to authenticated using (true);
+-- Is this clinician on the current care team of a patient the signed-in person sees as patient or guardian?
+create function private.is_my_clinician(_staff uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1 from public.care_team ct
+    where ct.staff_id = _staff
+      and ct.patient_id in (select private.my_patient_ids())
+      and ct.since <= private.london_today()
+      and (ct.until is null or ct.until > private.london_today())
+  );
+$$;
+revoke all on function private.is_my_clinician(uuid) from public, anon;
+grant execute on function private.is_my_clinician(uuid) to authenticated;
+
+-- Hours: staff read everyone's; a patient reads only their own clinicians' (to see free times).
+create policy "Staff read hours, patients their own clinicians'" on public.clinician_availability
+  for select to authenticated
+  using ((select private.is_active_staff((select auth.uid()))) or private.is_my_clinician(staff_id));
 create policy "Admins, PAs and the clinician add hours" on public.clinician_availability
   for insert to authenticated
   with check ((select private.has_role('admin')) or (select private.has_role('pa')) or staff_id = (select private.my_staff_id()));
@@ -93,11 +114,12 @@ set search_path = ''
 as $$
   select a.starts_at, a.starts_at + make_interval(mins => a.duration_min)
   from public.appointments a
-  where (select auth.uid()) is not null
+  where (private.is_active_staff((select auth.uid())) or private.is_my_clinician(_staff))
     and a.clinician_id = _staff
     and a.status in ('booked', 'confirmed')
-    and a.starts_at < _to
-    and a.starts_at + make_interval(mins => a.duration_min) > _from
+    -- The booking window only: never the past, never further ahead than a booking can be made.
+    and a.starts_at < least(_to, now() + interval '121 days')
+    and a.starts_at + make_interval(mins => a.duration_min) > greatest(_from, now())
   order by a.starts_at;
 $$;
 comment on function private.clinician_busy(uuid, timestamptz, timestamptz) is 'Busy intervals of one clinician, with no patient details. For working out free slots.';
@@ -139,6 +161,10 @@ begin
         and ct.since <= private.london_today() and (ct.until is null or ct.until > private.london_today())
     ) then
       raise exception 'You can book with the clinicians who look after you.' using errcode = '42501';
+    end if;
+    -- A patient holds a few open bookings at most; the team books beyond that.
+    if (select count(*) from public.appointments a where a.patient_id = _patient and a.status in ('booked', 'confirmed') and a.starts_at > now()) >= 3 then
+      raise exception 'You already have three appointments booked. Please contact the clinic to book more.' using errcode = '22023';
     end if;
   end if;
   if not exists (select 1 from public.staff_profiles s where s.id = _staff and s.active and s.archived_at is null and s.clinical_role in ('doctor', 'nurse', 'health_coach')) then

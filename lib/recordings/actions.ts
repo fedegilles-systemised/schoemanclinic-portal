@@ -61,7 +61,7 @@ export async function sendForTranscription(recordingId: string): Promise<{ error
   if (own.error || !own.data || own.data.recorded_by !== me.staffId) return { error: "That recording was not found." };
   const admin = createAdminClient();
   try {
-    const link = await admin.storage.from("recordings").createSignedUrl(own.data.storage_path, 60 * 60);
+    const link = await admin.storage.from("recordings").createSignedUrl(own.data.storage_path, 30 * 60);
     if (link.error) throw new Error("No link to the audio");
     const job = await submitTranscription(link.data.signedUrl);
     await admin.rpc("recording_sent", { _recording: own.data.id, _job: job });

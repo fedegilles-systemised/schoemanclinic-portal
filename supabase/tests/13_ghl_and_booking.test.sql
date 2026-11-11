@@ -88,8 +88,25 @@ select lives_ok(
   $$ select t.run('a0000000-0000-4000-8000-000000000011', format('select public.book_appointment(%L, %L, %L, %L)', 'd0000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000001', (select kind from slot), (select at from slot))) $$,
   'and the freed slot can be booked again');
 
+-- A patient sees only her own clinicians' busy times and hours, and never the past.
+select is(t.n('a0000000-0000-4000-8000-000000000011', format('select * from public.clinician_busy(%L, now(), now() + interval ''30 days'')', 'b0000000-0000-4000-8000-000000000002')), 0, 'a patient cannot read the diary of a clinician who does not look after her');
+select is(t.n('a0000000-0000-4000-8000-000000000011', format('select * from public.clinician_busy(%L, now() - interval ''400 days'', now())', 'b0000000-0000-4000-8000-000000000001')), 0, 'or any past appointments');
+select is(t.n('a0000000-0000-4000-8000-000000000011', $q$select * from public.clinician_availability where staff_id = 'b0000000-0000-4000-8000-000000000002'$q$), 0, 'or another clinician''s hours');
+
 select is(t.n('a0000000-0000-4000-8000-000000000011', $q$select * from public.get_bookable_clinicians('d0000000-0000-4000-8000-000000000001')$q$), 1, 'a patient sees the clinicians she can book');
 select is(t.n('a0000000-0000-4000-8000-000000000012', $q$select * from public.get_bookable_clinicians('d0000000-0000-4000-8000-000000000001')$q$), 0, 'but not another patient''s');
+
+-- A patient holds three open bookings at most: fill her up to three, then try once more.
+insert into public.appointments (patient_id, clinician_id, starts_at, duration_min, type, status, source)
+select 'd0000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000002', now() + make_interval(days => 40 + g), 30, 'Filler', 'booked', 'clinic_hub'
+from generate_series(1, greatest(0, 3 - (select count(*)::int from public.appointments where patient_id = 'd0000000-0000-4000-8000-000000000001' and status in ('booked', 'confirmed') and starts_at > now()))) g;
+select throws_ok($$ select t.run('a0000000-0000-4000-8000-000000000011', format('select public.book_appointment(%L, %L, %L, %L)', 'd0000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000001', (select kind from slot), (select at from slot) + interval '3 days')) $$, '22023', null, 'a patient with three open bookings cannot book a fourth');
+select lives_ok($$ select t.run('a0000000-0000-4000-8000-000000000003', format('select public.book_appointment(%L, %L, %L, %L)', 'd0000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000001', (select kind from slot), (select at from slot) + interval '3 days')) $$, 'but the team can book for her');
+
+-- One GoHighLevel contact per patient.
+set local role service_role;
+select throws_ok($$ select public.set_patient_ghl_contact('d0000000-0000-4000-8000-000000000002', 'ghl-contact-123') $$, '23505', null, 'two patients never share a GoHighLevel contact');
+reset role;
 
 select * from finish();
 rollback;

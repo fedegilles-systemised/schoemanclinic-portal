@@ -32,6 +32,29 @@ grant insert (patient_id, author_id, appointment_id, title, body) on public.clin
 grant insert (patient_id, author_id, appointment_id, title, body, source) on public.clinical_notes to service_role;
 comment on table public.clinical_notes is 'Consultation and coaching notes. Final once signed: nobody edits or corrects a signed note.';
 
+create or replace function private.clinical_note_lock()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if tg_op = 'DELETE' then
+    raise exception 'Notes are never deleted. Archive a draft instead.' using errcode = '42501';
+  end if;
+  if old.status = 'signed' then
+    raise exception 'A signed note is final and cannot be changed.' using errcode = '42501';
+  end if;
+  if old.archived_at is not null then
+    raise exception 'An archived draft cannot be changed.' using errcode = '42501';
+  end if;
+  if new.patient_id <> old.patient_id or new.author_id <> old.author_id or new.supersedes_id is distinct from old.supersedes_id
+     or new.version <> old.version or new.source <> old.source then
+    raise exception 'A note cannot move to another patient, author or version.' using errcode = '42501';
+  end if;
+  return new;
+end;
+$$;
+
 -- 2. Unmatched files: PAs and admins only --------------------------------------------------------
 
 alter policy "Patients and guardians read shared documents and staff in scope" on public.documents

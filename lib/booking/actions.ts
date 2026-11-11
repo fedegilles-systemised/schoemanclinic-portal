@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { getCurrentUser } from "@/lib/auth/session";
+import { allowAuthAttempt } from "@/lib/auth/throttle";
 import { createEvent, deleteEvent, googleSessionFor, listEvents } from "@/lib/calendar/google";
 import { londonParts } from "@/lib/calendar/time";
 import { appointmentEmail } from "@/lib/email/templates/app";
@@ -45,6 +46,7 @@ export async function bookAppointment(_state: BookingFormState, formData: FormDa
   });
   if (!parsed.success) return { error: GENERIC_FAILURE };
   const input = parsed.data;
+  if (!(await allowAuthAttempt("booking", user.email))) return { error: "Too many bookings at once. Please wait a while and try again." };
   const supabase = await createClient();
   if (await busyInGoogle(input.staffId, input.typeId, input.startsAt)) {
     return { error: "That time is no longer free in the clinician's calendar. Please choose another." };
