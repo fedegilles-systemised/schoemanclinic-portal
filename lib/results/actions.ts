@@ -25,7 +25,7 @@ function friendly(error: { code?: string; message: string }): string {
   return ["42501", "22023", "23505"].includes(error.code ?? "") ? error.message : GENERIC_FAILURE;
 }
 
-async function requireStaff(roles: readonly ("pa" | "doctor")[]): Promise<CurrentUser> {
+async function requireStaff(roles: readonly ("pa" | "doctor" | "nurse")[]): Promise<CurrentUser> {
   const user = await getCurrentUser();
   if (!user || user.isSuspended || !user.roles.some((role) => (roles as readonly string[]).includes(role))) redirect("/clinic");
   return user;
@@ -70,7 +70,7 @@ const entrySchema = z.object({
 });
 
 export async function enterReport(_state: ResultsFormState, formData: FormData): Promise<ResultsFormState> {
-  const user = await requireStaff(["pa", "doctor"]);
+  const user = await requireStaff(["pa", "doctor", "nurse"]);
 
   let rows: unknown = [];
   try {

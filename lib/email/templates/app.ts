@@ -116,6 +116,36 @@ export function guardianAccessEmail({
   };
 }
 
+/** The clinic's lead is told that a doctor or an admin has been invited. */
+export function teamInviteAlertEmail({
+  siteUrl,
+  inviterName,
+  invitedEmail,
+  roleLabel,
+  teamUrl,
+}: Base & { inviterName: string; invitedEmail: string; roleLabel: string; teamUrl: string }): EmailContent {
+  const reason = "You are receiving this email because the clinic asked to be told whenever a doctor or an admin is invited.";
+  const line = `${inviterName} invited ${invitedEmail} to join the team as ${roleLabel === "Admin" ? "an admin" : "a doctor"}.`;
+
+  return {
+    subject: `${roleLabel} invitation sent: ${invitedEmail}`,
+    html: renderEmail({
+      siteUrl,
+      preheader: line,
+      eyebrow: "Team",
+      title: { before: "A new ", accent: roleLabel.toLowerCase(), after: " was invited" },
+      body:
+        paragraph("Hello,") +
+        paragraph(escapeHtml(line)) +
+        paragraph("If you did not expect this, cancel the invitation from Team and settings before it is accepted.") +
+        button("Open Team and settings", teamUrl) +
+        paragraph(SIGN_OFF_HTML),
+      reason,
+    }),
+    text: `Hello,\n\n${line}\n\nIf you did not expect this, cancel the invitation from Team and settings before it is accepted.\n\nOpen Team and settings: ${teamUrl}\n\n${textFooter(reason)}`,
+  };
+}
+
 /** A patient is told that a result has been shared. It carries no value or verdict. */
 export function resultReadyEmail({
   siteUrl,

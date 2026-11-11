@@ -186,7 +186,7 @@ export function InviteSheet({ kinds, patients }: { kinds: InvitationKind[]; pati
           ) : null}
           {kind === "team" ? (
             <p className="type-small text-content-muted">
-              When a doctor or an admin is invited, the other admins are told. A nurse sees no patient records until the clinic decides what a nurse may see.
+              When a doctor or an admin is invited, the other admins and Dr Gina Schoeman are told. Doctors, nurses and health coaches see only the patients whose care team they are on.
             </p>
           ) : null}
 

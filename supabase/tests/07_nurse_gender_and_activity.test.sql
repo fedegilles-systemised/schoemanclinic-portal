@@ -45,9 +45,9 @@ create function t.p_eleanor() returns uuid language sql immutable as $$ select '
 
 select is((select clinical_role::text from public.staff_profiles where user_id = t.nora()), 'nurse', 'the seeded nurse has a staff profile');
 select is(t.val(t.nora(), 'select private.has_role(''nurse'')'), 'true', 'the nurse holds the nurse role');
-select is(t.val(t.nora(), 'select private.is_clinical_staff()'), 'false', 'a nurse is not clinical staff yet');
-select is(t.val(t.nora(), 'select count(*) from public.patient_profiles'), '0', 'a nurse sees no patient');
-select is(t.val(t.nora(), 'select count(*) from public.lab_reports'), '0', 'a nurse sees no lab report');
+select is(t.val(t.nora(), 'select private.is_clinical_staff()'), 'true', 'a nurse is clinical staff');
+select is(t.val(t.nora(), 'select count(*) from public.patient_profiles'), '0', 'a nurse on no care team sees no patient');
+select is(t.val(t.nora(), 'select count(*) from public.lab_reports'), '0', 'or lab report');
 select is(t.val(t.nora(), 'select count(*) from public.results'), '0', 'a nurse sees no result');
 
 select lives_ok($$ insert into public.invitations (kind, email, role, invited_by, token_hash, expires_at)
@@ -77,8 +77,8 @@ select throws_ok($$ select t.val(t.gina(), format($q$ select public.log_record_v
 select throws_ok($$ select t.val(t.priya(), format($q$ select public.log_record_view(%L, 'patient_profiles', gen_random_uuid())::text $q$, t.p_eleanor())) $$, '22023', null, 'a patient record view cannot name another id');
 
 select throws_ok($$ select t.val(t.eleanor(), format($q$ select public.log_record_view(%L, 'patient_profiles')::text $q$, t.p_eleanor())) $$, '42501', null, 'a patient cannot write to the log');
-select throws_ok($$ select t.val(t.admin(), format($q$ select public.log_record_view(%L, 'patient_profiles')::text $q$, t.p_eleanor())) $$, '42501', null, 'an admin cannot write to the log');
-select throws_ok($$ select t.val(t.nora(), format($q$ select public.log_record_view(%L, 'patient_profiles')::text $q$, t.p_eleanor())) $$, '42501', null, 'a nurse cannot write to the log');
+select lives_ok($$ select t.val(t.admin(), format($q$ select public.log_record_view(%L, 'patient_profiles')::text $q$, t.p_eleanor())) $$, 'an admin opening a record is logged too');
+select throws_ok($$ select t.val(t.nora(), format($q$ select public.log_record_view(%L, 'patient_profiles')::text $q$, t.p_eleanor())) $$, '42501', null, 'a nurse on no care team cannot write to the log');
 select throws_ok($$ select t.val(t.priya(), format($q$ select public.log_record_view(%L, 'profiles')::text $q$, t.p_eleanor())) $$, '22023', null, 'only a patient record or a report can be named');
 select throws_ok($$ select t.val(null, format($q$ select public.log_record_view(%L, 'patient_profiles')::text $q$, t.p_eleanor())) $$, '42501', null, 'someone signed out cannot write to the log');
 
@@ -86,7 +86,7 @@ select throws_ok($$ select t.val(null, format($q$ select public.log_record_view(
 
 select cmp_ok(t.val(t.admin(), 'select count(*) from public.activity_log()')::int, '>=', 2, 'an admin reads the activity log');
 select is(t.val(t.admin(), $q$ select patient_name from public.activity_log() where action = 'viewed' and entity = 'patient_profiles' limit 1 $q$), 'Eleanor Hart', 'it names the patient');
-select is(t.val(t.admin(), $q$ select actor_name from public.activity_log() where action = 'viewed' and entity = 'patient_profiles' limit 1 $q$), 'Priya Shah', 'and who opened the record');
+select is(t.val(t.admin(), $q$ select count(*) from public.activity_log() where action = 'viewed' and entity = 'patient_profiles' and actor_name = 'Priya Shah' $q$), '1', 'and who opened the record');
 select cmp_ok(t.val(t.admin(), 'select count(*) from public.activity_log(1)')::int, '=', 1, 'a page can be limited');
 select cmp_ok(t.val(t.admin(), 'select count(*) from public.activity_log(100000)')::int, '<=', 100, 'and a page never holds more than 100');
 select is(t.val(t.admin(), $q$ select count(*) from public.activity_log(100) where entity in ('safeguarding_alerts', 'diagnoses', 'medications', 'allergies') $q$), '0', 'it never shows safeguarding, diagnosis, medicine or allergy events');
