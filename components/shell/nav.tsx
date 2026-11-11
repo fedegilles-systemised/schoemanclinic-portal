@@ -2,6 +2,7 @@
 
 import {
   Activity,
+  Briefcase,
   CalendarDays,
   ClipboardList,
   Clock,
@@ -87,6 +88,7 @@ const NAV: Record<PortalKind, NavGroup[]> = {
         { label: "Team and settings", icon: Settings, href: "/clinic/team", roles: ["pa", "admin", "doctor"] },
         { label: "Education", icon: GraduationCap, href: "/clinic/education" },
         { label: "Activity", icon: Activity, href: "/clinic/activity", roles: ["admin"] },
+        { label: "BrightHR", icon: Briefcase, href: "/clinic/hr" },
       ],
     },
   ],
