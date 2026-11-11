@@ -23,14 +23,15 @@ select pg_temp.become('a0000000-0000-4000-8000-000000000002');
 select throws_ok($$ select public.reply_to_question((select id from qq), 'Hello') $$, '42501', null, 'a doctor not on the care team cannot reply');
 reset role;
 select pg_temp.become('a0000000-0000-4000-8000-000000000001');
-select lives_ok($$ select public.reply_to_question((select id from qq), 'Take it in the morning.') $$, 'her doctor replies');
+select is(public.reply_to_question((select id from qq), 'Take it in the morning.'), true, 'her doctor replies, as the clinic');
+select throws_ok($$ update public.questions set status = 'closed' where id = (select id from qq) $$, '42501', null, 'status changes only through the functions');
 reset role;
 select is((select status::text from public.questions where id = (select id from qq)), 'answered', 'and the question is answered');
 
 -- The patient reads the reply and writes back.
 select pg_temp.become('a0000000-0000-4000-8000-000000000011');
 select is((select count(*)::int from public.question_replies where question_id = (select id from qq)), 1, 'the patient reads the reply');
-select lives_ok($$ select public.reply_to_question((select id from qq), 'Thank you.') $$, 'and writes back');
+select is(public.reply_to_question((select id from qq), 'Thank you.'), false, 'and writes back, as the patient side');
 select throws_ok($$ select public.close_question((select id from qq)) $$, '42501', null, 'a patient cannot close a question');
 reset role;
 select is((select status::text from public.questions where id = (select id from qq)), 'awaiting_reply', 'which waits for the clinic again');
@@ -76,6 +77,10 @@ reset role;
 update public.documents set shared_with_patient = true, shared_at = now() where title = 'Test letter';
 select pg_temp.become('a0000000-0000-4000-8000-000000000011');
 select is((select count(*)::int from public.documents where title = 'Test letter'), 1, 'and shows once shared');
+reset role;
+select pg_temp.become('a0000000-0000-4000-8000-000000000001');
+select lives_ok($$ select public.log_record_view('d0000000-0000-4000-8000-000000000001', 'documents', (select id from public.documents where title = 'Test letter')) $$, 'opening a document is logged');
+select throws_ok($$ select public.log_record_view('d0000000-0000-4000-8000-000000000002', 'documents', (select id from public.documents where title = 'Test letter')) $$, null, null, 'but not against another patient');
 reset role;
 select pg_temp.become('a0000000-0000-4000-8000-000000000005');
 select throws_ok($$ insert into public.documents (patient_id, kind, title, storage_path, source, uploaded_by) values ('d0000000-0000-4000-8000-000000000001', 'letter', 'x', 'd0000000-0000-4000-8000-000000000001/x.pdf', 'staff_upload', 'a0000000-0000-4000-8000-000000000005') $$, '42501', null, 'a health coach does not add documents');

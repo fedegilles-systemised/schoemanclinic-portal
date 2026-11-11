@@ -40,7 +40,7 @@ export default async function PortalQuestionPage({
       {sent ? (
         <div className="mb-6">
           <Alert variant="success">
-            <AlertDescription>Question sent. We will tell you when the clinic replies.</AlertDescription>
+            <AlertDescription>Question sent. The reply will appear on this page.</AlertDescription>
           </Alert>
         </div>
       ) : null}

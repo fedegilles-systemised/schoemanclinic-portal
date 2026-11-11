@@ -52,6 +52,7 @@ export default async function DocumentsPage({ searchParams }: { searchParams: Pr
                   <a href={`/portal/documents/${d.id}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-content">
                     <FileText className="size-4" aria-hidden />
                     {d.title}
+                    <span className="sr-only"> (opens in a new tab)</span>
                   </a>
                 </TableCell>
                 <TableCell>{DOCUMENT_KIND_LABELS[d.kind]}</TableCell>

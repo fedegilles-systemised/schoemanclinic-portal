@@ -49,7 +49,6 @@ export function ReplyForm({ questionId, from }: { questionId: string; from: "cli
   return (
     <form action={action} className="flex flex-col gap-4" key={state.sentAt ?? "reply"}>
       <input type="hidden" name="questionId" value={questionId} />
-      <input type="hidden" name="from" value={from} />
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="reply-body">{from === "clinic" ? "Reply to the patient" : "Write back"}</Label>
         <Textarea id="reply-body" name="body" maxLength={4000} required />

@@ -3,9 +3,9 @@
 import { useActionState } from "react";
 
 import { FormMessage } from "@/components/profile/form-message";
-import { Button } from "@/components/ui/button";
+import { ConfirmButton } from "@/components/ui/confirm-button";
 import { setConsent, type ConsentFormState } from "@/lib/consents/actions";
-import type { ConsentType } from "@/lib/consents/constants";
+import { CONSENTS, type ConsentType } from "@/lib/consents/constants";
 
 const initial: ConsentFormState = {};
 
@@ -17,9 +17,17 @@ export function ConsentChoice({ patientId, type, granted }: { patientId: string;
       <input type="hidden" name="patientId" value={patientId} />
       <input type="hidden" name="type" value={type} />
       <input type="hidden" name="granted" value={granted ? "no" : "yes"} />
-      <Button type="submit" variant={granted ? "outline" : "primary"} size="sm" loading={pending}>
+      <ConfirmButton
+        variant={granted ? "outline" : "primary"}
+        size="sm"
+        loading={pending}
+        aria-label={`${granted ? "Withdraw consent" : "Give consent"}: ${CONSENTS[type].title}`}
+        confirmTitle={granted ? "Withdraw this consent?" : "Give this consent?"}
+        confirmText={CONSENTS[type].description}
+        confirmVariant={granted ? "destructive" : "primary"}
+      >
         {granted ? "Withdraw consent" : "Give consent"}
-      </Button>
+      </ConfirmButton>
       <FormMessage state={state} />
     </form>
   );

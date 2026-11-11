@@ -1146,7 +1146,7 @@ isOneToOne: false
 { Args: { "_question": string }; Returns: undefined
                            },
 "reply_to_question":
-{ Args: { "_body": string,"_question": string }; Returns: string
+{ Args: { "_body": string,"_question": string }; Returns: boolean
                            },
 "log_record_view":
 { Args: { "_entity": string,"_entity_id"?: string,"_patient": string }; Returns: undefined

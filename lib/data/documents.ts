@@ -43,16 +43,18 @@ export async function listDocuments(patientId: string, { sharedOnly }: { sharedO
  * A short-lived link to one document's file, through the person's own session: Storage serves the
  * file only when they can read its row. Staff opening a file is written to the activity log first.
  */
-export async function signedDocumentUrl(documentId: string, { logAs }: { logAs: "staff" | "patient" }): Promise<string | null> {
+export async function signedDocumentUrl(
+  documentId: string,
+  opener: { logAs: "staff" } | { logAs: "patient"; patientId: string },
+): Promise<string | null> {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("documents")
-    .select("storage_path, patient_id")
-    .eq("id", documentId)
-    .is("archived_at", null)
-    .maybeSingle();
+  let query = supabase.from("documents").select("storage_path, patient_id").eq("id", documentId).is("archived_at", null);
+  // In the portal, only the portal patient's shared documents: a team member who is also a patient
+  // opens other patients' files from the clinic, where the view is logged.
+  if (opener.logAs === "patient") query = query.eq("patient_id", opener.patientId).eq("shared_with_patient", true);
+  const { data, error } = await query.maybeSingle();
   if (error || !data) return null;
-  if (logAs === "staff" && data.patient_id) {
+  if (opener.logAs === "staff" && data.patient_id) {
     const logged = await supabase.rpc("log_record_view", { _patient: data.patient_id, _entity: "documents", _entity_id: documentId });
     if (logged.error) return null;
   }

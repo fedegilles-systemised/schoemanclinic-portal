@@ -43,7 +43,7 @@ export function SafeguardingSection({ patientId, alerts, today }: { patientId: s
                   {a.reviewDue ? ` · review by ${formatDate(a.reviewDue)}` : ""}
                 </span>
               </div>
-              <ResolveAlertButton patientId={patientId} alertId={a.id} />
+              <ResolveAlertButton patientId={patientId} alertId={a.id} label={a.alertType} />
             </li>
           ))}
         </ul>
@@ -139,7 +139,7 @@ export function ClinicalSummarySection({
                   </span>
                   {d.notes ? <span className="type-small block text-content-muted">{d.notes}</span> : null}
                 </span>
-                {canDiagnose ? <DiagnosisStatusForm patientId={patientId} diagnosisId={d.id} status={d.status} /> : null}
+                {canDiagnose ? <DiagnosisStatusForm patientId={patientId} diagnosisId={d.id} status={d.status} label={d.label} /> : null}
               </li>
             ))}
           </ul>
@@ -175,6 +175,7 @@ export function DocumentsSection({ patientId, documents, canManage }: { patientI
                 <span>
                   <a href={`/clinic/documents/${d.id}`} target="_blank" rel="noopener noreferrer" className="text-content">
                     {d.title}
+                    <span className="sr-only"> (opens in a new tab)</span>
                   </a>
                   <span className="type-small text-content-muted">
                     {" "}
@@ -183,8 +184,8 @@ export function DocumentsSection({ patientId, documents, canManage }: { patientI
                 </span>
                 {manageable ? (
                   <div className="flex items-start gap-2">
-                    <ShareDocumentButton documentId={d.id} patientId={patientId} shared={d.sharedWithPatient} />
-                    <ArchiveDocumentButton documentId={d.id} patientId={patientId} />
+                    <ShareDocumentButton documentId={d.id} patientId={patientId} shared={d.sharedWithPatient} title={d.title} />
+                    <ArchiveDocumentButton documentId={d.id} patientId={patientId} title={d.title} />
                   </div>
                 ) : null}
               </li>

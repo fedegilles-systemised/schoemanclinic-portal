@@ -103,20 +103,20 @@ export function DiagnosisForm({ patientId, today }: { patientId: string; today: 
   );
 }
 
-export function DiagnosisStatusForm({ patientId, diagnosisId, status }: { patientId: string; diagnosisId: string; status: DiagnosisStatus }) {
+export function DiagnosisStatusForm({ patientId, diagnosisId, status, label }: { patientId: string; diagnosisId: string; status: DiagnosisStatus; label: string }) {
   const [state, action, pending] = useActionState(setDiagnosisStatus, initial);
   return (
     <form action={action} className="flex flex-wrap items-center gap-2">
       <input type="hidden" name="patientId" value={patientId} />
       <input type="hidden" name="diagnosisId" value={diagnosisId} />
-      <Select name="status" defaultValue={status} aria-label="Status" className="w-auto">
+      <Select name="status" defaultValue={status} aria-label={`Status of ${label}`} className="w-auto">
         {DIAGNOSIS_STATUSES.map((s) => (
           <option key={s} value={s}>
             {DIAGNOSIS_STATUS_LABELS[s]}
           </option>
         ))}
       </Select>
-      <Button type="submit" variant="ghost" size="sm" loading={pending}>
+      <Button type="submit" variant="ghost" size="sm" loading={pending} aria-label={`Save status of ${label}`}>
         Save
       </Button>
       {state.error ? <FormMessage state={state} /> : null}
@@ -164,7 +164,7 @@ export function SafeguardingForm({ patientId, today }: { patientId: string; toda
   );
 }
 
-export function ResolveAlertButton({ patientId, alertId }: { patientId: string; alertId: string }) {
+export function ResolveAlertButton({ patientId, alertId, label }: { patientId: string; alertId: string; label: string }) {
   const [state, action, pending] = useActionState(resolveSafeguardingAlert, initial);
   return (
     <form action={action} className="flex flex-col items-end gap-1">
@@ -174,6 +174,7 @@ export function ResolveAlertButton({ patientId, alertId }: { patientId: string; 
         variant="ghost"
         size="sm"
         loading={pending}
+        aria-label={`Mark resolved: ${label}`}
         confirmTitle="Mark this alert resolved?"
         confirmText="It stays on the record but no longer shows as active."
       >

@@ -52,22 +52,30 @@ export function UploadDocumentForm({ patientId }: { patientId: string }) {
   );
 }
 
-export function ShareDocumentButton({ documentId, patientId, shared }: { documentId: string; patientId: string; shared: boolean }) {
+export function ShareDocumentButton({ documentId, patientId, shared, title }: { documentId: string; patientId: string; shared: boolean; title: string }) {
   const [state, action, pending] = useActionState(setDocumentShared, initial);
   return (
     <form action={action} className="flex flex-col items-end gap-1">
       <input type="hidden" name="documentId" value={documentId} />
       <input type="hidden" name="patientId" value={patientId} />
       <input type="hidden" name="share" value={shared ? "no" : "yes"} />
-      <Button type="submit" variant="ghost" size="sm" loading={pending}>
+      <ConfirmButton
+        variant="ghost"
+        size="sm"
+        loading={pending}
+        aria-label={`${shared ? "Stop sharing" : "Share"}: ${title}`}
+        confirmTitle={shared ? `Stop sharing ${title}?` : `Share ${title} with the patient?`}
+        confirmText={shared ? "The patient stops seeing it straight away." : "The patient sees it in their portal and is told a new document is there."}
+        confirmVariant={shared ? "destructive" : "primary"}
+      >
         {shared ? "Stop sharing" : "Share"}
-      </Button>
+      </ConfirmButton>
       {state.error || state.saved ? <FormMessage state={state} /> : null}
     </form>
   );
 }
 
-export function ArchiveDocumentButton({ documentId, patientId }: { documentId: string; patientId: string }) {
+export function ArchiveDocumentButton({ documentId, patientId, title }: { documentId: string; patientId: string; title: string }) {
   const [state, action, pending] = useActionState(archiveDocument, initial);
   return (
     <form action={action} className="flex flex-col items-end gap-1">
@@ -77,6 +85,8 @@ export function ArchiveDocumentButton({ documentId, patientId }: { documentId: s
         variant="ghost"
         size="sm"
         loading={pending}
+        aria-label={`Remove: ${title}`}
+        confirmVariant="destructive"
         confirmTitle="Remove this document?"
         confirmText="It is archived, not deleted, and the patient no longer sees it."
       >

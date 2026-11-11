@@ -82,18 +82,18 @@ export async function replyToQuestion(_state: QuestionFormState, formData: FormD
     .object({
       questionId: z.uuid(),
       body: z.string().trim().min(1, "Write a reply.").max(4000, "Use 4,000 characters or fewer."),
-      from: z.enum(["clinic", "portal"]),
     })
-    .safeParse({ questionId: formData.get("questionId"), body: formData.get("body"), from: formData.get("from") });
+    .safeParse({ questionId: formData.get("questionId"), body: formData.get("body") });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? GENERIC_FAILURE };
   if (!(await allowAuthAttempt("question", user.email))) return { error: TOO_MANY };
 
   const supabase = await createClient();
-  const { error } = await supabase.rpc("reply_to_question", { _question: parsed.data.questionId, _body: parsed.data.body });
+  // The database decides which side the person is on; the form does not get a say.
+  const { data: fromClinic, error } = await supabase.rpc("reply_to_question", { _question: parsed.data.questionId, _body: parsed.data.body });
   if (error) return { error: friendly(error.message) };
 
   let saved = "Reply sent.";
-  if (parsed.data.from === "clinic") {
+  if (fromClinic) {
     const question = await supabase
       .from("questions")
       .select("patient_id, patient:patient_profiles(first_name)")

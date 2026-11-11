@@ -422,8 +422,8 @@ create trigger care_team_role_matches before insert or update of staff_id, relat
   for each row execute function private.care_team_role_matches();
 
 -- S-107, C64: a team member who leaves loses their Google connection at once, so nothing that can
--- call Google is kept for them. The grant itself stays at Google until the person or a Google admin
--- removes it (myaccount.google.com/permissions); revoking the token would end every Google session.
+-- call Google is kept for them. Deleting the token does not withdraw the grant at Google: the person
+-- or the clinic's Google admin removes Clinic Hub at myaccount.google.com/permissions when they leave.
 create function private.drop_leaver_connections()
 returns trigger
 language plpgsql

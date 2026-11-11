@@ -31,6 +31,7 @@ export default async function PrivacyPage() {
         Read the clinic&apos;s{" "}
         <a href={PRIVACY_POLICY_URL} target="_blank" rel="noopener noreferrer">
           privacy policy
+          <span className="sr-only"> (opens in a new tab)</span>
         </a>
         . For a copy of your information, or any question about privacy, email{" "}
         <a href={`mailto:${PRIVACY_CONTACT}`}>{PRIVACY_CONTACT}</a>.
