@@ -14,14 +14,11 @@ export type RecordNote = {
   source: NoteSource;
   status: "draft" | "signed";
   version: number;
-  supersedesId: string | null;
   authorId: string;
   authorName: string;
   signedAt: string | null;
   createdAt: string;
   updatedAt: string;
-  /** A signed note that a later version corrects. */
-  correctedBy: string | null;
 };
 
 export type PatientRecord = {
@@ -58,7 +55,7 @@ export async function getPatientRecord(patientId: string): Promise<PatientRecord
       .or(`until.is.null,until.gt.${today}`),
     supabase
       .from("clinical_notes")
-      .select("id, title, body, source, status, version, supersedes_id, author_id, signed_at, created_at, updated_at")
+      .select("id, title, body, source, status, version, author_id, signed_at, created_at, updated_at")
       .eq("patient_id", patientId)
       .is("archived_at", null)
       .order("created_at", { ascending: false }),
@@ -67,7 +64,6 @@ export async function getPatientRecord(patientId: string): Promise<PatientRecord
   if (team.error || notes.error || directory.error) throw new Error("Could not load the patient's record.");
 
   const names = new Map(directory.data.map((person) => [person.staff_id, person.full_name]));
-  const correctedBy = new Map(notes.data.filter((n) => n.supersedes_id).map((n) => [n.supersedes_id as string, n.id]));
 
   return {
     id: patient.data.id,
@@ -82,13 +78,11 @@ export async function getPatientRecord(patientId: string): Promise<PatientRecord
       source: n.source,
       status: n.status,
       version: n.version,
-      supersedesId: n.supersedes_id,
       authorId: n.author_id,
       authorName: names.get(n.author_id) ?? "A former team member",
       signedAt: n.signed_at,
       createdAt: n.created_at,
       updatedAt: n.updated_at,
-      correctedBy: correctedBy.get(n.id) ?? null,
     })),
   };
 }
@@ -98,4 +92,39 @@ export async function getMyStaffId(userId: string): Promise<string | null> {
   const supabase = await createClient();
   const { data } = await supabase.from("staff_profiles").select("id").eq("user_id", userId).maybeSingle();
   return data?.id ?? null;
+}
+
+export type RecordingRow = { id: string; status: "uploading" | "transcribing" | "transcribed" | "failed"; createdAt: string; recordedBy: string };
+
+/** Recent call recordings of one patient, newest first. */
+export async function getRecordings(patientId: string): Promise<RecordingRow[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("call_recordings")
+    .select("id, status, created_at, recorded_by")
+    .eq("patient_id", patientId)
+    .order("created_at", { ascending: false })
+    .limit(20);
+  if (error) throw new Error("Could not load the recordings.");
+  return data.map((r) => ({ id: r.id, status: r.status, createdAt: r.created_at, recordedBy: r.recorded_by }));
+}
+
+export type GuardianLink = { id: string; name: string; email: string; relationship: string; canAct: boolean };
+
+/** The guardians who can currently see this patient's portal. For PAs and admins, who manage them. */
+export async function getGuardians(patientId: string): Promise<GuardianLink[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("patient_guardians")
+    .select("id, relationship, can_act, guardian:profiles!patient_guardians_guardian_user_id_fkey(full_name, email)")
+    .eq("patient_id", patientId)
+    .eq("can_view", true);
+  if (error) throw new Error("Could not load the patient's guardians.");
+  return data.map((g) => ({
+    id: g.id,
+    name: g.guardian?.full_name ?? "Guardian",
+    email: g.guardian?.email ?? "",
+    relationship: g.relationship,
+    canAct: g.can_act,
+  }));
 }

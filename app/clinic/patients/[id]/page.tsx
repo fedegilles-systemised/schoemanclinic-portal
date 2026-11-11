@@ -5,16 +5,24 @@ import { ArrowLeft, Lock } from "lucide-react";
 import { z } from "zod";
 
 import { AssignCourseForm, UnassignButton } from "@/components/education/forms";
-import { CorrectNote, DraftForm, NewNoteForm } from "@/components/notes/note-forms";
+import { AppointmentsTable } from "@/components/booking/appointments-table";
+import { CancelAppointmentButton } from "@/components/booking/book-slot";
+import { DraftForm, NewNoteForm } from "@/components/notes/note-forms";
+import { CheckRecordingButton, Recorder } from "@/components/recordings/recorder";
 import { RELATIONSHIP_LABELS } from "@/components/patients/care-team-forms";
+import { RemoveGuardianButton } from "@/components/patients/guardian-forms";
 import { ReadingsTable } from "@/components/wearables/readings-table";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader, SectionHeader } from "@/components/ui/page-header";
 import { getCurrentUser } from "@/lib/auth/session";
+import { getUpcomingAppointments } from "@/lib/data/appointments";
 import { getPatientAssignments, getReadings, listCourses } from "@/lib/data/education";
-import { getMyStaffId, getPatientRecord } from "@/lib/data/patient-record";
+import { getGuardians, getMyStaffId, getPatientRecord, getRecordings } from "@/lib/data/patient-record";
+import { isTranscriptionConfigured } from "@/lib/env";
+import { RELATIONSHIP_LABELS as GUARDIAN_LABELS } from "@/lib/invitations/constants";
 import { formatDate } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 
@@ -32,8 +40,15 @@ function dateTime(value: string): string {
 }
 
 /** A patient's record for the clinic: who looks after them, and their clinical notes. */
-export default async function PatientRecordPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function PatientRecordPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ booked?: string }>;
+}) {
   const { id } = await params;
+  const { booked } = await searchParams;
   if (!z.uuid().safeParse(id).success) notFound();
   const user = await getCurrentUser();
   if (!user) redirect("/login");
@@ -50,8 +65,18 @@ export default async function PatientRecordPage({ params }: { params: Promise<{ 
 
   const canWrite = user.roles.some((role) => role === "doctor" || role === "nurse" || role === "health_coach");
   const myStaffId = canWrite ? await getMyStaffId(user.id) : null;
-  const [assignments, library, readings] = await Promise.all([getPatientAssignments(record.id), listCourses(), getReadings(record.id, 30)]);
+  const [assignments, library, readings, appointments] = await Promise.all([
+    getPatientAssignments(record.id),
+    listCourses(),
+    getReadings(record.id, 30),
+    getUpcomingAppointments(record.id),
+  ]);
   const assignable = library.filter((course) => course.published && !assignments.some((a) => a.courseId === course.id));
+  const recordings = await getRecordings(record.id);
+  const canRecord = canWrite && Boolean(myStaffId) && isTranscriptionConfigured();
+  const RECORDING_STATUS = { uploading: "Not uploaded", transcribing: "Being transcribed", transcribed: "Transcript in notes", failed: "Transcription failed" } as const;
+  const managesGuardians = user.roles.some((role) => role === "pa" || role === "admin");
+  const guardians = managesGuardians ? await getGuardians(record.id) : [];
   const drafts = record.notes.filter((note) => note.status === "draft");
   const signed = record.notes.filter((note) => note.status === "signed");
 
@@ -69,6 +94,34 @@ export default async function PatientRecordPage({ params }: { params: Promise<{ 
           record.careTeam.length ? record.careTeam.map((m) => `${m.name} (${RELATIONSHIP_LABELS[m.relationship]})`).join(", ") : "nobody yet"
         }.`}
       />
+
+      {booked ? (
+        <div className="mb-6">
+          <Alert variant="success">
+            <AlertDescription>Appointment booked. A confirmation goes to the patient where their choices allow.</AlertDescription>
+          </Alert>
+        </div>
+      ) : null}
+
+      <section aria-labelledby="appointments" className="mb-12 flex flex-col gap-4">
+        <SectionHeader id="appointments" title="Appointments">
+          <Link href={`/clinic/patients/${record.id}/book`} className="type-button-label text-content no-underline">
+            Book an appointment
+          </Link>
+        </SectionHeader>
+        {appointments.length === 0 ? (
+          <EmptyState>No upcoming appointments.</EmptyState>
+        ) : (
+          <AppointmentsTable
+            rows={appointments}
+            action={(row) =>
+              row.status === "booked" || row.status === "confirmed" ? (
+                <CancelAppointmentButton appointmentId={row.id} patientId={record.id} label={`${row.type} on ${formatDate(row.startsAt)}`} />
+              ) : null
+            }
+          />
+        )}
+      </section>
 
       <div className="mb-12 grid gap-6 lg:grid-cols-2">
         <section aria-labelledby="education" className="flex flex-col gap-4">
@@ -96,8 +149,63 @@ export default async function PatientRecordPage({ params }: { params: Promise<{ 
         </section>
       </div>
 
+      {managesGuardians ? (
+        <section aria-labelledby="guardians" className="mb-12 flex flex-col gap-4">
+          <SectionHeader id="guardians" title="Guardians" />
+          {guardians.length === 0 ? (
+            <EmptyState>No guardian can see this patient&apos;s account.</EmptyState>
+          ) : (
+            <ul className="flex flex-col divide-y divide-surface-border border border-surface-border">
+              {guardians.map((g) => (
+                <li key={g.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+                  <span>
+                    {g.name}
+                    <span className="type-small text-content-muted">
+                      {" "}
+                      · {GUARDIAN_LABELS[g.relationship as keyof typeof GUARDIAN_LABELS] ?? g.relationship} · {g.canAct ? "can act" : "can view"}
+                      {g.email ? ` · ${g.email}` : ""}
+                    </span>
+                  </span>
+                  <RemoveGuardianButton patientId={record.id} linkId={g.id} name={g.name} />
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="type-small text-content-muted">Patients cannot remove a guardian themselves. New guardians are invited from Team and settings.</p>
+        </section>
+      ) : null}
+
       <section aria-labelledby="notes" className="flex flex-col gap-6">
         <SectionHeader id="notes" title="Clinical " accent="notes" />
+
+        {canRecord ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>Record a call</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Recorder patientId={record.id} />
+            </CardContent>
+          </Card>
+        ) : null}
+
+        {recordings.some((r) => r.status !== "transcribed") ? (
+          <ul className="flex flex-col divide-y divide-surface-border border border-surface-border">
+            {recordings
+              .filter((r) => r.status !== "transcribed")
+              .map((r) => (
+                <li key={r.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-2">
+                  <span>
+                    Call recorded {dateTime(r.createdAt)}
+                    <span className="type-small text-content-muted"> · {RECORDING_STATUS[r.status]}</span>
+                  </span>
+                  {r.recordedBy === myStaffId && r.status !== "uploading" ? (
+                    <CheckRecordingButton recordingId={r.id} patientId={record.id} failed={r.status === "failed"} />
+                  ) : null}
+                </li>
+              ))}
+          </ul>
+        ) : null}
 
         {canWrite && myStaffId ? (
           <Card>
@@ -115,7 +223,7 @@ export default async function PatientRecordPage({ params }: { params: Promise<{ 
             <CardHeader>
               <div className="flex flex-wrap items-center gap-2">
                 <CardTitle>{note.title}</CardTitle>
-                <Badge variant="outline">Draft{note.version > 1 ? `, version ${note.version}` : ""}</Badge>
+                <Badge variant="outline">Draft</Badge>
                 {note.source === "recording" ? <Badge variant="neutral">From a recording</Badge> : null}
               </div>
               <div className="type-small text-content-muted">
@@ -140,20 +248,16 @@ export default async function PatientRecordPage({ params }: { params: Promise<{ 
               <div className="flex flex-wrap items-center gap-2">
                 <CardTitle>{note.title}</CardTitle>
                 <Badge variant="neutral">
-                  <Lock className="size-3" aria-hidden /> Signed{note.version > 1 ? `, version ${note.version}` : ""}
+                  <Lock className="size-3" aria-hidden /> Signed, final
                 </Badge>
-                {note.correctedBy ? <Badge variant="outline">Corrected by a later version</Badge> : null}
                 {note.source === "recording" ? <Badge variant="neutral">From a recording</Badge> : null}
               </div>
               <div className="type-small text-content-muted">
                 {note.authorName} · signed {note.signedAt ? dateTime(note.signedAt) : ""}
               </div>
             </CardHeader>
-            <CardContent className="flex flex-col gap-4">
+            <CardContent>
               <p className="type-body whitespace-pre-wrap">{note.body}</p>
-              {canWrite && myStaffId && !note.correctedBy ? (
-                <CorrectNote patientId={record.id} noteId={note.id} title={note.title} body={note.body} />
-              ) : null}
             </CardContent>
           </Card>
         ))}

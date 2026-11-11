@@ -36,13 +36,11 @@ function read(formData: FormData, name: string): string | undefined {
   return typeof value === "string" ? value : undefined;
 }
 
-/** A new draft, or a correction of a signed note when supersedesId is sent. */
+/** A new draft. Signed notes are final, so nothing here corrects one. */
 export async function createNote(_state: NoteFormState, formData: FormData): Promise<NoteFormState> {
   const { staffId } = await requireWriter();
   const patientId = z.uuid().safeParse(read(formData, "patientId"));
-  const supersedes = read(formData, "supersedesId");
-  const supersedesId = supersedes ? z.uuid().safeParse(supersedes) : null;
-  if (!patientId.success || (supersedesId && !supersedesId.success)) return { error: GENERIC_FAILURE };
+  if (!patientId.success) return { error: GENERIC_FAILURE };
   const fields = noteFields.safeParse({ title: read(formData, "title"), body: read(formData, "body") });
   if (!fields.success) return { error: fields.error.issues[0]?.message ?? GENERIC_FAILURE };
 
@@ -52,11 +50,10 @@ export async function createNote(_state: NoteFormState, formData: FormData): Pro
     author_id: staffId,
     title: fields.data.title,
     body: fields.data.body,
-    supersedes_id: supersedesId?.success ? supersedesId.data : null,
   });
-  if (error) return { error: error.code === "23505" ? "Someone is already correcting this note." : friendly(error) };
+  if (error) return { error: friendly(error) };
   revalidatePath(`/clinic/patients/${patientId.data}`);
-  return { saved: supersedesId ? "Correction saved as a draft. Sign it to replace the earlier version." : "Draft saved. Sign it when it is final." };
+  return { saved: "Draft saved. Sign it when it is final." };
 }
 
 export async function updateNote(_state: NoteFormState, formData: FormData): Promise<NoteFormState> {
@@ -97,7 +94,7 @@ export async function signNote(_state: NoteFormState, formData: FormData): Promi
   const { error } = await supabase.rpc("sign_clinical_note", { _note: noteId.data });
   if (error) return { error: friendly(error) };
   revalidatePath(`/clinic/patients/${patientId.data}`);
-  return { saved: "Signed. The note is now locked." };
+  return { saved: "Signed. The note is now final." };
 }
 
 export async function archiveDraft(_state: NoteFormState, formData: FormData): Promise<NoteFormState> {

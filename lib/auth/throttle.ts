@@ -13,7 +13,8 @@ type ThrottledAction =
   | "email-change"
   | "invitation-send"
   | "invitation-accept"
-  | "results-entry";
+  | "results-entry"
+  | "booking";
 
 // A clinic shares one address, so the address limit is well above the account limits.
 const LIMITS: Record<ThrottledAction, { windowSeconds: number; address: number; addressAndAccount: number; account: number }> = {
@@ -27,6 +28,8 @@ const LIMITS: Record<ThrottledAction, { windowSeconds: number; address: number; 
   "invitation-accept": { windowSeconds: 15 * 60, address: 60, addressAndAccount: 10, account: 15 },
   // Each entry can carry a file, so this keeps a stuck script from filling storage.
   "results-entry": { windowSeconds: 60 * 60, address: 300, addressAndAccount: 120, account: 120 },
+  // Each booking sends a calendar event and messages, so a script must not be able to fill a diary.
+  booking: { windowSeconds: 60 * 60, address: 60, addressAndAccount: 20, account: 20 },
 };
 
 /** Stored as a hash, so the table holds no plain email or IP address. */

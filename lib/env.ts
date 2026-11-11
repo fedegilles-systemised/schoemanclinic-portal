@@ -50,6 +50,21 @@ const googleSchema = z.object({
     .optional(),
 });
 
+const ghlSchema = z.object({
+  // A GoHighLevel Private Integration token for the clinic's sub-account, with contacts and
+  // conversation-message write scopes. Settings > Private Integrations in GoHighLevel.
+  GHL_PRIVATE_TOKEN: z.string().min(1),
+  GHL_LOCATION_ID: z.string().min(1),
+});
+
+const transcriptionSchema = z.object({
+  // AssemblyAI, EU region: call recordings are transcribed there. Needs a data processing agreement.
+  ASSEMBLYAI_API_KEY: z.string().min(1),
+  // Sent back by AssemblyAI with each finished transcript, so nobody else can post one. 32+ characters.
+  TRANSCRIPTION_WEBHOOK_SECRET: z.string().min(32),
+  SITE_URL: z.url(),
+});
+
 export type PublicEnv = z.infer<typeof publicSchema>;
 
 function assertServer(): void {
@@ -129,6 +144,51 @@ export function isGoogleConfigured(): boolean {
     GOOGLE_TOKEN_ENCRYPTION_KEY: process.env.GOOGLE_TOKEN_ENCRYPTION_KEY,
     SITE_URL: process.env.SITE_URL,
     GOOGLE_WORKSPACE_DOMAIN: process.env.GOOGLE_WORKSPACE_DOMAIN || undefined,
+  }).success;
+}
+
+/** Server-only GoHighLevel variables, for lib/ghl/. */
+export function getGhlEnv(): z.infer<typeof ghlSchema> {
+  assertServer();
+  const parsed = ghlSchema.safeParse({
+    GHL_PRIVATE_TOKEN: process.env.GHL_PRIVATE_TOKEN,
+    GHL_LOCATION_ID: process.env.GHL_LOCATION_ID,
+  });
+  if (!parsed.success) {
+    throw new Error(`Invalid GoHighLevel environment: ${formatIssues(parsed.error)}`);
+  }
+  return parsed.data;
+}
+
+/** True when GoHighLevel is connected, so messages go through it and WhatsApp is offered. */
+export function isGhlConfigured(): boolean {
+  assertServer();
+  return ghlSchema.safeParse({
+    GHL_PRIVATE_TOKEN: process.env.GHL_PRIVATE_TOKEN,
+    GHL_LOCATION_ID: process.env.GHL_LOCATION_ID,
+  }).success;
+}
+
+/** Server-only transcription variables, for lib/transcription/. */
+export function getTranscriptionEnv(): z.infer<typeof transcriptionSchema> {
+  assertServer();
+  const parsed = transcriptionSchema.safeParse({
+    ASSEMBLYAI_API_KEY: process.env.ASSEMBLYAI_API_KEY,
+    TRANSCRIPTION_WEBHOOK_SECRET: process.env.TRANSCRIPTION_WEBHOOK_SECRET,
+    SITE_URL: process.env.SITE_URL,
+  });
+  if (!parsed.success) {
+    throw new Error(`Invalid transcription environment: ${formatIssues(parsed.error)}`);
+  }
+  return parsed.data;
+}
+
+export function isTranscriptionConfigured(): boolean {
+  assertServer();
+  return transcriptionSchema.safeParse({
+    ASSEMBLYAI_API_KEY: process.env.ASSEMBLYAI_API_KEY,
+    TRANSCRIPTION_WEBHOOK_SECRET: process.env.TRANSCRIPTION_WEBHOOK_SECRET,
+    SITE_URL: process.env.SITE_URL,
   }).success;
 }
 

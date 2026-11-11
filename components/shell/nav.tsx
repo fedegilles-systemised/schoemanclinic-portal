@@ -4,6 +4,7 @@ import {
   Activity,
   CalendarDays,
   ClipboardList,
+  Clock,
   FileText,
   FlaskConical,
   GraduationCap,
@@ -54,7 +55,7 @@ const NAV: Record<PortalKind, NavGroup[]> = {
         { label: "Education", icon: GraduationCap, href: "/portal/education" },
         { label: "Wearables", icon: Watch, href: "/portal/wearables" },
         { label: "Prescriptions", icon: Pill },
-        { label: "Appointments", icon: CalendarDays },
+        { label: "Appointments", icon: CalendarDays, href: "/portal/appointments" },
         { label: "Ask the clinic", icon: MessageSquare },
         { label: "Letters and documents", icon: FileText },
         { label: "Privacy and consent", icon: Shield },
@@ -67,6 +68,7 @@ const NAV: Record<PortalKind, NavGroup[]> = {
       items: [
         { label: "Dashboard", icon: LayoutGrid, href: "/clinic" },
         { label: "Calendar", icon: CalendarDays, href: "/clinic/calendar" },
+        { label: "Booking settings", icon: Clock, href: "/clinic/booking" },
       ],
     },
     {
@@ -74,7 +76,7 @@ const NAV: Record<PortalKind, NavGroup[]> = {
       items: [
         { label: "Patient list", icon: Users, href: "/clinic/patients" },
         { label: "Results review", icon: ClipboardList, href: "/clinic/results", countKey: "review" },
-        { label: "Import queue", icon: Inbox, href: "/clinic/results#imports", countKey: "imports", roles: ["pa", "doctor", "nurse"] },
+        { label: "Import queue", icon: Inbox, href: "/clinic/results#imports", countKey: "imports", roles: ["pa", "doctor", "nurse", "admin"] },
         { label: "Lab orders", icon: FlaskConical },
       ],
     },

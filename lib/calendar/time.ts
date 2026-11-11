@@ -59,6 +59,17 @@ export function startOfDayInstant(day: string): string {
   return `${day}T00:00:00${offsetAt(day, "00:00")}`;
 }
 
+/** That London wall-clock day and time as an instant with its offset, e.g. `2026-07-01T09:30:00+01:00`. */
+export function londonInstant(day: string, time: string): string {
+  return `${day}T${time}:00${offsetAt(day, time)}`;
+}
+
+/** ISO weekday of a day: 1 = Monday, 7 = Sunday. */
+export function isoWeekday(day: string): number {
+  const weekday = new Date(`${day}T12:00:00Z`).getUTCDay();
+  return weekday === 0 ? 7 : weekday;
+}
+
 /** The London day and time of an event's start or end. All-day events have no time. */
 export function londonParts(value: string): { day: string; time: string | null } {
   if (DAY_PATTERN.test(value)) return { day: value, time: null };

@@ -1,5 +1,5 @@
 -- Clinical notes: written by doctors, nurses and health coaches for their own patients, locked once
--- signed, corrected only by a new version, never deleted, and never shown to patients.
+-- signed and final (nobody corrects a signed note), never deleted, and never shown to patients.
 -- Ids from supabase/seed.sql: Gina (doctor) a..01 / b..01, on the care team of Eleanor d..01.
 begin;
 create extension if not exists pgtap with schema extensions;
@@ -59,7 +59,7 @@ select throws_ok(
   '42501', null, 'nobody writes in someone else''s name');
 
 create temporary table note on commit drop as select id from public.clinical_notes where title = 'Follow-up';
-grant select on note to authenticated;
+grant select on note to authenticated, service_role;
 
 select is(
   t.run(t.gina(), format($q$update public.clinical_notes set body = 'Feeling much better.' where id = %L$q$, (select id from note))),
@@ -92,18 +92,22 @@ select throws_ok(
   format($$ delete from public.clinical_notes where id = %L $$, (select id from note)),
   '42501', null, 'and no note is ever deleted');
 
--- A correction is a new version -------------------------------------------------------------------
+-- A signed note is final: nobody corrects it (decided 12 November) ---------------------------------
 
-select is(
-  t.run(t.gina(), format($q$insert into public.clinical_notes (patient_id, author_id, title, body, supersedes_id) values (%L, %L, 'Follow-up', 'Corrected.', %L)$q$, t.p_eleanor(), t.s_gina(), (select id from note))),
-  1, 'the doctor writes a correction');
-select is((select version from public.clinical_notes where supersedes_id = (select id from note)), 2, 'which is version 2');
 select throws_ok(
-  format($$ select t.run(t.gina(), $q$insert into public.clinical_notes (patient_id, author_id, title, body, supersedes_id) values (%L, %L, 'Again', 'Twice.', %L)$q$) $$, t.p_eleanor(), t.s_gina(), (select id from note)),
-  '23505', null, 'a signed note has one live correction at a time');
-select is((select body from public.clinical_notes where id = (select id from note)), 'Feeling much better.', 'and the signed version is unchanged');
+  format($$ select t.run(t.gina(), $q$insert into public.clinical_notes (patient_id, author_id, title, body, supersedes_id) values (%L, %L, 'Follow-up', 'Corrected.', %L)$q$) $$, t.p_eleanor(), t.s_gina(), (select id from note)),
+  '42501', null, 'not even its author can correct a signed note');
+create temporary table correction_sql on commit drop as
+  select format($$ insert into public.clinical_notes (patient_id, author_id, title, body, supersedes_id) values (%L, %L, 'Follow-up', 'Corrected.', %L) $$, t.p_eleanor(), t.s_gina(), (select id from note)) as q;
+grant select on correction_sql to service_role;
+set local role service_role;
+select throws_ok(
+  (select q from correction_sql),
+  '42501', null, 'nor can the server');
+reset role;
+select is((select body from public.clinical_notes where id = (select id from note)), 'Feeling much better.', 'and the signed note is unchanged');
 
-select cmp_ok((select count(*)::int from public.audit_log where entity = 'clinical_notes'), '>=', 4, 'every change is in the audit log');
+select cmp_ok((select count(*)::int from public.audit_log where entity = 'clinical_notes'), '>=', 3, 'every change is in the audit log');
 
 select throws_ok(
   format($$ select t.run(t.gina(), $q$insert into public.clinical_notes (patient_id, author_id, title, body, source) values (%L, %L, 'X', 'Y', 'recording')$q$) $$, t.p_eleanor(), t.s_gina()),

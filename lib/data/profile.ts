@@ -4,7 +4,8 @@ import { cache } from "react";
 
 import type { CurrentUser } from "@/lib/auth/session";
 import type { Database } from "@/lib/database.types";
-import { NOTIFICATION_CHANNELS, NOTIFICATION_TOPICS } from "@/lib/profile/notification-options";
+import { isGhlConfigured } from "@/lib/env";
+import { BASE_CHANNELS, defaultFor, GHL_CHANNELS, NOTIFICATION_TOPICS } from "@/lib/profile/notification-options";
 import { createClient } from "@/lib/supabase/server";
 
 const SIGNED_URL_SECONDS = 60 * 60;
@@ -44,7 +45,7 @@ export const getAccount = cache(async (user: CurrentUser): Promise<AccountView> 
   };
 });
 
-/** Every topic and channel on or off. A missing row counts as on. */
+/** Every topic and offered channel on or off. A missing row counts as the channel's default. */
 export async function getNotificationPreferences(userId: string): Promise<Record<string, boolean>> {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -54,8 +55,9 @@ export async function getNotificationPreferences(userId: string): Promise<Record
   if (error) throw new Error("Could not load your notification choices.");
   const saved = new Map<string, boolean>(data.map((row) => [`${row.topic}.${row.channel}`, row.enabled]));
   const result: Record<string, boolean> = {};
+  const channels = isGhlConfigured() ? GHL_CHANNELS : BASE_CHANNELS;
   for (const topic of NOTIFICATION_TOPICS) {
-    for (const channel of NOTIFICATION_CHANNELS) result[`${topic}.${channel}`] = saved.get(`${topic}.${channel}`) ?? true;
+    for (const channel of channels) result[`${topic}.${channel}`] = saved.get(`${topic}.${channel}`) ?? defaultFor(channel);
   }
   return result;
 }
