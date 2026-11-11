@@ -103,7 +103,9 @@ export async function addEvent(_state: CalendarFormState, formData: FormData): P
   const user = await requireStaff();
   const { input, error } = readEvent(formData);
   if (!input) return { error };
-  return withGoogle(user, (session) => createGoogleEvent(session, input), "Added to your Google Calendar.");
+  return withGoogle(user, async (session) => {
+    await createGoogleEvent(session, input);
+  }, "Added to your Google Calendar.");
 }
 
 export async function changeEvent(_state: CalendarFormState, formData: FormData): Promise<CalendarFormState> {

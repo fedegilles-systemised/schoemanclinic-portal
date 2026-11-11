@@ -146,6 +146,43 @@ export function teamInviteAlertEmail({
   };
 }
 
+/** A patient's appointment is booked, or cancelled by the team. Time and type only, nothing clinical. */
+export function appointmentEmail({
+  siteUrl,
+  firstName,
+  when,
+  typeName,
+  clinicianName,
+  cancelled,
+  portalUrl,
+}: Base & { firstName?: string; when: string; typeName: string; clinicianName: string; cancelled: boolean; portalUrl: string }): EmailContent {
+  const hello = firstName ? `Dear ${firstName},` : "Hello,";
+  const line = cancelled
+    ? `Your ${typeName.toLowerCase()} with ${clinicianName} on ${when} has been cancelled.`
+    : `Your ${typeName.toLowerCase()} with ${clinicianName} is booked for ${when}.`;
+  const policy = cancelled
+    ? "If you did not expect this, or would like a new time, please contact the clinic."
+    : "If you need to change or cancel it, please contact the clinic at least 48 hours before.";
+  const reason = "You are receiving this email because you have an appointment at The Schoeman Clinic.";
+  return {
+    subject: cancelled ? "Your appointment has been cancelled" : "Your appointment is booked",
+    html: renderEmail({
+      siteUrl,
+      preheader: line,
+      eyebrow: "Appointments",
+      title: cancelled ? { before: "Appointment ", accent: "cancelled" } : { before: "Your appointment is ", accent: "booked" },
+      body:
+        paragraph(escapeHtml(hello)) +
+        paragraph(escapeHtml(line)) +
+        paragraph(escapeHtml(policy)) +
+        button("View your appointments", portalUrl) +
+        paragraph(SIGN_OFF_HTML),
+      reason,
+    }),
+    text: `${hello}\n\n${line}\n\n${policy}\n\nView your appointments: ${portalUrl}\n\n${textFooter(reason)}`,
+  };
+}
+
 /** A patient is told that a result has been shared. It carries no value or verdict. */
 export function resultReadyEmail({
   siteUrl,

@@ -5,6 +5,8 @@ import { ArrowLeft, Lock } from "lucide-react";
 import { z } from "zod";
 
 import { AssignCourseForm, UnassignButton } from "@/components/education/forms";
+import { AppointmentsTable } from "@/components/booking/appointments-table";
+import { CancelAppointmentButton } from "@/components/booking/book-slot";
 import { DraftForm, NewNoteForm } from "@/components/notes/note-forms";
 import { RELATIONSHIP_LABELS } from "@/components/patients/care-team-forms";
 import { RemoveGuardianButton } from "@/components/patients/guardian-forms";
@@ -14,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader, SectionHeader } from "@/components/ui/page-header";
 import { getCurrentUser } from "@/lib/auth/session";
+import { getUpcomingAppointments } from "@/lib/data/appointments";
 import { getPatientAssignments, getReadings, listCourses } from "@/lib/data/education";
 import { getGuardians, getMyStaffId, getPatientRecord } from "@/lib/data/patient-record";
 import { RELATIONSHIP_LABELS as GUARDIAN_LABELS } from "@/lib/invitations/constants";
@@ -52,7 +55,12 @@ export default async function PatientRecordPage({ params }: { params: Promise<{ 
 
   const canWrite = user.roles.some((role) => role === "doctor" || role === "nurse" || role === "health_coach");
   const myStaffId = canWrite ? await getMyStaffId(user.id) : null;
-  const [assignments, library, readings] = await Promise.all([getPatientAssignments(record.id), listCourses(), getReadings(record.id, 30)]);
+  const [assignments, library, readings, appointments] = await Promise.all([
+    getPatientAssignments(record.id),
+    listCourses(),
+    getReadings(record.id, 30),
+    getUpcomingAppointments(record.id),
+  ]);
   const assignable = library.filter((course) => course.published && !assignments.some((a) => a.courseId === course.id));
   const managesGuardians = user.roles.some((role) => role === "pa" || role === "admin");
   const guardians = managesGuardians ? await getGuardians(record.id) : [];
@@ -73,6 +81,26 @@ export default async function PatientRecordPage({ params }: { params: Promise<{ 
           record.careTeam.length ? record.careTeam.map((m) => `${m.name} (${RELATIONSHIP_LABELS[m.relationship]})`).join(", ") : "nobody yet"
         }.`}
       />
+
+      <section aria-labelledby="appointments" className="mb-12 flex flex-col gap-4">
+        <SectionHeader id="appointments" title="Appointments">
+          <Link href={`/clinic/patients/${record.id}/book`} className="type-button-label text-content no-underline">
+            Book an appointment
+          </Link>
+        </SectionHeader>
+        {appointments.length === 0 ? (
+          <EmptyState>No upcoming appointments.</EmptyState>
+        ) : (
+          <AppointmentsTable
+            rows={appointments}
+            action={(row) =>
+              row.status === "booked" || row.status === "confirmed" ? (
+                <CancelAppointmentButton appointmentId={row.id} patientId={record.id} label={`${row.type} on ${formatDate(row.startsAt)}`} />
+              ) : null
+            }
+          />
+        )}
+      </section>
 
       <div className="mb-12 grid gap-6 lg:grid-cols-2">
         <section aria-labelledby="education" className="flex flex-col gap-4">

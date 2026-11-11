@@ -7,14 +7,14 @@ export type Database = {
           Tables: {
             "appointments": {
                   Row: {
-                    "clinician_id": string | null,"created_at": string,"duration_min": number,"external_id": string | null,"id": string,"location_id": string | null,"patient_id": string,"source": Database["public"]['Enums']["appt_source"],"starts_at": string,"status": Database["public"]['Enums']["appt_status"],"synced_at": string | null,"type": string
+                    "appointment_type_id": string | null,"booked_by": string | null,"clinician_id": string | null,"created_at": string,"duration_min": number,"external_id": string | null,"id": string,"location_id": string | null,"patient_id": string,"source": Database["public"]['Enums']["appt_source"],"starts_at": string,"status": Database["public"]['Enums']["appt_status"],"synced_at": string | null,"type": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "clinician_id"?: string | null,"created_at"?: string,"duration_min": number,"external_id"?: string | null,"id"?: string,"location_id"?: string | null,"patient_id": string,"source": Database["public"]['Enums']["appt_source"],"starts_at": string,"status"?: Database["public"]['Enums']["appt_status"],"synced_at"?: string | null,"type": string
+                    "appointment_type_id"?: string | null,"booked_by"?: string | null,"clinician_id"?: string | null,"created_at"?: string,"duration_min": number,"external_id"?: string | null,"id"?: string,"location_id"?: string | null,"patient_id": string,"source": Database["public"]['Enums']["appt_source"],"starts_at": string,"status"?: Database["public"]['Enums']["appt_status"],"synced_at"?: string | null,"type": string
                   }
                   Update: {
-                    "clinician_id"?: string | null,"created_at"?: string,"duration_min"?: number,"external_id"?: string | null,"id"?: string,"location_id"?: string | null,"patient_id"?: string,"source"?: Database["public"]['Enums']["appt_source"],"starts_at"?: string,"status"?: Database["public"]['Enums']["appt_status"],"synced_at"?: string | null,"type"?: string
+                    "appointment_type_id"?: string | null,"booked_by"?: string | null,"clinician_id"?: string | null,"created_at"?: string,"duration_min"?: number,"external_id"?: string | null,"id"?: string,"location_id"?: string | null,"patient_id"?: string,"source"?: Database["public"]['Enums']["appt_source"],"starts_at"?: string,"status"?: Database["public"]['Enums']["appt_status"],"synced_at"?: string | null,"type"?: string
                   }
                   Relationships: [
                     {
@@ -36,6 +36,20 @@ isOneToOne: false
       referencedRelation: "patient_profiles"
       referencedColumns: ["id"]
     }
+                  ]
+                },"appointment_types": {
+                  Row: {
+                    "active": boolean,"bookable_by_patients": boolean,"created_at": string,"description": string | null,"duration_min": number,"id": string,"location_kind": Database["public"]['Enums']["location_kind"],"name": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "active"?: boolean,"bookable_by_patients"?: boolean,"created_at"?: string,"description"?: string | null,"duration_min": number,"id"?: string,"location_kind": Database["public"]['Enums']["location_kind"],"name": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "active"?: boolean,"bookable_by_patients"?: boolean,"created_at"?: string,"description"?: string | null,"duration_min"?: number,"id"?: string,"location_kind"?: Database["public"]['Enums']["location_kind"],"name"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
                   ]
                 },"audit_log": {
                   Row: {
@@ -77,6 +91,32 @@ isOneToOne: false
       referencedColumns: ["id"]
     },{
       foreignKeyName: "care_team_staff_id_fkey"
+      columns: ["staff_id"]
+isOneToOne: false
+      referencedRelation: "staff_profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"clinician_availability": {
+                  Row: {
+                    "active": boolean,"created_at": string,"end_time": string,"id": string,"location_id": string | null,"staff_id": string,"start_time": string,"weekday": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "active"?: boolean,"created_at"?: string,"end_time": string,"id"?: string,"location_id"?: string | null,"staff_id": string,"start_time": string,"weekday": number
+                  }
+                  Update: {
+                    "active"?: boolean,"created_at"?: string,"end_time"?: string,"id"?: string,"location_id"?: string | null,"staff_id"?: string,"start_time"?: string,"weekday"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "clinician_availability_location_id_fkey"
+      columns: ["location_id"]
+isOneToOne: false
+      referencedRelation: "locations"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "clinician_availability_staff_id_fkey"
       columns: ["staff_id"]
 isOneToOne: false
       referencedRelation: "staff_profiles"
@@ -1014,11 +1054,27 @@ isOneToOne: false
 "auth_throttle_hit":
 { Args: { "_keys": (string)[],"_limits": (number)[],"_window_seconds": number }; Returns: boolean
                            },
+"book_appointment":
+{ Args: { "_location"?: string,"_patient": string,"_staff": string,"_starts_at": string,"_type": string }; Returns: string
+                           },
+"cancel_appointment":
+{ Args: { "_appointment": string }; Returns: undefined
+                           },
+"clinician_busy":
+{ Args: { "_from": string,"_staff": string,"_to": string }; Returns: {
+              "ends_at": string,"starts_at": string
+            }[]
+                           },
 "create_invitation":
 { Args: { "_can_act"?: boolean,"_confirm_email_mismatch"?: boolean,"_email": string,"_full_name"?: string,"_inviter": string,"_job_title"?: string,"_kind": Database["public"]['Enums']["invitation_kind"],"_new_patient"?: Json,"_patient_id"?: string,"_relationship"?: Database["public"]['Enums']["guardian_relationship"],"_role"?: Database["public"]['Enums']["app_role"],"_token_hash": string }; Returns: string
                            },
 "enter_report":
 { Args: { "_document_id"?: string,"_import_id"?: string,"_items": Json,"_lab_name"?: string,"_patient": string,"_sample_date": string }; Returns: string
+                           },
+"get_bookable_clinicians":
+{ Args: { "_patient": string }; Returns: {
+              "clinical_role": Database["public"]['Enums']["staff_role"],"full_name": string,"profile_id": string,"staff_id": string
+            }[]
                            },
 "get_invitable_patients":
 { Args: Record<PropertyKey, never>; Returns: {
@@ -1049,6 +1105,9 @@ isOneToOne: false
 "remove_google_calendar_connection":
 { Args: { "_user": string }; Returns: undefined
                            },
+"set_appointment_calendar_event":
+{ Args: { "_appointment": string,"_event": string }; Returns: undefined
+                           },
 "set_patient_ghl_contact":
 { Args: { "_contact": string,"_patient": string }; Returns: undefined
                            },
@@ -1072,7 +1131,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "account_status": "invited"|"active"|"suspended","app_role": "patient"|"doctor"|"pa"|"health_coach"|"admin"|"nurse","appt_source": "ghl"|"semble","appt_status": "booked"|"confirmed"|"cancelled"|"completed"|"no_show","care_relationship": "primary_doctor"|"doctor"|"pa"|"health_coach"|"nurse","consent_type": "care"|"partner_labs"|"research","diagnosis_status": "active"|"monitoring"|"treating"|"under_investigation"|"resolved","doc_kind": "letter"|"lab_report"|"patient_upload"|"referral"|"other","document_source": "patient_upload"|"email"|"tdl"|"semble"|"staff_upload","guardian_relationship": "parent"|"carer"|"power_of_attorney","import_confidence": "high"|"medium"|"low","import_decision": "pending"|"confirmed"|"rejected","import_status": "needs_match"|"matched"|"confirmed"|"rejected","invitation_kind": "patient"|"guardian"|"team","location_kind": "clinic"|"video","med_kind": "prescription"|"supplement","med_status": "active"|"paused"|"stopped","note_source": "typed"|"recording","note_status": "draft"|"signed","notification_channel": "email"|"whatsapp"|"sms"|"portal","notification_topic": "results"|"payments"|"appointments"|"messages","order_status": "sent_to_patient"|"paid"|"sample_taken"|"results_in"|"reviewed"|"cancelled","question_status": "awaiting_reply"|"answered"|"closed","question_urgency": "routine"|"important","report_status": "awaiting_review"|"reviewed"|"released","request_status": "requested"|"approved"|"sent_to_pharmacy"|"declined","result_flag": "normal"|"borderline"|"low"|"high"|"critical","results_channel": "api"|"email"|"upload","safeguarding_severity": "low"|"moderate"|"high","staff_role": "doctor"|"pa"|"health_coach"|"admin"|"nurse","sync_direction": "in"|"out","sync_status": "ok"|"failed"|"retrying","sync_system": "ghl"|"semble"|"stripe"|"tdl"|"fathom","webhook_source": "stripe"|"tdl"|"ghl"|"semble"|"fathom","webhook_status": "received"|"processed"|"failed"|"ignored","wearable_metric": "sleep_minutes"|"sleep_score"|"readiness_score"|"resting_heart_rate"|"hrv_ms"|"steps"|"active_minutes"|"weight_kg"|"body_fat_percent"|"vo2_max"|"spo2_percent"|"temperature_deviation_c"
+            "account_status": "invited"|"active"|"suspended","app_role": "patient"|"doctor"|"pa"|"health_coach"|"admin"|"nurse","appt_source": "ghl"|"semble"|"clinic_hub","appt_status": "booked"|"confirmed"|"cancelled"|"completed"|"no_show","care_relationship": "primary_doctor"|"doctor"|"pa"|"health_coach"|"nurse","consent_type": "care"|"partner_labs"|"research","diagnosis_status": "active"|"monitoring"|"treating"|"under_investigation"|"resolved","doc_kind": "letter"|"lab_report"|"patient_upload"|"referral"|"other","document_source": "patient_upload"|"email"|"tdl"|"semble"|"staff_upload","guardian_relationship": "parent"|"carer"|"power_of_attorney","import_confidence": "high"|"medium"|"low","import_decision": "pending"|"confirmed"|"rejected","import_status": "needs_match"|"matched"|"confirmed"|"rejected","invitation_kind": "patient"|"guardian"|"team","location_kind": "clinic"|"video","med_kind": "prescription"|"supplement","med_status": "active"|"paused"|"stopped","note_source": "typed"|"recording","note_status": "draft"|"signed","notification_channel": "email"|"whatsapp"|"sms"|"portal","notification_topic": "results"|"payments"|"appointments"|"messages","order_status": "sent_to_patient"|"paid"|"sample_taken"|"results_in"|"reviewed"|"cancelled","question_status": "awaiting_reply"|"answered"|"closed","question_urgency": "routine"|"important","report_status": "awaiting_review"|"reviewed"|"released","request_status": "requested"|"approved"|"sent_to_pharmacy"|"declined","result_flag": "normal"|"borderline"|"low"|"high"|"critical","results_channel": "api"|"email"|"upload","safeguarding_severity": "low"|"moderate"|"high","staff_role": "doctor"|"pa"|"health_coach"|"admin"|"nurse","sync_direction": "in"|"out","sync_status": "ok"|"failed"|"retrying","sync_system": "ghl"|"semble"|"stripe"|"tdl"|"fathom","webhook_source": "stripe"|"tdl"|"ghl"|"semble"|"fathom","webhook_status": "received"|"processed"|"failed"|"ignored","wearable_metric": "sleep_minutes"|"sleep_score"|"readiness_score"|"resting_heart_rate"|"hrv_ms"|"steps"|"active_minutes"|"weight_kg"|"body_fat_percent"|"vo2_max"|"spo2_percent"|"temperature_deviation_c"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -1188,7 +1247,7 @@ export type CompositeTypes<
 export const Constants = {
   "public": {
           Enums: {
-            "account_status": ["invited", "active", "suspended"],"app_role": ["patient", "doctor", "pa", "health_coach", "admin", "nurse"],"appt_source": ["ghl", "semble"],"appt_status": ["booked", "confirmed", "cancelled", "completed", "no_show"],"care_relationship": ["primary_doctor", "doctor", "pa", "health_coach", "nurse"],"consent_type": ["care", "partner_labs", "research"],"diagnosis_status": ["active", "monitoring", "treating", "under_investigation", "resolved"],"doc_kind": ["letter", "lab_report", "patient_upload", "referral", "other"],"document_source": ["patient_upload", "email", "tdl", "semble", "staff_upload"],"guardian_relationship": ["parent", "carer", "power_of_attorney"],"import_confidence": ["high", "medium", "low"],"import_decision": ["pending", "confirmed", "rejected"],"import_status": ["needs_match", "matched", "confirmed", "rejected"],"invitation_kind": ["patient", "guardian", "team"],"location_kind": ["clinic", "video"],"med_kind": ["prescription", "supplement"],"med_status": ["active", "paused", "stopped"],"note_source": ["typed", "recording"],"note_status": ["draft", "signed"],"notification_channel": ["email", "whatsapp", "sms", "portal"],"notification_topic": ["results", "payments", "appointments", "messages"],"order_status": ["sent_to_patient", "paid", "sample_taken", "results_in", "reviewed", "cancelled"],"question_status": ["awaiting_reply", "answered", "closed"],"question_urgency": ["routine", "important"],"report_status": ["awaiting_review", "reviewed", "released"],"request_status": ["requested", "approved", "sent_to_pharmacy", "declined"],"result_flag": ["normal", "borderline", "low", "high", "critical"],"results_channel": ["api", "email", "upload"],"safeguarding_severity": ["low", "moderate", "high"],"staff_role": ["doctor", "pa", "health_coach", "admin", "nurse"],"sync_direction": ["in", "out"],"sync_status": ["ok", "failed", "retrying"],"sync_system": ["ghl", "semble", "stripe", "tdl", "fathom"],"webhook_source": ["stripe", "tdl", "ghl", "semble", "fathom"],"webhook_status": ["received", "processed", "failed", "ignored"],"wearable_metric": ["sleep_minutes", "sleep_score", "readiness_score", "resting_heart_rate", "hrv_ms", "steps", "active_minutes", "weight_kg", "body_fat_percent", "vo2_max", "spo2_percent", "temperature_deviation_c"]
+            "account_status": ["invited", "active", "suspended"],"app_role": ["patient", "doctor", "pa", "health_coach", "admin", "nurse"],"appt_source": ["ghl", "semble", "clinic_hub"],"appt_status": ["booked", "confirmed", "cancelled", "completed", "no_show"],"care_relationship": ["primary_doctor", "doctor", "pa", "health_coach", "nurse"],"consent_type": ["care", "partner_labs", "research"],"diagnosis_status": ["active", "monitoring", "treating", "under_investigation", "resolved"],"doc_kind": ["letter", "lab_report", "patient_upload", "referral", "other"],"document_source": ["patient_upload", "email", "tdl", "semble", "staff_upload"],"guardian_relationship": ["parent", "carer", "power_of_attorney"],"import_confidence": ["high", "medium", "low"],"import_decision": ["pending", "confirmed", "rejected"],"import_status": ["needs_match", "matched", "confirmed", "rejected"],"invitation_kind": ["patient", "guardian", "team"],"location_kind": ["clinic", "video"],"med_kind": ["prescription", "supplement"],"med_status": ["active", "paused", "stopped"],"note_source": ["typed", "recording"],"note_status": ["draft", "signed"],"notification_channel": ["email", "whatsapp", "sms", "portal"],"notification_topic": ["results", "payments", "appointments", "messages"],"order_status": ["sent_to_patient", "paid", "sample_taken", "results_in", "reviewed", "cancelled"],"question_status": ["awaiting_reply", "answered", "closed"],"question_urgency": ["routine", "important"],"report_status": ["awaiting_review", "reviewed", "released"],"request_status": ["requested", "approved", "sent_to_pharmacy", "declined"],"result_flag": ["normal", "borderline", "low", "high", "critical"],"results_channel": ["api", "email", "upload"],"safeguarding_severity": ["low", "moderate", "high"],"staff_role": ["doctor", "pa", "health_coach", "admin", "nurse"],"sync_direction": ["in", "out"],"sync_status": ["ok", "failed", "retrying"],"sync_system": ["ghl", "semble", "stripe", "tdl", "fathom"],"webhook_source": ["stripe", "tdl", "ghl", "semble", "fathom"],"webhook_status": ["received", "processed", "failed", "ignored"],"wearable_metric": ["sleep_minutes", "sleep_score", "readiness_score", "resting_heart_rate", "hrv_ms", "steps", "active_minutes", "weight_kg", "body_fat_percent", "vo2_max", "spo2_percent", "temperature_deviation_c"]
           }
         }
 } as const

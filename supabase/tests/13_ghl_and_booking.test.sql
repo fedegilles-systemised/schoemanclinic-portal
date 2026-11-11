@@ -42,7 +42,54 @@ select is((select ghl_contact_id from public.patient_profiles where id = 'd00000
 select is((select metadata ->> 'system' from public.audit_log where entity = 'patient_profiles' order by id desc limit 1), 'ghl-sync', 'logged as the ghl-sync job');
 select throws_ok($$ select t.run('a0000000-0000-4000-8000-000000000003', $q$select public.set_patient_ghl_contact('d0000000-0000-4000-8000-000000000001', 'x')$q$) $$, '42501', null, 'a PA cannot set it');
 
--- BOOKING
+-- Booking -----------------------------------------------------------------------------------------
+
+-- An admin sets up a 30-minute type; Gina works Monday to Sunday 09:00 to 17:00 London time.
+select is(t.run('a0000000-0000-4000-8000-000000000006', $q$insert into public.appointment_types (name, duration_min, location_kind) values ('Follow-up', 30, 'video')$q$), 1, 'an admin adds an appointment type');
+select throws_ok($$ select t.run('a0000000-0000-4000-8000-000000000003', $q$insert into public.appointment_types (name, duration_min, location_kind) values ('Mine', 30, 'video')$q$) $$, '42501', null, 'a PA cannot');
+select is(t.run('a0000000-0000-4000-8000-000000000003', $q$insert into public.clinician_availability (staff_id, weekday, start_time, end_time) select 'b0000000-0000-4000-8000-000000000001', d, '09:00', '17:00' from generate_series(1, 7) d$q$), 7, 'a PA sets a clinician''s hours');
+select throws_ok($$ select t.run('a0000000-0000-4000-8000-000000000011', $q$insert into public.clinician_availability (staff_id, weekday, start_time, end_time) values ('b0000000-0000-4000-8000-000000000001', 1, '06:00', '07:00')$q$) $$, '42501', null, 'a patient cannot');
+
+create temporary table slot on commit drop as
+  select (((now() at time zone 'Europe/London')::date + 10)::timestamp + time '10:00') at time zone 'Europe/London' as at,
+         (select id from public.appointment_types where name = 'Follow-up') as kind;
+grant select on slot to authenticated;
+
+-- Eleanor (Gina is on her care team) books with Gina.
+select lives_ok(
+  $$ select t.run('a0000000-0000-4000-8000-000000000011', format('select public.book_appointment(%L, %L, %L, %L)', 'd0000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000001', (select kind from slot), (select at from slot))) $$,
+  'a patient books with a clinician on her care team');
+select is((select source::text || '/' || status::text from public.appointments where appointment_type_id = (select kind from slot)), 'clinic_hub/booked', 'the booking is saved');
+select throws_ok(
+  $$ select t.run('a0000000-0000-4000-8000-000000000003', format('select public.book_appointment(%L, %L, %L, %L)', 'd0000000-0000-4000-8000-000000000002', 'b0000000-0000-4000-8000-000000000001', (select kind from slot), (select at from slot) + interval '15 minutes')) $$,
+  '23505', null, 'an overlapping booking is refused');
+select throws_ok(
+  $$ select t.run('a0000000-0000-4000-8000-000000000011', format('select public.book_appointment(%L, %L, %L, %L)', 'd0000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000001', (select kind from slot), (select at from slot) + interval '8 hours')) $$,
+  '22023', null, 'a time outside the clinician''s hours is refused');
+select throws_ok(
+  $$ select t.run('a0000000-0000-4000-8000-000000000011', format('select public.book_appointment(%L, %L, %L, %L)', 'd0000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000002', (select kind from slot), (select at from slot) + interval '2 hours')) $$,
+  '42501', null, 'a patient cannot book a clinician who does not look after her');
+select throws_ok(
+  $$ select t.run('a0000000-0000-4000-8000-000000000011', format('select public.book_appointment(%L, %L, %L, %L)', 'd0000000-0000-4000-8000-000000000002', 'b0000000-0000-4000-8000-000000000001', (select kind from slot), (select at from slot) + interval '3 hours')) $$,
+  '42501', null, 'or book for another patient');
+select lives_ok(
+  $$ select t.run('a0000000-0000-4000-8000-000000000003', format('select public.book_appointment(%L, %L, %L, %L)', 'd0000000-0000-4000-8000-000000000002', 'b0000000-0000-4000-8000-000000000001', (select kind from slot), (select at from slot) + interval '1 hour')) $$,
+  'a PA books for any patient');
+
+-- Busy times show no patient details, and patients cannot cancel.
+select is(t.n('a0000000-0000-4000-8000-000000000012', format('select * from public.clinician_busy(%L, now(), now() + interval ''30 days'') where starts_at = %L', 'b0000000-0000-4000-8000-000000000001', (select at from slot))), 1, 'another patient sees that the slot is busy');
+select throws_ok(
+  $$ select t.run('a0000000-0000-4000-8000-000000000011', format('select public.cancel_appointment(%L)', (select id from public.appointments where appointment_type_id = (select kind from slot) and patient_id = 'd0000000-0000-4000-8000-000000000001'))) $$,
+  '42501', null, 'a patient cannot cancel');
+select lives_ok(
+  $$ select t.run('a0000000-0000-4000-8000-000000000003', format('select public.cancel_appointment(%L)', (select id from public.appointments where appointment_type_id = (select kind from slot) and patient_id = 'd0000000-0000-4000-8000-000000000001'))) $$,
+  'a PA cancels');
+select lives_ok(
+  $$ select t.run('a0000000-0000-4000-8000-000000000011', format('select public.book_appointment(%L, %L, %L, %L)', 'd0000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000001', (select kind from slot), (select at from slot))) $$,
+  'and the freed slot can be booked again');
+
+select is(t.n('a0000000-0000-4000-8000-000000000011', $q$select * from public.get_bookable_clinicians('d0000000-0000-4000-8000-000000000001')$q$), 1, 'a patient sees the clinicians she can book');
+select is(t.n('a0000000-0000-4000-8000-000000000012', $q$select * from public.get_bookable_clinicians('d0000000-0000-4000-8000-000000000001')$q$), 0, 'but not another patient''s');
 
 select * from finish();
 rollback;

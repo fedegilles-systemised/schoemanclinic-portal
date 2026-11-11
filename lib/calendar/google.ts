@@ -288,9 +288,12 @@ function eventBody(input: EventInput) {
   };
 }
 
-export async function createEvent(session: Session, input: EventInput): Promise<void> {
+/** Adds an event and returns Google's id for it. */
+export async function createEvent(session: Session, input: EventInput): Promise<string> {
   const response = await calendarFetch(session, "/events", { method: "POST", body: JSON.stringify(eventBody(input)) });
   if (!response.ok) throw new GoogleRequestError("Could not add the event.", response.status);
+  const json = (await response.json().catch(() => ({}))) as { id?: string };
+  return json.id ?? "";
 }
 
 export async function updateEvent(session: Session, eventId: string, input: EventInput): Promise<void> {
