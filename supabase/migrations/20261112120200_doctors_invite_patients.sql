@@ -36,8 +36,8 @@ as $$
       join public.staff_profiles s on s.id = ct.staff_id
       where ct.patient_id = _patient
         and s.user_id = _inviter
-        and ct.since <= current_date
-        and (ct.until is null or ct.until > current_date)
+        and ct.since <= private.london_today()
+        and (ct.until is null or ct.until > private.london_today())
     );
 $$;
 comment on function private.inviter_covers_patient(uuid, public.invitation_kind, uuid) is 'A doctor-only inviter may act on a patient invitation only for a patient on their care team.';

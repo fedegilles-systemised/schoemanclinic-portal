@@ -77,12 +77,12 @@ select is(t.n(t.laura(), format('select * from public.patient_profiles where id 
 
 -- Setting the leaving day to today ends access at once.
 select is(
-  t.run(t.priya(), format($q$update public.care_team set until = current_date where patient_id = %L and staff_id = %L$q$, t.p_eleanor(), t.s_laura())),
+  t.run(t.priya(), format($q$update public.care_team set until = private.london_today() where patient_id = %L and staff_id = %L$q$, t.p_eleanor(), t.s_laura())),
   1, 'a PA ends a care team membership');
 select is(t.n(t.laura(), format('select * from public.patient_profiles where id = %L', t.p_eleanor())), 0, 'and the doctor no longer sees the patient');
 
 -- A membership that starts in the future gives nothing yet.
-insert into public.care_team (patient_id, staff_id, relationship, since) values (t.p_daniel(), t.s_laura(), 'doctor', current_date + 7);
+insert into public.care_team (patient_id, staff_id, relationship, since) values (t.p_daniel(), t.s_laura(), 'doctor', private.london_today() + 7);
 select is(t.n(t.laura(), format('select * from public.patient_profiles where id = %L', t.p_daniel())), 0, 'a membership that starts next week gives no access today');
 
 -- Health coaches see everything on their own clients ------------------------------------------

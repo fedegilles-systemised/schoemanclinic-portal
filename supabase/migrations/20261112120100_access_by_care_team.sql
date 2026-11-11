@@ -12,6 +12,17 @@
 -- Every read and write policy on a patient's record already goes through private.in_scope(), so the
 -- scope is changed there once. Policies that also named a role are widened below where needed.
 
+-- The clinic's day. The database runs in UTC, and the app writes care-team dates in London time,
+-- so access must change at London midnight, not an hour late during British Summer Time.
+create function private.london_today()
+returns date
+language sql
+stable
+set search_path = ''
+as $$ select (now() at time zone 'Europe/London')::date $$;
+comment on function private.london_today() is 'Today''s date in London, for care-team start and leaving days.';
+grant execute on function private.london_today() to authenticated, service_role;
+
 -- The care team is now what decides access for doctors, nurses and health coaches.
 create or replace function private.in_scope(_patient_id uuid)
 returns boolean
@@ -29,8 +40,8 @@ as $$
         select 1 from public.care_team ct
         where ct.patient_id = _patient_id
           and ct.staff_id = private.my_staff_id()
-          and ct.since <= current_date
-          and (ct.until is null or ct.until > current_date)
+          and ct.since <= private.london_today()
+          and (ct.until is null or ct.until > private.london_today())
       )
     )
   );
@@ -347,3 +358,19 @@ alter policy "PAs and doctors change the care team" on public.care_team
   );
 alter policy "The team reads the care team" on public.care_team
   using ((select private.is_team()) or private.in_scope(patient_id));
+
+-- Nurses enter results with the lab's file, so they upload to the documents bucket as doctors and PAs do.
+alter policy "People upload document files for patients they can act for" on storage.objects
+  with check (
+    bucket_id = 'documents'
+    and (
+      private.can_act_for(private.try_uuid(split_part(name, '/', 1)))
+      or (
+        ((select private.has_role('doctor')) or (select private.has_role('nurse')) or (select private.has_role('pa')))
+        and (
+          split_part(name, '/', 1) = 'unmatched'
+          or private.in_scope(private.try_uuid(split_part(name, '/', 1)))
+        )
+      )
+    )
+  );

@@ -144,6 +144,8 @@ async function deliver(params: {
  * failure is logged, and the portal bell notice to the other admins still stands.
  */
 async function alertTeamInvite(params: { inviterName: string; invitedEmail: string; role: "doctor" | "admin" }): Promise<void> {
+  // Only the live site emails the clinic's lead: test and preview invitations must never reach her.
+  if (process.env.VERCEL_ENV !== "production") return;
   try {
     const env = getEmailEnv();
     const siteUrl = env.SITE_URL.replace(/\/$/, "");
