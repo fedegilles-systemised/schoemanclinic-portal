@@ -76,16 +76,20 @@ export function DraftForm({ patientId, noteId, title, body }: { patientId: strin
           <Button type="submit" variant="outline" loading={saving}>
             Save draft
           </Button>
+          {/* Signs exactly what is on screen: the action saves this text first. */}
+          <Button
+            type="submit"
+            formAction={signAction}
+            loading={signing}
+            onClick={(event) => {
+              if (!window.confirm("Sign this note? Once signed it cannot be changed; a correction becomes a new version.")) event.preventDefault();
+            }}
+          >
+            Sign and lock
+          </Button>
         </div>
       </form>
       <div className="flex flex-wrap gap-2">
-        <form action={signAction}>
-          <input type="hidden" name="patientId" value={patientId} />
-          <input type="hidden" name="noteId" value={noteId} />
-          <Button type="submit" loading={signing}>
-            Sign and lock
-          </Button>
-        </form>
         <form action={discardAction}>
           <input type="hidden" name="patientId" value={patientId} />
           <input type="hidden" name="noteId" value={noteId} />
@@ -94,7 +98,7 @@ export function DraftForm({ patientId, noteId, title, body }: { patientId: strin
           </Button>
         </form>
       </div>
-      <p className="type-small text-content-muted">Save your changes before signing. Once signed, a note cannot be changed; a correction becomes a new version.</p>
+      <p className="type-small text-content-muted">Signing saves what is on screen and locks it. A correction becomes a new version.</p>
       <FormMessage state={state} />
     </div>
   );

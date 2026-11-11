@@ -89,8 +89,8 @@ begin
 
   select r.role into role_held
   from public.user_roles r
-  where r.user_id = actor and r.role in ('doctor', 'pa', 'health_coach')
-  order by array_position(array['doctor', 'pa', 'health_coach']::public.app_role[], r.role)
+  where r.user_id = actor and r.role in ('doctor', 'nurse', 'pa', 'health_coach', 'admin')
+  order by array_position(array['doctor', 'nurse', 'pa', 'health_coach', 'admin']::public.app_role[], r.role)
   limit 1;
 
   if exists (

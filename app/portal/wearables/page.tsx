@@ -23,7 +23,7 @@ export default async function WearablesPage() {
         eyebrow="Wearables"
         title="Your "
         accent="wearables"
-        description="Add readings from your Oura, Whoop, Garmin or other device. Your clinic team sees them alongside your results."
+        description="Add readings from your Oura, Whoop, Garmin or other device. Your clinic team sees them on your record."
       />
       {patient.canAct ? (
         <Card className="mb-8">

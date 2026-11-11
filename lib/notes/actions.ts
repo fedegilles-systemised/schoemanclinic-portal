@@ -78,12 +78,22 @@ export async function updateNote(_state: NoteFormState, formData: FormData): Pro
   return { saved: "Draft saved." };
 }
 
+/** Saves the text on screen, then signs it, so what is signed is exactly what the author sees. */
 export async function signNote(_state: NoteFormState, formData: FormData): Promise<NoteFormState> {
   await requireWriter();
   const noteId = z.uuid().safeParse(read(formData, "noteId"));
   const patientId = z.uuid().safeParse(read(formData, "patientId"));
   if (!noteId.success || !patientId.success) return { error: GENERIC_FAILURE };
+  const fields = noteFields.safeParse({ title: read(formData, "title"), body: read(formData, "body") });
+  if (!fields.success) return { error: fields.error.issues[0]?.message ?? GENERIC_FAILURE };
   const supabase = await createClient();
+  const saved = await supabase
+    .from("clinical_notes")
+    .update({ title: fields.data.title, body: fields.data.body })
+    .eq("id", noteId.data)
+    .select("id");
+  if (saved.error) return { error: friendly(saved.error) };
+  if (!saved.data?.length) return { error: "Only the author can sign a draft." };
   const { error } = await supabase.rpc("sign_clinical_note", { _note: noteId.data });
   if (error) return { error: friendly(error) };
   revalidatePath(`/clinic/patients/${patientId.data}`);
