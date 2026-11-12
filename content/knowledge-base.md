@@ -367,7 +367,7 @@ For a new patient the clinic reference (SC- and six digits) is made automaticall
 3. For a weight-loss medicine (Mounjaro, Ozempic, Wegovy, semaglutide) they answer whether they are still losing weight, how much in the last month, and whether they have side effects.
 4. They review the request, then pay the £30 administration fee on Stripe's own page. Without Stripe keys the request is sent unpaid and the clinic arranges the fee.
 5. When Stripe confirms the payment, admins, PAs and the patient's doctors are told in Clinic Hub, the clinic inbox is emailed, and the patient gets a receipt.
-6. A doctor or PA approves, declines (with a reason the patient reads in the portal) or marks it sent to the pharmacy, after prescribing in SignatureRx. The patient is told at each step, without the note or any medicine named.
+6. A doctor or PA approves, declines (with a reason the patient reads in the portal) or marks it sent to the pharmacy, after prescribing in SignatureRx, which a doctor can now do from the request page once that connection is switched on. The patient is told at each step, without the note or any medicine named.
 7. An unpaid request can be withdrawn by the patient side, a doctor or a PA. Without online payment, the team is told of each new request as it arrives.
 
 Doctors add a patient's medicines on the record, with the day each supply starts and how long it lasts, and renew, pause or stop them there. Admins and doctors keep the clinic's medicine list, which starts with the Typeform's list. Patients are reminded three weeks before a prescription runs out: on the home screen, on the Prescriptions page, and by a daily email or WhatsApp, unless a repeat for it is already on its way.
@@ -678,7 +678,7 @@ The clinic answered the rest on 11 November. Those answers are under Decisions a
 - Wearables: patients type in their readings until the device connections are built, which come next. Manual entry is built. (Question 21)
 - The clinic keeps a patient's contact details. A patient who wants one changed messages the clinic. Built, including Ask the clinic. (Question 22)
 - Staff see the team's photos and the photos of patients they can open. Patients see only their own photo. Built. (Question 23)
-- Only doctors sign letters, and prescribing will go through SignatureRx. Signatures are built; SignatureRx is not built yet. (Question 24)
+- Only doctors sign letters, and prescribing will go through SignatureRx. Signatures are built. The SignatureRx connection is built too, but switched off by default until its security review and the data agreement are done (flow 8). (Question 24)
 - WhatsApp goes through GoHighLevel: a plug-in diverts GoHighLevel's text messages to WhatsApp, so a message sent as a text arrives as a WhatsApp. WhatsApp appears in a patient's notification choices once GoHighLevel is connected, off until they turn it on. Built; needs the GoHighLevel key. (Question 25)
 - The email confirmation is enough for a staff member to change their sign-in email, and the old address is told. Built. (Question 26)
 - When a doctor, an admin or a guardian who can act is invited, other admins or PAs get a notice in the portal bell, and for doctors and admins an email to Dr Gina Schoeman. The date of birth, and for patients the ID at first sign-in, are the checks. Built. (Question 28)
