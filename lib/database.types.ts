@@ -145,14 +145,14 @@ isOneToOne: false
                   ]
                 },"clinical_notes": {
                   Row: {
-                    "appointment_id": string | null,"archived_at": string | null,"author_id": string,"body": string,"created_at": string,"id": string,"patient_id": string,"signed_at": string | null,"signed_by": string | null,"source": Database["public"]['Enums']["note_source"],"status": Database["public"]['Enums']["note_status"],"supersedes_id": string | null,"title": string,"updated_at": string,"version": number
+                    "all_options_discussed": boolean,"appointment_id": string | null,"archived_at": string | null,"author_id": string,"body": string,"created_at": string,"customised_options_discussed": boolean,"id": string,"nice_options_discussed": boolean,"options_offered": string | null,"patient_id": string,"side_effects_discussed": boolean,"signed_at": string | null,"signed_by": string | null,"source": Database["public"]['Enums']["note_source"],"status": Database["public"]['Enums']["note_status"],"supersedes_id": string | null,"title": string,"updated_at": string,"version": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "appointment_id"?: string | null,"archived_at"?: string | null,"author_id": string,"body": string,"created_at"?: string,"id"?: string,"patient_id": string,"signed_at"?: string | null,"signed_by"?: string | null,"source"?: Database["public"]['Enums']["note_source"],"status"?: Database["public"]['Enums']["note_status"],"supersedes_id"?: string | null,"title": string,"updated_at"?: string,"version"?: number
+                    "all_options_discussed"?: boolean,"appointment_id"?: string | null,"archived_at"?: string | null,"author_id": string,"body": string,"created_at"?: string,"customised_options_discussed"?: boolean,"id"?: string,"nice_options_discussed"?: boolean,"options_offered"?: string | null,"patient_id": string,"side_effects_discussed"?: boolean,"signed_at"?: string | null,"signed_by"?: string | null,"source"?: Database["public"]['Enums']["note_source"],"status"?: Database["public"]['Enums']["note_status"],"supersedes_id"?: string | null,"title": string,"updated_at"?: string,"version"?: number
                   }
                   Update: {
-                    "appointment_id"?: string | null,"archived_at"?: string | null,"author_id"?: string,"body"?: string,"created_at"?: string,"id"?: string,"patient_id"?: string,"signed_at"?: string | null,"signed_by"?: string | null,"source"?: Database["public"]['Enums']["note_source"],"status"?: Database["public"]['Enums']["note_status"],"supersedes_id"?: string | null,"title"?: string,"updated_at"?: string,"version"?: number
+                    "all_options_discussed"?: boolean,"appointment_id"?: string | null,"archived_at"?: string | null,"author_id"?: string,"body"?: string,"created_at"?: string,"customised_options_discussed"?: boolean,"id"?: string,"nice_options_discussed"?: boolean,"options_offered"?: string | null,"patient_id"?: string,"side_effects_discussed"?: boolean,"signed_at"?: string | null,"signed_by"?: string | null,"source"?: Database["public"]['Enums']["note_source"],"status"?: Database["public"]['Enums']["note_status"],"supersedes_id"?: string | null,"title"?: string,"updated_at"?: string,"version"?: number
                   }
                   Relationships: [
                     {
@@ -554,6 +554,44 @@ isOneToOne: false
                   }
                   Relationships: [
                     
+                  ]
+                },"lab_report_signoffs": {
+                  Row: {
+                    "action_note": string | null,"id": string,"ordered_by": string | null,"outcome": string,"patient_id": string,"report_id": string,"signed_at": string,"signed_by": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "action_note"?: string | null,"id": string,"ordered_by"?: string | null,"outcome": string,"patient_id": string,"report_id": string,"signed_at"?: string,"signed_by": string
+                  }
+                  Update: {
+                    "action_note"?: string | null,"id"?: string,"ordered_by"?: string | null,"outcome"?: string,"patient_id"?: string,"report_id"?: string,"signed_at"?: string,"signed_by"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "lab_report_signoffs_ordered_by_fkey"
+      columns: ["ordered_by"]
+isOneToOne: false
+      referencedRelation: "staff_profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "lab_report_signoffs_patient_id_fkey"
+      columns: ["patient_id"]
+isOneToOne: false
+      referencedRelation: "patient_profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "lab_report_signoffs_report_fkey"
+      columns: ["report_id","patient_id"]
+isOneToOne: true
+      referencedRelation: "lab_reports"
+      referencedColumns: ["id","patient_id"]
+    },{
+      foreignKeyName: "lab_report_signoffs_signed_by_fkey"
+      columns: ["signed_by"]
+isOneToOne: false
+      referencedRelation: "staff_profiles"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"lab_reports": {
                   Row: {
@@ -1275,7 +1313,7 @@ isOneToOne: false
 { Args: { "_body": string,"_recording": string,"_title": string }; Returns: string
                            },
 "release_report":
-{ Args: { "_comment"?: string,"_report": string }; Returns: undefined
+{ Args: { "_action_note"?: string,"_comment"?: string,"_outcome"?: string,"_report": string }; Returns: undefined
                            },
 "resend_invitation":
 { Args: { "_invitation": string,"_inviter": string,"_token_hash": string }; Returns: string

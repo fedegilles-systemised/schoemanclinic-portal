@@ -19,6 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader, SectionHeader } from "@/components/ui/page-header";
 import { getCurrentUser } from "@/lib/auth/session";
+import { hasAnyOption, OPTION_CHECKS, type TreatmentOptions } from "@/lib/notes/options";
 import { getUpcomingAppointments } from "@/lib/data/appointments";
 import { getPatientAssignments, getReadings, listCourses } from "@/lib/data/education";
 import { getConsents } from "@/lib/data/consents";
@@ -43,6 +44,24 @@ function dateTime(value: string): string {
     minute: "2-digit",
     timeZone: "Europe/London",
   }).format(new Date(value));
+}
+
+/** The treatment-option confirmations on a signed note: each one said in words, ticked or not. */
+function NoteOptions({ options }: { options: TreatmentOptions }) {
+  if (!hasAnyOption(options)) return <p className="type-small mt-4 text-content-muted">No treatment options were recorded on this note.</p>;
+  return (
+    <div className="mt-4 border-t border-surface-border pt-4">
+      <h4 className="type-eyebrow mb-2 text-content-muted">Treatment options</h4>
+      <ul className="type-small flex flex-col gap-1">
+        {OPTION_CHECKS.map(([key, , label]) => (
+          <li key={key}>
+            {options[key] ? "Yes" : "No"}: {label}
+          </li>
+        ))}
+      </ul>
+      {options.optionsOffered ? <p className="type-small mt-2 whitespace-pre-wrap">Options offered: {options.optionsOffered}</p> : null}
+    </div>
+  );
 }
 
 /** A patient's record for the clinic: who looks after them, and their clinical notes. */
@@ -269,7 +288,7 @@ export default async function PatientRecordPage({
             </CardHeader>
             <CardContent>
               {note.authorId === myStaffId ? (
-                <DraftForm patientId={record.id} noteId={note.id} title={note.title} body={note.body} />
+                <DraftForm patientId={record.id} noteId={note.id} title={note.title} body={note.body} options={note.options} />
               ) : (
                 <p className="type-body whitespace-pre-wrap">{note.body}</p>
               )}
@@ -295,6 +314,7 @@ export default async function PatientRecordPage({
             </CardHeader>
             <CardContent>
               <p className="type-body whitespace-pre-wrap">{note.body}</p>
+              <NoteOptions options={note.options} />
             </CardContent>
           </Card>
         ))}

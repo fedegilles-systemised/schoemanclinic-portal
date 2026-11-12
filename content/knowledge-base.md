@@ -20,7 +20,7 @@ Clinic Hub is a patient portal and a clinic portal built around one journey, the
 3. **Sample.** The sample is taken and sent to a lab partner.
 4. **Results arrive** in one of two ways: the lab sends them electronically (a lab feed), or a PDF arrives by patient upload or email.
 5. **PA check (PDFs only).** An AI tool suggests the values in the PDF. A PA matches the PDF to a patient and confirms each value. Nothing is saved as a result without that confirmation.
-6. **Doctor review and release.** A doctor reviews the report, adds a comment if needed, and releases it.
+6. **Doctor review, sign-off and release.** A doctor reviews the report, adds a comment if needed, signs it off (action, with the action, or no action) and releases it.
 7. **Patient view.** Only now can the patient see the results, with a trend against their earlier values.
 
 Since 11 November, Clinic Hub also holds clinical notes, patient booking, call recordings with transcripts, education and wearables. GoHighLevel sends patient email and WhatsApp and keeps tasks, invoices and marketing; Semble is retired in stages; SignatureRx handles prescribing. The section on integrations lists every connection.
@@ -335,7 +335,7 @@ For a new patient the clinic reference (SC- and six digits) is made automaticall
 
 1. The report appears under "To review" on the Results review page.
 2. The doctor checks each value against the lab's range and earlier results, and may add a comment to a value or a note to the whole report.
-3. The doctor releases the report. The system records who released it and when.
+3. The doctor signs the report off and releases it: "action needed", with the action described, or "no action needed". The system records who signed off and when, and who ordered the tests. Another doctor may sign off when the ordering doctor is away; the record then shows it was a different doctor. Reports from outside labs with no order (GutMap, Nordic, Regenerus and others) are signed off the same way. The sign-off is for the team only, and nobody can change it afterwards (CQC, 12 November 2026).
 4. The patient is told a result is ready, through the bell in the portal and by email ("A new result is ready in your portal"). The email holds no value or verdict, only a sign-in link, and it is not sent if the patient has switched results emails off in their profile. A message by WhatsApp is planned.
 5. The order is marked reviewed.
 
@@ -659,3 +659,6 @@ The clinic answered the rest on 11 November. Those answers are under Decisions a
 - Lab files and imports not yet matched to a patient are for PAs and admins only (decided 12 November). Built.
 - Clinic Hub follows the clinic's four choices for bloods: the clinic's own lab, TDL, a TDL home kit, or the patient's own results. Only TDL and the home kit are paid through Stripe and get a barcode. Not built yet. (Question 33)
 - Repeat prescriptions move from the Typeform into the portal: up to ten medicines at a time, each for one or two months' supply, with the Typeform's appointment and weight-loss questions and the £30 fee through Stripe. Built. (10 and 12 November 2026)
+- For CQC, each lab report is signed off by a doctor when released: action (described) or no action, with who ordered and who signed off. A different doctor may sign off and it is shown. Built. (12 November 2026)
+- For CQC, a clinical note records that all available treatment options, customised options and NICE guideline options, and side effects, were discussed, with the options offered. Fixed once the note is signed. Built. (12 November 2026)
+- Patient feedback with green, amber and red routing, Google review invitations and stored positive feedback are handled in GoHighLevel, not Clinic Hub. (12 November 2026)
