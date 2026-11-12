@@ -4,6 +4,7 @@ import {
   Activity,
   Briefcase,
   CalendarDays,
+  CalendarRange,
   ClipboardCheck,
   ClipboardList,
   Clock,
@@ -71,7 +72,8 @@ const NAV: Record<PortalKind, NavGroup[]> = {
       eyebrow: "Today",
       items: [
         { label: "Dashboard", icon: LayoutGrid, href: "/clinic" },
-        { label: "Calendar", icon: CalendarDays, href: "/clinic/calendar" },
+        { label: "Diary", icon: CalendarRange, href: "/clinic/diary" },
+        { label: "My calendar", icon: CalendarDays, href: "/clinic/calendar" },
         { label: "Booking settings", icon: Clock, href: "/clinic/booking" },
       ],
     },

@@ -8,7 +8,14 @@ import { ConfirmButton } from "@/components/ui/confirm-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
-import { addAppointmentType, addHours, removeHours, setTypeActive, type SettingsFormState } from "@/lib/booking/settings-actions";
+import {
+  addAppointmentType,
+  addHours,
+  removeHours,
+  setTypeActive,
+  setTypeOnline,
+  type SettingsFormState,
+} from "@/lib/booking/settings-actions";
 
 const initial: SettingsFormState = {};
 export const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -34,7 +41,11 @@ export function AddTypeForm() {
       </div>
       <label className="type-body flex items-center gap-2 self-end">
         <input type="checkbox" name="bookableByPatients" defaultChecked />
-        Patients can book it online
+        Patients can book it in the portal
+      </label>
+      <label className="type-body flex items-center gap-2 self-end">
+        <input type="checkbox" name="bookableOnline" />
+        New patients can book it on the public booking page
       </label>
       <div className="sm:col-span-2">
         <FormMessage state={state} />
@@ -44,6 +55,20 @@ export function AddTypeForm() {
           Add appointment type
         </Button>
       </div>
+    </form>
+  );
+}
+
+export function TypeOnlineButton({ id, online, name }: { id: string; online: boolean; name: string }) {
+  const [state, action, pending] = useActionState(setTypeOnline, initial);
+  return (
+    <form action={action}>
+      <input type="hidden" name="id" value={id} />
+      <input type="hidden" name="online" value={online ? "false" : "true"} />
+      <Button type="submit" variant="ghost" size="sm" loading={pending} aria-label={`${online ? "Stop offering online" : "Offer online"}: ${name}`}>
+        {online ? "Stop offering online" : "Offer online"}
+      </Button>
+      {state.error ? <FormMessage state={state} /> : null}
     </form>
   );
 }
