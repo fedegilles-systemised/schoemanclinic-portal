@@ -236,7 +236,7 @@ Each flow names who acts, the steps, whether it needs data from another system (
 | 5 | Results by PDF import | Built without AI: values entered by hand | None | Yes (inbound) |
 | 6 | Doctor reviews and releases | Built | GoHighLevel | Proposed |
 | 7 | Patient reads results and trends | Built | None | No |
-| 8 | Request a repeat prescription | Built; Stripe needs the clinic's keys; SignatureRx not connected | Stripe | Yes |
+| 8 | Request a repeat prescription | Built; Stripe needs the clinic's keys; the SignatureRx connection is built but switched off until its security review is done | Stripe | Yes |
 | 9 | Ask the clinic | Built | Clinic Hub | Built |
 | 10 | Appointments and bloods due date | Read built, sync planned | GoHighLevel, Semble | No |
 | 11 | A guardian acts for a patient | Planned | None | Proposed |
@@ -369,9 +369,9 @@ For a new patient the clinic reference (SC- and six digits) is made automaticall
 
 Doctors add a patient's medicines on the record, with the day each supply starts and how long it lasts, and renew, pause or stop them there. Admins and doctors keep the clinic's medicine list, which starts with the Typeform's list. Patients are reminded three weeks before a prescription runs out: on the home screen, on the Prescriptions page, and by a daily email or WhatsApp, unless a repeat for it is already on its way.
 
-**Data in/out:** Stripe is told the amount and the request's reference only, never a name, email or medicine. Prescribing itself is done in SignatureRx, not yet connected. **Email:** receipt, each status change, the clinic alert and the three-week reminder, none naming a medicine.
+**Data in/out:** Stripe is told the amount and the request's reference only, never a name, email or medicine. Prescribing itself is done in SignatureRx. From an approved request, a doctor can create the prescription there, typing their signing PIN, which Clinic Hub passes straight on and never keeps. It needs the patient's address, date of birth, sex, phone, email and country on the record, and it is switched off until a security review is done and SignatureRx's live credentials are in place. **Email:** receipt, each status change, the clinic alert and the three-week reminder, none naming a medicine.
 
-**Questions:** is the fee refunded if a request is declined (refunds are made in Stripe for now)? Should "no future appointment" block a request rather than warn? Could PCCA's Nexa portal or SignatureRx take approved repeats automatically?
+**Questions:** is the fee refunded if a request is declined (refunds are made in Stripe for now)? Should "no future appointment" block a request rather than warn? Could PCCA's Nexa portal or SignatureRx take approved repeats automatically? For SignatureRx: can a draft be saved without the doctor's PIN? How does each doctor get their integration code? Which events can SignatureRx send us when a prescription changes? What does each prescription cost, and who tops up the balance? Is a data processing agreement needed?
 
 ### 9. Ask the clinic
 
@@ -461,7 +461,7 @@ Clinic Hub connects to nine systems. Supabase and Resend are in place (Resend on
 | Lab partners (TDL is named) | Results by electronic feed; barcodes | In (and out, proposed) | Results per marker, with the barcode that links them to an order | Planned |
 | GoHighLevel | Patient email and WhatsApp (as texts its plug-in diverts), tasks, invoices, marketing | Out | Contact details and message text; never a result value | Built; needs the clinic's key |
 | Semble | Being retired in stages: notes and bookings now live in Clinic Hub | In | Records to move across | Migration planned |
-| SignatureRx | Prescribing, signed by the doctor with a PIN | Out | Repeat prescriptions (proposed) | Planned |
+| SignatureRx | Prescribing, signed by the doctor with a PIN | Out | An approved repeat request as a prescription, and its state back when a doctor or PA asks | Built, off by default, staging only |
 | Resend | Email from Clinic Hub and the sign-in emails (invitations, password reset, security notices) | Out | Only links and neutral wording. No clinical values | In place on a test domain. It moves to the clinic's own domain later |
 | AI document reader | Reads values from imported PDFs | Both | The PDF's content out; proposed values back | Planned. Provider not chosen |
 | AssemblyAI (EU) | Transcribes call recordings; replaces Fathom | Out and back | A short-lived link to the audio out; the transcript back, then deleted there | Built; needs the clinic's key and data agreement |

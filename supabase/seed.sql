@@ -120,6 +120,9 @@ insert into public.patient_profiles (id, user_id, clinic_ref, first_name, last_n
   ('d0000000-0000-4000-8000-00000000000a', null, 'SC-005301', 'Isla', 'Hart', '2011-06-21', 'F', null, null, 'United Kingdom', 'b0000000-0000-4000-8000-000000000001', null, null, null),
   ('d0000000-0000-4000-8000-00000000000b', 'a0000000-0000-4000-8000-000000000002', 'SC-006001', 'Laura', 'Bennett', '1979-10-05', 'F', 'laura.bennett@example.test', null, 'United Kingdom', 'b0000000-0000-4000-8000-000000000001', null, null, null);
 
+-- A fictional postal address for every patient, which SignatureRx needs for a prescription.
+update public.patient_profiles set address_line1 = '1 Example Mews', city = 'London', postcode = 'W1G 0AA' where address_line1 is null;
+
 insert into public.patient_guardians (patient_id, guardian_user_id, relationship, can_view, can_act, verified_by) values
   ('d0000000-0000-4000-8000-00000000000a', 'a0000000-0000-4000-8000-000000000021', 'parent', true, true, 'b0000000-0000-4000-8000-000000000003'),
   ('d0000000-0000-4000-8000-000000000006', 'a0000000-0000-4000-8000-000000000022', 'carer', true, false, 'b0000000-0000-4000-8000-000000000003');

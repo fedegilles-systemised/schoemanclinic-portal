@@ -71,3 +71,78 @@ export async function removeFromCareTeam(_state: CareTeamFormState, formData: Fo
   revalidatePath("/clinic/patients");
   return { saved: "Removed from the care team." };
 }
+
+// A patient's contact details and postal address ------------------------------------------------
+
+const contactSchema = z.object({
+  patientId: z.uuid(),
+  addressLine1: z.string().trim().max(200, "Use 200 characters or fewer for the first line."),
+  addressLine2: z.string().trim().max(200, "Use 200 characters or fewer for the second line."),
+  city: z.string().trim().max(100, "Use 100 characters or fewer for the town or city."),
+  postcode: z.string().trim().max(20, "Use 20 characters or fewer for the postcode."),
+  country: z.string().trim().max(100, "Use 100 characters or fewer for the country."),
+  phone: z.string().trim().max(40, "Use 40 characters or fewer for the phone number."),
+  email: z
+    .string()
+    .trim()
+    .max(254, "Use 254 characters or fewer for the email address.")
+    .refine((value) => value === "" || z.email().safeParse(value).success, "Enter a valid email address."),
+  // Sex at birth: it decides which panels and prescriptions a patient gets, so it is chosen, never typed.
+  sex: z.enum(["", "F", "M"], { message: "Choose female, male or leave it unrecorded." }),
+  dateOfBirth: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Enter the date of birth.")
+    .refine((value) => {
+      const date = new Date(`${value}T00:00:00Z`);
+      return !Number.isNaN(date.getTime()) && date.getTime() <= Date.now() && date.getUTCFullYear() >= 1900;
+    }, "Enter a real date of birth, after 1900 and not in the future."),
+});
+
+/**
+ * A PA keeps a patient's postal address, country, phone number, contact email, sex at birth and date
+ * of birth. SignatureRx needs them for every prescription. Row-level security decides which patients a PA may change; an empty box clears it.
+ */
+export async function updatePatientContact(_state: CareTeamFormState, formData: FormData): Promise<CareTeamFormState> {
+  const user = await getCurrentUser();
+  if (!user || user.isSuspended || !user.roles.includes("pa")) redirect("/clinic");
+  const text = (name: string) => {
+    const value = formData.get(name);
+    return typeof value === "string" ? value : "";
+  };
+  const parsed = contactSchema.safeParse({
+    patientId: text("patientId"),
+    addressLine1: text("addressLine1"),
+    addressLine2: text("addressLine2"),
+    city: text("city"),
+    postcode: text("postcode"),
+    country: text("country"),
+    phone: text("phone"),
+    email: text("email"),
+    sex: text("sex"),
+    dateOfBirth: text("dateOfBirth"),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? GENERIC_FAILURE };
+  const d = parsed.data;
+  const empty = (value: string) => (value === "" ? null : value);
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("patient_profiles")
+    .update({
+      address_line1: empty(d.addressLine1),
+      address_line2: empty(d.addressLine2),
+      city: empty(d.city),
+      postcode: empty(d.postcode),
+      country: empty(d.country),
+      contact_phone: empty(d.phone),
+      contact_email: empty(d.email),
+      sex: empty(d.sex),
+      date_of_birth: d.dateOfBirth,
+    })
+    .eq("id", d.patientId)
+    .select("id");
+  // An update that row-level security does not allow changes nothing and is not an error.
+  if (error || !data || data.length === 0) return { error: "You cannot change this patient's details." };
+  revalidatePath(`/clinic/patients/${d.patientId}`);
+  return { saved: "Saved." };
+}
