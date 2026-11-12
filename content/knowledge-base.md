@@ -86,7 +86,7 @@ This table is what the database enforces since the clinic's decisions of 11 Nove
 | Questions to the clinic | Read, ask | Read, ask if can act | Read, change status | Read | Read, change status | Read | Read, change status |
 | Repeat prescription requests | Read, request, withdraw before paying | Read, request and withdraw if can act | Read, change status | Read | Read, request for a patient, change status | Read | Read |
 | Submitted forms (repeat requests, questions and feedback, as asked and answered) | Read their own; never changed | Read those of the patient | Read | Read, except feedback | Read | Read, except feedback | Read |
-| Patient feedback | Answer their own survey, read it | Answer if can act | Read for their care team, record the follow-up | - | Read, record the follow-up | - | Read, record the follow-up |
+| Patient feedback | Answer their own survey, read it | Answer if can act | Read for their care team, record the follow-up, check quotes, download | - | Read, record the follow-up, check quotes, download | - | Read, record the follow-up, check quotes, download |
 | Education courses | Courses added to their portal | Same | Read the library, add to a patient's portal | Same as doctor | Same as doctor | Same as doctor | Read, build and publish courses, add to any patient's portal |
 | Wearable readings | Read, add, remove their own | Read, add if can act | Read | Read | Read | Read | Read |
 | Own notifications and preferences | Read, change | Read, change | Read, change | Read, change | Read, change | Read, change | Read, change |
@@ -460,9 +460,9 @@ Doctors add a patient's medicines on the record, with the day each supply starts
 2. In the portal they answer: how likely they are to recommend the clinic (0 to 10), what went well, what could be better, whether they would like to be contacted, and whether their comments may be used without their name as evidence.
 3. The answer is rated. 9 or 10 is green (positive). 7 or 8 is amber (mixed). 0 to 6, or asking to be contacted, is red (needs attention).
 4. Everyone who answers is offered the clinic's Google review link, whatever they said. Asking only happy patients for reviews breaks Google's rules and the CMA's guidance on reviews.
-5. Amber alerts admins and PAs, with a follow-up due within two working days. Red also alerts the patient's doctors, with a follow-up due the same working day. The clinic inbox is emailed with a link, never a name or a comment.
+5. Amber alerts admins and PAs, with a follow-up due within two working days. Red also alerts the patient's doctors, with a follow-up due the same working day. Working days skip weekends and bank holidays in England and Wales. The clinic inbox is emailed with a link, never a name or a comment.
 6. On the Feedback screen the team sees what is waiting, contacts the patient and records what was done and the outcome. A follow-up cannot be changed once recorded.
-7. For the CQC, the Feedback screen downloads positive feedback the patient agreed may be used, without names, and a full log with follow-ups.
+7. For the CQC, the Feedback screen downloads positive feedback the patient agreed may be used, without names, and a full log with follow-ups. Before a comment goes into the evidence download, an admin, PA or doctor checks it names nobody and says nothing about the patient's health, and marks it checked. Every download is written to the activity log.
 
 Every form a patient sends (feedback, repeat requests and questions to the clinic) is also kept on their record as asked and answered, in **Forms** in the portal and **Submitted forms** on the clinic record. Nobody can change or remove one. Nurses and health coaches see the record's other forms but not feedback, which may be about them.
 

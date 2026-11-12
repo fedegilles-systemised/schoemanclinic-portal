@@ -4,7 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { z } from "zod";
 
-import { FollowUpForm } from "@/components/feedback/forms";
+import { FollowUpForm, QuoteCheckForm } from "@/components/feedback/forms";
 import { RatingPill } from "@/components/feedback/parts";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
@@ -28,11 +28,16 @@ export default async function ClinicFeedbackDetailPage({ params }: { params: Pro
   if (!feedback) notFound();
 
   let followedUpBy = "";
-  if (feedback.followUp) {
+  let quoteCheckedBy = "";
+  if (feedback.followUp || feedback.quoteChecked) {
     const supabase = await createClient();
     const directory = await supabase.rpc("get_staff_directory");
-    followedUpBy = (directory.data ?? []).find((p) => p.staff_id === feedback.followUp?.byStaffId)?.full_name ?? "a team member";
+    const nameOf = (staffId: string | undefined) => (directory.data ?? []).find((p) => p.staff_id === staffId)?.full_name ?? "a team member";
+    followedUpBy = nameOf(feedback.followUp?.byStaffId);
+    quoteCheckedBy = nameOf(feedback.quoteChecked?.byStaffId);
   }
+  // Positive feedback is what goes to the CQC as evidence.
+  const quotable = Boolean(feedback.rating === "green" && feedback.mayQuote && (feedback.wentWell || feedback.couldImprove));
   const needsFollowUp = (feedback.rating === "amber" || feedback.rating === "red") && !feedback.followUp;
 
   return (
@@ -68,6 +73,22 @@ export default async function ClinicFeedbackDetailPage({ params }: { params: Pro
               <dd>{yes(feedback.mayQuote)}</dd>
             </dl>
           </CardContent>
+        </Card>
+      ) : null}
+
+      {quotable ? (
+        <Card className="mb-6">
+          <CardTitle>Use as CQC evidence</CardTitle>
+          <p className="type-body">
+            The patient agreed their comments may be used without their name. Before they are, check the comments name nobody and say
+            nothing about their health. Only checked comments are in the evidence download.
+          </p>
+          {feedback.quoteChecked ? (
+            <p className="type-small text-content-muted">
+              Checked by {quoteCheckedBy} on {formatDate(feedback.quoteChecked.at)}.
+            </p>
+          ) : null}
+          <QuoteCheckForm feedbackId={feedback.id} checked={Boolean(feedback.quoteChecked)} />
         </Card>
       ) : null}
 

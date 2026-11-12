@@ -27,6 +27,7 @@ function friendly(message: string | undefined, fallback = GENERIC_FAILURE): stri
     "The follow-up has already been recorded.",
     "Describe the follow-up, in up to 2,000 characters.",
     "This survey has not been answered.",
+    "Only comments the patient agreed may be quoted can be checked.",
   ];
   return message && known.includes(message) ? message : fallback;
 }
@@ -109,4 +110,27 @@ export async function recordFollowUp(_state: FeedbackFormState, formData: FormDa
   if (error) return { error: friendly(error.message, "You cannot follow up this feedback.") };
   revalidatePath("/clinic/feedback", "layout");
   return { saved: "Follow-up recorded.", sentAt: Date.now() };
+}
+
+/**
+ * An admin, PA or doctor marks a patient's comments as checked for use as CQC evidence (no name
+ * and no health detail in them), or takes the check back. Only checked comments are downloaded.
+ */
+export async function checkQuote(_state: FeedbackFormState, formData: FormData): Promise<FeedbackFormState> {
+  const user = await getCurrentUser();
+  if (!user || user.isSuspended || !user.roles.some((r) => r === "admin" || r === "pa" || r === "doctor")) redirect("/clinic");
+  const parsed = z
+    .object({ feedbackId: z.uuid(), checked: z.enum(["yes", "no"]) })
+    .safeParse({ feedbackId: formData.get("feedbackId"), checked: formData.get("checked") });
+  if (!parsed.success) return { error: GENERIC_FAILURE };
+  if (!(await allowAuthAttempt("feedback", user.email))) return { error: TOO_MANY };
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("check_feedback_quote", { _feedback: parsed.data.feedbackId, _checked: parsed.data.checked === "yes" });
+  if (error) return { error: friendly(error.message, "You cannot check this feedback.") };
+  revalidatePath("/clinic/feedback", "layout");
+  return {
+    saved: parsed.data.checked === "yes" ? "Checked. These comments are now in the evidence download." : "Check taken back. These comments are no longer in the evidence download.",
+    sentAt: Date.now(),
+  };
 }

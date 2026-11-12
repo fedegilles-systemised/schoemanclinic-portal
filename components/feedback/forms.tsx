@@ -6,7 +6,7 @@ import { FormMessage } from "@/components/profile/form-message";
 import { Button } from "@/components/ui/button";
 import { ConfirmButton } from "@/components/ui/confirm-button";
 import { Textarea } from "@/components/ui/textarea";
-import { recordFollowUp, submitFeedback, type FeedbackFormState } from "@/lib/feedback/actions";
+import { checkQuote, recordFollowUp, submitFeedback, type FeedbackFormState } from "@/lib/feedback/actions";
 import { FEEDBACK_QUESTIONS } from "@/lib/feedback/constants";
 
 const initial: FeedbackFormState = {};
@@ -94,6 +94,23 @@ export function FollowUpForm({ feedbackId }: { feedbackId: string }) {
         <ConfirmButton loading={pending} confirmTitle="Record this follow-up?" confirmText="It becomes part of the clinic's permanent record and cannot be changed afterwards.">
           Record follow-up
         </ConfirmButton>
+      </div>
+    </form>
+  );
+}
+
+/** Marks the comments as checked for CQC evidence, or takes the check back. */
+export function QuoteCheckForm({ feedbackId, checked }: { feedbackId: string; checked: boolean }) {
+  const [state, action, pending] = useActionState(checkQuote, initial);
+  return (
+    <form action={action} className="flex flex-col gap-4">
+      <input type="hidden" name="feedbackId" value={feedbackId} />
+      <input type="hidden" name="checked" value={checked ? "no" : "yes"} />
+      <FormMessage state={state} />
+      <div>
+        <Button type="submit" variant={checked ? "outline" : "secondary"} loading={pending}>
+          {checked ? "Take the check back" : "Mark as checked"}
+        </Button>
       </div>
     </form>
   );

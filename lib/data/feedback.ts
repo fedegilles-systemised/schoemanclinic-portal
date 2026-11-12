@@ -17,11 +17,12 @@ export type FeedbackRow = {
   wantsContact: boolean | null;
   mayQuote: boolean | null;
   followUpDue: string | null;
+  quoteChecked: { byStaffId: string; at: string } | null;
   followUp: { note: string; byStaffId: string; at: string } | null;
 };
 
 const COLUMNS =
-  "id, patient_id, sent_at, answered_at, rating, score, went_well, could_improve, wants_contact, may_quote, follow_up_due, patient:patient_profiles!patient_feedback_patient_id_fkey(first_name, last_name, clinic_ref), follow_up:feedback_follow_ups(note, followed_up_by, followed_up_at)";
+  "id, patient_id, sent_at, answered_at, rating, score, went_well, could_improve, wants_contact, may_quote, follow_up_due, quote_checked_by, quote_checked_at, patient:patient_profiles!patient_feedback_patient_id_fkey(first_name, last_name, clinic_ref), follow_up:feedback_follow_ups(note, followed_up_by, followed_up_at)";
 
 type Row = {
   id: string;
@@ -35,6 +36,8 @@ type Row = {
   wants_contact: boolean | null;
   may_quote: boolean | null;
   follow_up_due: string | null;
+  quote_checked_by: string | null;
+  quote_checked_at: string | null;
   patient: { first_name: string; last_name: string; clinic_ref: string } | null;
   follow_up: { note: string; followed_up_by: string; followed_up_at: string } | { note: string; followed_up_by: string; followed_up_at: string }[] | null;
 };
@@ -55,6 +58,7 @@ function rowOf(r: Row): FeedbackRow {
     wantsContact: r.wants_contact,
     mayQuote: r.may_quote,
     followUpDue: r.follow_up_due,
+    quoteChecked: r.quote_checked_by && r.quote_checked_at ? { byStaffId: r.quote_checked_by, at: r.quote_checked_at } : null,
     followUp: followUp ? { note: followUp.note, byStaffId: followUp.followed_up_by, at: followUp.followed_up_at } : null,
   };
 }
@@ -73,6 +77,26 @@ export async function listAnsweredFeedback({ limit = 500 }: { limit?: number } =
     .limit(limit);
   if (error) throw new Error("Could not load the feedback.");
   return (data as unknown as Row[]).map(rowOf);
+}
+
+/** Every answered survey the signed-in person may read, a page at a time, for the downloads. */
+export async function listAllAnsweredFeedback(): Promise<FeedbackRow[]> {
+  const supabase = await createClient();
+  const all: FeedbackRow[] = [];
+  const PAGE = 1000;
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabase
+      .from("patient_feedback")
+      .select(COLUMNS)
+      .not("answered_at", "is", null)
+      .order("answered_at", { ascending: false })
+      .order("id")
+      .range(from, from + PAGE - 1);
+    if (error) throw new Error("Could not load the feedback.");
+    all.push(...(data as unknown as Row[]).map(rowOf));
+    if (data.length < PAGE) break;
+  }
+  return all;
 }
 
 /** One survey with its answer and follow-up. Null if not found or not readable. */

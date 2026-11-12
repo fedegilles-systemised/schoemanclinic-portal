@@ -837,14 +837,14 @@ isOneToOne: false
                   ]
                 },"patient_feedback": {
                   Row: {
-                    "answered_at": string | null,"answered_by": string | null,"appointment_id": string | null,"could_improve": string | null,"created_at": string,"expires_at": string,"follow_up_due": string | null,"id": string,"may_quote": boolean | null,"patient_id": string,"rating": string | null,"reminded_at": string | null,"score": number | null,"sent_at": string,"wants_contact": boolean | null,"went_well": string | null
+                    "answered_at": string | null,"answered_by": string | null,"appointment_id": string | null,"could_improve": string | null,"created_at": string,"expires_at": string,"follow_up_due": string | null,"id": string,"may_quote": boolean | null,"patient_id": string,"quote_checked_at": string | null,"quote_checked_by": string | null,"rating": string | null,"reminded_at": string | null,"score": number | null,"sent_at": string,"wants_contact": boolean | null,"went_well": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "answered_at"?: string | null,"answered_by"?: string | null,"appointment_id"?: string | null,"could_improve"?: string | null,"created_at"?: string,"expires_at"?: string,"follow_up_due"?: string | null,"id"?: string,"may_quote"?: boolean | null,"patient_id": string,"rating"?: string | null,"reminded_at"?: string | null,"score"?: number | null,"sent_at"?: string,"wants_contact"?: boolean | null,"went_well"?: string | null
+                    "answered_at"?: string | null,"answered_by"?: string | null,"appointment_id"?: string | null,"could_improve"?: string | null,"created_at"?: string,"expires_at"?: string,"follow_up_due"?: string | null,"id"?: string,"may_quote"?: boolean | null,"patient_id": string,"quote_checked_at"?: string | null,"quote_checked_by"?: string | null,"rating"?: string | null,"reminded_at"?: string | null,"score"?: number | null,"sent_at"?: string,"wants_contact"?: boolean | null,"went_well"?: string | null
                   }
                   Update: {
-                    "answered_at"?: string | null,"answered_by"?: string | null,"appointment_id"?: string | null,"could_improve"?: string | null,"created_at"?: string,"expires_at"?: string,"follow_up_due"?: string | null,"id"?: string,"may_quote"?: boolean | null,"patient_id"?: string,"rating"?: string | null,"reminded_at"?: string | null,"score"?: number | null,"sent_at"?: string,"wants_contact"?: boolean | null,"went_well"?: string | null
+                    "answered_at"?: string | null,"answered_by"?: string | null,"appointment_id"?: string | null,"could_improve"?: string | null,"created_at"?: string,"expires_at"?: string,"follow_up_due"?: string | null,"id"?: string,"may_quote"?: boolean | null,"patient_id"?: string,"quote_checked_at"?: string | null,"quote_checked_by"?: string | null,"rating"?: string | null,"reminded_at"?: string | null,"score"?: number | null,"sent_at"?: string,"wants_contact"?: boolean | null,"went_well"?: string | null
                   }
                   Relationships: [
                     {
@@ -864,6 +864,12 @@ isOneToOne: true
       columns: ["patient_id"]
 isOneToOne: false
       referencedRelation: "patient_profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "patient_feedback_quote_checked_by_fkey"
+      columns: ["quote_checked_by"]
+isOneToOne: false
+      referencedRelation: "staff_profiles"
       referencedColumns: ["id"]
     }
                   ]
@@ -1295,7 +1301,13 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "due_feedback_reminders":
+            "check_feedback_quote":
+{ Args: { "_checked": boolean,"_feedback": string }; Returns: undefined
+                           },
+"log_feedback_export":
+{ Args: { "_rows": number,"_set": string }; Returns: undefined
+                           },
+"due_feedback_reminders":
 { Args: Record<PropertyKey, never>; Returns: {
               "feedback_id": string,"patient_id": string
             }[]

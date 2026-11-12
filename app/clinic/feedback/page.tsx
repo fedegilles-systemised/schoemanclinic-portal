@@ -65,6 +65,7 @@ export default async function ClinicFeedbackPage() {
   const since = addDays(londonDate(), -90);
   const recent = rows.filter((r) => r.answeredAt && londonDate(new Date(r.answeredAt)) >= since);
   const count = (rating: string) => recent.filter((r) => r.rating === rating).length;
+  const toCheck = rows.filter((r) => r.rating === "green" && r.mayQuote && (r.wentWell || r.couldImprove) && !r.quoteChecked).length;
 
   return (
     <>
@@ -72,7 +73,7 @@ export default async function ClinicFeedbackPage() {
         eyebrow="Patients"
         title="Patient "
         accent="feedback"
-        description={`Last 90 days: ${recent.length} ${recent.length === 1 ? "answer" : "answers"}, ${count("green")} positive, ${count("amber")} mixed and ${count("red")} needing attention. Every patient who answers is offered the Google review link.`}
+        description={`Last 90 days: ${recent.length} ${recent.length === 1 ? "answer" : "answers"}, ${count("green")} positive, ${count("amber")} mixed and ${count("red")} needing attention. Every patient who answers is offered the Google review link.${toCheck > 0 ? ` ${toCheck} positive ${toCheck === 1 ? "comment is" : "comments are"} waiting to be checked before ${toCheck === 1 ? "it goes" : "they go"} into the CQC download.` : ""}`}
       >
         <div className="flex flex-wrap gap-6">
           <Link href="/clinic/feedback/export?set=evidence" prefetch={false} className="type-button-label text-content no-underline">
