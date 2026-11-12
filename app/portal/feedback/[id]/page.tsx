@@ -18,8 +18,7 @@ export const metadata: Metadata = { title: "Your feedback · The Schoeman Clinic
  * A feedback survey in the portal, and the thank-you once answered. The Google review link is
  * offered only after positive feedback (a score of 9 or 10): the clinic's decision of 12 November
  * 2026, taken knowing that Google's review policy and the CMA's guidance discourage asking only
- * satisfied patients. Everyone else is told the clinic has their answer, and that it will be in
- * touch when they asked or when the answer needs a follow-up.
+ * satisfied patients. Everyone else is followed up by the team, so is told to expect contact.
  */
 export default async function FeedbackPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -32,7 +31,8 @@ export default async function FeedbackPage({ params }: { params: Promise<{ id: s
 
   if (survey.answeredAt) {
     const reviewUrl = survey.rating === "green" ? getGoogleReviewUrl() : null;
-    const inTouch = survey.rating === "red" || survey.wantsContact;
+    // Amber and red answers are followed up by the team, so those patients are told to expect contact.
+    const inTouch = survey.rating !== "green";
     return (
       <>
         <PageHeader
@@ -42,15 +42,13 @@ export default async function FeedbackPage({ params }: { params: Promise<{ id: s
           description={
             inTouch
               ? "Your answers have reached the clinic, and they are kept with your record. Someone from the clinic will be in touch soon."
-              : survey.rating === "amber"
-                ? "Your answers have reached the clinic, and they are kept with your record. We read every answer and use it to improve."
-                : "Your answers have reached the clinic, and they are kept with your record."
+              : "Your answers have reached the clinic, and they are kept with your record."
           }
         />
         {reviewUrl ? (
           <Card>
             <CardContent className="flex flex-col gap-4">
-              <p className="type-body">If you have a moment, a review on Google helps other people find the clinic. Every review is welcome.</p>
+              <p className="type-body">If you have a moment, a review on Google helps other people find the clinic.</p>
               <div>
                 <Button variant="secondary" asChild>
                   <a href={reviewUrl} target="_blank" rel="noopener noreferrer">
@@ -61,6 +59,9 @@ export default async function FeedbackPage({ params }: { params: Promise<{ id: s
             </CardContent>
           </Card>
         ) : null}
+        <Link href="/portal" className="type-button-label mt-6 inline-block text-content no-underline">
+          Back to your home
+        </Link>
       </>
     );
   }
