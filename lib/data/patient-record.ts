@@ -157,6 +157,7 @@ export type MedicationRow = {
   kind: Database["public"]["Enums"]["med_kind"];
   status: Database["public"]["Enums"]["med_status"];
   startDate: string;
+  supplyDays: number;
 };
 export type SafeguardingRow = {
   id: string;
@@ -187,7 +188,7 @@ export async function getClinicalSummary(patientId: string): Promise<{ allergies
       .order("created_at", { ascending: false }),
     supabase
       .from("medications")
-      .select("id, name, dose, instructions, kind, status, start_date")
+      .select("id, name, dose, instructions, kind, status, start_date, supply_days")
       .eq("patient_id", patientId)
       .is("archived_at", null)
       .order("start_date", { ascending: false }),
@@ -204,6 +205,7 @@ export async function getClinicalSummary(patientId: string): Promise<{ allergies
       kind: m.kind,
       status: m.status,
       startDate: m.start_date,
+      supplyDays: m.supply_days,
     })),
   };
 }

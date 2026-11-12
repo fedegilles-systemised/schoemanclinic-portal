@@ -3,6 +3,7 @@ import "server-only";
 import type { Database } from "@/lib/database.types";
 import { daysBetween, londonDate } from "@/lib/format";
 import { getPortalPatient, type PortalRecord } from "@/lib/portal/patient";
+import { RUN_OUT_WARNING_DAYS } from "@/lib/prescriptions/constants";
 import { createClient } from "@/lib/supabase/server";
 
 type PatientRecord = PortalRecord;
@@ -45,7 +46,8 @@ export type PortalHome = {
   runningLow: { name: string; daysLeft: number } | null;
 };
 
-const LOW_SUPPLY_DAYS = 14;
+// The home card warns three weeks ahead, like the reminder email (agreed on 6 November 2026).
+const LOW_SUPPLY_DAYS = RUN_OUT_WARNING_DAYS;
 const GLANCE_COUNT = 4;
 
 // Row-level security already limits these reads. A doctor who is also a patient is a

@@ -156,8 +156,10 @@ insert into public.medications (id, patient_id, name, dose, instructions, kind, 
   ('e0000000-0000-4000-8000-000000000002', 'd0000000-0000-4000-8000-000000000001', 'Utrogestan 100 mg', '100 mg', '1 capsule at night', 'prescription', 'b0000000-0000-4000-8000-000000000001', 'Harley Street Pharmacy, London W1G', current_date - 4, 28, 'semble_rx_demo_2'),
   ('e0000000-0000-4000-8000-000000000003', 'd0000000-0000-4000-8000-000000000001', 'Vitamin D3 4,000 IU', '4,000 IU', '1 capsule daily with food', 'supplement', 'b0000000-0000-4000-8000-000000000001', 'Clinic dispensary', current_date - 19, 60, null);
 
-insert into public.repeat_requests (medication_id, patient_id, requested_by, fee_pence, stripe_payment_intent_id, status, requested_at, resolved_at) values
-  ('e0000000-0000-4000-8000-000000000002', 'd0000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000011', 3000, 'pi_demo_1', 'sent_to_pharmacy', now() - interval '32 days', now() - interval '31 days');
+insert into public.repeat_requests (id, medication_id, patient_id, requested_by, fee_pence, stripe_payment_intent_id, status, requested_at, resolved_at, paid_at, has_future_appointment) values
+  ('e1000000-0000-4000-8000-000000000001', 'e0000000-0000-4000-8000-000000000002', 'd0000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000011', 3000, 'pi_demo_1', 'sent_to_pharmacy', now() - interval '32 days', now() - interval '31 days', now() - interval '32 days', true);
+insert into public.repeat_request_items (request_id, patient_id, medication_id, supply_months) values
+  ('e1000000-0000-4000-8000-000000000001', 'd0000000-0000-4000-8000-000000000001', 'e0000000-0000-4000-8000-000000000002', 1);
 
 insert into public.questions (patient_id, asked_by, subject, body, urgency, status, answered_at) values
   ('d0000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000011', 'Taking Vitamin D with HRT', 'Can I take my Vitamin D at the same time as my HRT?', 'routine', 'answered', now() - interval '26 days');
