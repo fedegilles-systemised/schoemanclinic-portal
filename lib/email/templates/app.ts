@@ -153,32 +153,39 @@ export function appointmentEmail({
   when,
   clinicianName,
   cancelled,
+  moved = false,
   portalUrl,
-}: Base & { firstName?: string; when: string; clinicianName: string; cancelled: boolean; portalUrl: string }): EmailContent {
+}: Base & { firstName?: string; when: string; clinicianName: string; cancelled: boolean; moved?: boolean; portalUrl: string | null }): EmailContent {
   const hello = firstName ? `Dear ${firstName},` : "Hello,";
   const line = cancelled
     ? `Your appointment with ${clinicianName} on ${when} has been cancelled.`
-    : `Your appointment with ${clinicianName} is booked for ${when}.`;
+    : moved
+      ? `Your appointment has moved. It is now with ${clinicianName} on ${when}.`
+      : `Your appointment with ${clinicianName} is booked for ${when}.`;
   const policy = cancelled
     ? "If you did not expect this, or would like a new time, please contact the clinic."
     : "If you need to change or cancel it, please contact the clinic at least 48 hours before.";
   const reason = "You are receiving this email because you have an appointment at The Schoeman Clinic.";
   return {
-    subject: cancelled ? "Your appointment has been cancelled" : "Your appointment is booked",
+    subject: cancelled ? "Your appointment has been cancelled" : moved ? "Your appointment has moved" : "Your appointment is booked",
     html: renderEmail({
       siteUrl,
       preheader: line,
       eyebrow: "Appointments",
-      title: cancelled ? { before: "Appointment ", accent: "cancelled" } : { before: "Your appointment is ", accent: "booked" },
+      title: cancelled
+        ? { before: "Appointment ", accent: "cancelled" }
+        : moved
+          ? { before: "Your appointment has ", accent: "moved" }
+          : { before: "Your appointment is ", accent: "booked" },
       body:
         paragraph(escapeHtml(hello)) +
         paragraph(escapeHtml(line)) +
         paragraph(escapeHtml(policy)) +
-        button("View your appointments", portalUrl) +
+        (portalUrl ? button("View your appointments", portalUrl) : "") +
         paragraph(SIGN_OFF_HTML),
       reason,
     }),
-    text: `${hello}\n\n${line}\n\n${policy}\n\nView your appointments: ${portalUrl}\n\n${textFooter(reason)}`,
+    text: `${hello}\n\n${line}\n\n${policy}\n\n${portalUrl ? `View your appointments: ${portalUrl}\n\n` : ""}${textFooter(reason)}`,
   };
 }
 
@@ -368,5 +375,78 @@ export function runOutReminderEmail({
       reason,
     }),
     text: `${hello}\n\n${line}\n\nRequest a repeat: ${portalUrl}\n\n${textFooter(reason)}`,
+  };
+}
+
+/** A patient is asked for feedback after an appointment, or reminded once. */
+export function feedbackRequestEmail({
+  siteUrl,
+  firstName,
+  surveyUrl,
+  reminder,
+}: Base & { firstName?: string; surveyUrl: string; reminder: boolean }): EmailContent {
+  const hello = firstName ? `Dear ${firstName},` : "Hello,";
+  const line = reminder
+    ? "A few days ago we asked how your recent appointment went. We would value your answer if you have a moment. It takes less than a minute, and every answer is read by the clinic."
+    : "Thank you for your recent appointment. We would value a minute of your time to hear how it went. Every answer is read by the clinic.";
+  const reason = "You are receiving this email because you recently had an appointment with The Schoeman Clinic.";
+  return {
+    subject: reminder ? "A reminder: how was your appointment?" : "How was your appointment?",
+    html: renderEmail({
+      siteUrl,
+      preheader: line,
+      eyebrow: "Your feedback",
+      title: { before: "How did we ", accent: "do" },
+      body: paragraph(escapeHtml(hello)) + paragraph(escapeHtml(line)) + button("Share your feedback", surveyUrl) + paragraph(SIGN_OFF_HTML),
+      reason,
+    }),
+    text: `${hello}\n\n${line}\n\nShare your feedback: ${surveyUrl}\n\n${textFooter(reason)}`,
+  };
+}
+
+/** The clinic inbox is told that feedback needs a follow-up. No name and nothing the patient wrote. */
+export function feedbackAlertEmail({ siteUrl, feedbackUrl, urgent }: Base & { feedbackUrl: string; urgent: boolean }): EmailContent {
+  const reason = "You are receiving this email because this address receives the clinic's patient feedback alerts.";
+  const line = urgent
+    ? "A patient's feedback needs a follow-up today. Sign in to Clinic Hub to read it and record the follow-up."
+    : "A patient's feedback needs a follow-up within two working days. Sign in to Clinic Hub to read it and record the follow-up.";
+  return {
+    subject: urgent ? "Patient feedback to follow up today" : "Patient feedback to follow up",
+    html: renderEmail({
+      siteUrl,
+      preheader: line,
+      eyebrow: "Patient feedback",
+      title: { before: "Feedback to ", accent: "follow up" },
+      body: paragraph("Hello,") + paragraph(escapeHtml(line)) + button("Open the feedback", feedbackUrl) + paragraph(SIGN_OFF_HTML),
+      reason,
+    }),
+    text: `Hello,\n\n${line}\n\nOpen the feedback: ${feedbackUrl}\n\n${textFooter(reason)}`,
+  };
+}
+
+/** A new patient who booked online is told it is booked and what happens next. No portal link yet. */
+export function onlineBookingEmail({
+  siteUrl,
+  firstName,
+  when,
+  clinicianName,
+}: Base & { firstName?: string; when: string; clinicianName: string }): EmailContent {
+  const hello = firstName ? `Dear ${firstName},` : "Hello,";
+  const line = `Thank you for booking with The Schoeman Clinic. Your appointment with ${clinicianName} is booked for ${when}.`;
+  const next =
+    "Before your appointment the clinic will be in touch to confirm your details and invite you to your patient portal, where you will find forms to complete and, later, your results.";
+  const policy = "If you need to change or cancel it, please contact the clinic at least 48 hours before.";
+  const reason = "You are receiving this email because you booked an appointment on The Schoeman Clinic's website.";
+  return {
+    subject: "Your appointment is booked",
+    html: renderEmail({
+      siteUrl,
+      preheader: line,
+      eyebrow: "Appointments",
+      title: { before: "Your appointment is ", accent: "booked" },
+      body: paragraph(escapeHtml(hello)) + paragraph(escapeHtml(line)) + paragraph(escapeHtml(next)) + paragraph(escapeHtml(policy)) + paragraph(SIGN_OFF_HTML),
+      reason,
+    }),
+    text: `${hello}\n\n${line}\n\n${next}\n\n${policy}\n\n${textFooter(reason)}`,
   };
 }

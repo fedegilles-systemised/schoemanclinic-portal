@@ -12,6 +12,7 @@ import { CheckRecordingButton, Recorder } from "@/components/recordings/recorder
 import { RELATIONSHIP_LABELS } from "@/components/patients/care-team-forms";
 import { PatientContactForm } from "@/components/patients/contact-form";
 import { RemoveGuardianButton } from "@/components/patients/guardian-forms";
+import { FormList } from "@/components/forms/form-list";
 import { ClinicalSummarySection, ConsentsSection, DocumentsSection, QuestionsSection, SafeguardingSection } from "@/components/record/record-sections";
 import { ReadingsTable } from "@/components/wearables/readings-table";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -27,6 +28,7 @@ import { getConsents } from "@/lib/data/consents";
 import { listDocuments } from "@/lib/data/documents";
 import { getPatientContact } from "@/lib/data/patient-contact";
 import { getCatalogue } from "@/lib/data/prescriptions";
+import { listForms, submitterLabels } from "@/lib/data/forms";
 import { getClinicalSummary, getGuardians, getMyStaffId, getPatientRecord, getRecordings, getSafeguardingAlerts } from "@/lib/data/patient-record";
 import { listQuestions } from "@/lib/data/questions";
 import { todayInLondon } from "@/lib/calendar/time";
@@ -95,7 +97,7 @@ export default async function PatientRecordPage({
   const canManageDocuments = user.roles.some((role) => role === "doctor" || role === "nurse" || role === "pa");
   const today = todayInLondon();
   const myStaffId = canWrite ? await getMyStaffId(user.id) : null;
-  const [assignments, library, readings, appointments, summary, documents, questions, safeguarding, consents, medicineList] = await Promise.all([
+  const [assignments, library, readings, appointments, summary, documents, questions, safeguarding, consents, medicineList, forms] = await Promise.all([
     getPatientAssignments(record.id),
     listCourses(),
     getReadings(record.id, 30),
@@ -106,7 +108,9 @@ export default async function PatientRecordPage({
     isDoctor ? getSafeguardingAlerts(record.id) : Promise.resolve([]),
     getConsents(record.id),
     isDoctor ? getCatalogue() : Promise.resolve([]),
+    listForms(id),
   ]);
+  const formSubmitters = await submitterLabels(record.id, forms);
   const assignable = library.filter((course) => course.published && !assignments.some((a) => a.courseId === course.id));
   const recordings = await getRecordings(record.id);
   const canRecord = canWrite && Boolean(myStaffId) && isTranscriptionConfigured();
@@ -170,6 +174,15 @@ export default async function PatientRecordPage({
 
       <QuestionsSection questions={questions} />
 
+      <section aria-labelledby="forms" className="mb-12 flex flex-col gap-4">
+        <SectionHeader id="forms" title="Submitted " accent="forms" />
+        {forms.length === 0 ? (
+          <EmptyState>No forms yet. Repeat requests, questions and feedback appear here as they are sent.</EmptyState>
+        ) : (
+          <FormList forms={forms} submitterName={(form) => formSubmitters.get(form.submittedBy) ?? null} />
+        )}
+      </section>
+
       <ConsentsSection consents={consents} />
 
       <section aria-labelledby="appointments" className="mb-12 flex flex-col gap-4">
@@ -204,6 +217,12 @@ export default async function PatientRecordPage({
                   <span>
                     {a.title}
                     {a.published ? null : <span className="type-small text-content-muted"> · draft, not visible yet</span>}
+                    {a.published && a.total > 0 ? (
+                      <span className="type-small text-content-muted tabular-nums">
+                        {" "}
+                        · {a.completed} of {a.total} {a.total === 1 ? "lesson" : "lessons"} complete
+                      </span>
+                    ) : null}
                   </span>
                   <UnassignButton patientId={record.id} assignmentId={a.id} title={a.title} />
                 </li>

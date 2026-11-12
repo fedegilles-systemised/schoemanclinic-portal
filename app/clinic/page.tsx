@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { ArrowDown, ArrowRight, ArrowUp, Clock, MapPin, TriangleAlert, Video } from "lucide-react";
 
 import { ComingSoon } from "@/components/shell/coming-soon";
@@ -204,7 +205,12 @@ export default async function ClinicHomePage({
 
       <section id="diary" className="mt-12 flex flex-col gap-4">
         <SectionHeader title="Today's " accent="diary">
-          <span className="type-small text-content-muted">{selected?.name ?? "All locations"}</span>
+          <span className="type-small flex items-center gap-4 text-content-muted">
+            {selected?.name ?? "All locations"}
+            <Link href="/clinic/diary" className="type-button-label text-content no-underline">
+              Open the full diary
+            </Link>
+          </span>
         </SectionHeader>
         {home.diary.length ? (
           <Table>

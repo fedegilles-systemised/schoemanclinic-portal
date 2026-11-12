@@ -436,3 +436,15 @@ insert into public.webhook_events (source, external_event_id, event_type, payloa
 
 insert into public.integration_sync_log (system, direction, entity, status, finished_at) values
   ('ghl', 'in', 'appointments', 'ok', now());
+
+-- Feedback ---------------------------------------------------------------------------
+-- Eleanor answered a survey last week (positive, may be quoted) and has a new one waiting.
+insert into public.patient_feedback (id, patient_id, sent_at, answered_at, answered_by, score, went_well, could_improve, wants_contact, may_quote) values
+  ('f2000000-0000-4000-8000-000000000001', 'd0000000-0000-4000-8000-000000000001', now() - interval '9 days', now() - interval '8 days',
+   'a0000000-0000-4000-8000-000000000011', 9, 'Dr Schoeman explained my results clearly and took her time.', null, false, true);
+insert into public.form_submissions (patient_id, kind, title, answers, source_id, submitted_by, submitted_at) values
+  ('d0000000-0000-4000-8000-000000000001', 'feedback', 'Feedback after your appointment',
+   '[{"question": "How likely are you to recommend The Schoeman Clinic to a friend or family member? (0 to 10)", "answer": "9"}, {"question": "What went well?", "answer": "Dr Schoeman explained my results clearly and took her time."}, {"question": "Would you like someone from the clinic to contact you?", "answer": "No"}, {"question": "May we use your comments, without your name, as evidence of patient feedback?", "answer": "Yes"}]',
+   'f2000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000011', now() - interval '8 days');
+insert into public.patient_feedback (id, patient_id, sent_at) values
+  ('f2000000-0000-4000-8000-000000000002', 'd0000000-0000-4000-8000-000000000001', now() - interval '1 day');

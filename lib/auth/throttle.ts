@@ -18,7 +18,9 @@ type ThrottledAction =
   | "question"
   | "document-upload"
   | "repeat-request"
-  | "signaturerx";
+  | "signaturerx"
+  | "feedback"
+  | "online-booking";
 
 // A clinic shares one address, so the address limit is well above the account limits.
 const LIMITS: Record<ThrottledAction, { windowSeconds: number; address: number; addressAndAccount: number; account: number }> = {
@@ -42,6 +44,10 @@ const LIMITS: Record<ThrottledAction, { windowSeconds: number; address: number; 
   "repeat-request": { windowSeconds: 60 * 60, address: 200, addressAndAccount: 40, account: 40 },
   // Each send creates a prescription and takes a signing PIN, so a script must not be able to try PINs or flood SignatureRx.
   signaturerx: { windowSeconds: 60 * 60, address: 60, addressAndAccount: 20, account: 20 },
+  // Each answer can alert the team, and each follow-up is a permanent record.
+  feedback: { windowSeconds: 60 * 60, address: 200, addressAndAccount: 30, account: 30 },
+  // The public booking page needs no account, so the limits per address and per email are low.
+  "online-booking": { windowSeconds: 60 * 60, address: 15, addressAndAccount: 5, account: 5 },
 };
 
 /** Stored as a hash, so the table holds no plain email or IP address. */

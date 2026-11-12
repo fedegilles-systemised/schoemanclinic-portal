@@ -25,12 +25,14 @@ export async function addAppointmentType(_state: SettingsFormState, formData: Fo
       durationMin: z.coerce.number().int().min(5, "At least 5 minutes.").max(480, "At most 8 hours."),
       locationKind: z.enum(["clinic", "video"]),
       bookableByPatients: z.boolean(),
+      bookableOnline: z.boolean(),
     })
     .safeParse({
       name: formData.get("name"),
       durationMin: formData.get("durationMin"),
       locationKind: formData.get("locationKind"),
       bookableByPatients: formData.get("bookableByPatients") === "on",
+      bookableOnline: formData.get("bookableOnline") === "on",
     });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? GENERIC_FAILURE };
   const supabase = await createClient();
@@ -39,6 +41,7 @@ export async function addAppointmentType(_state: SettingsFormState, formData: Fo
     duration_min: parsed.data.durationMin,
     location_kind: parsed.data.locationKind,
     bookable_by_patients: parsed.data.bookableByPatients,
+    bookable_online: parsed.data.bookableOnline,
   });
   if (error) return { error: error.code === "42501" ? "Only an admin can add appointment types." : GENERIC_FAILURE };
   revalidatePath("/clinic/booking");
@@ -53,6 +56,19 @@ export async function setTypeActive(_state: SettingsFormState, formData: FormDat
   const { data, error } = await supabase.from("appointment_types").update({ active: parsed.data.active === "true" }).eq("id", parsed.data.id).select("id");
   if (error || !data?.length) return { error: GENERIC_FAILURE };
   revalidatePath("/clinic/booking");
+  return { saved: "Saved." };
+}
+
+/** Admins only: whether new patients can book this type on the public booking page. */
+export async function setTypeOnline(_state: SettingsFormState, formData: FormData): Promise<SettingsFormState> {
+  await requireStaff();
+  const parsed = z.object({ id: z.uuid(), online: z.enum(["true", "false"]) }).safeParse({ id: formData.get("id"), online: formData.get("online") });
+  if (!parsed.success) return { error: GENERIC_FAILURE };
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("appointment_types").update({ bookable_online: parsed.data.online === "true" }).eq("id", parsed.data.id).select("id");
+  if (error || !data?.length) return { error: GENERIC_FAILURE };
+  revalidatePath("/clinic/booking");
+  revalidatePath("/book");
   return { saved: "Saved." };
 }
 

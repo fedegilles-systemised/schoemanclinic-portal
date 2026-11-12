@@ -2,6 +2,6 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "crons": [
     { "path": "/api/cron/revoke-google", "schedule": "0 3 * * *" },
-    { "path": "/api/cron/prescription-reminders", "schedule": "0 9 * * *" }
+    { "path": "/api/cron/patient-messages", "schedule": "0 9 * * *" }
   ]
 }
