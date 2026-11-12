@@ -18,6 +18,7 @@ type ThrottledAction =
   | "question"
   | "document-upload"
   | "repeat-request"
+  | "signaturerx"
   | "feedback"
   | "online-booking";
 
@@ -41,6 +42,8 @@ const LIMITS: Record<ThrottledAction, { windowSeconds: number; address: number; 
   "document-upload": { windowSeconds: 60 * 60, address: 300, addressAndAccount: 120, account: 120 },
   // Each request opens a payment page and each decision messages a patient, so a script must not be able to flood either.
   "repeat-request": { windowSeconds: 60 * 60, address: 200, addressAndAccount: 40, account: 40 },
+  // Each send creates a prescription and takes a signing PIN, so a script must not be able to try PINs or flood SignatureRx.
+  signaturerx: { windowSeconds: 60 * 60, address: 60, addressAndAccount: 20, account: 20 },
   // Each answer can alert the team, and each follow-up is a permanent record.
   feedback: { windowSeconds: 60 * 60, address: 200, addressAndAccount: 30, account: 30 },
   // The public booking page needs no account, so the limits per address and per email are low.

@@ -99,7 +99,8 @@ export async function bookOnline(_state: OnlineBookingState, formData: FormData)
     _type: input.typeId,
     _staff: input.staffId,
     _starts_at: input.startsAt,
-    _location: input.locationId ?? null,
+    // No location (a video appointment) goes to the database as null; the generated types cannot say so.
+    _location: (input.locationId ?? null) as string,
     _first_name: input.firstName,
     _last_name: input.lastName,
     _date_of_birth: input.dateOfBirth,
