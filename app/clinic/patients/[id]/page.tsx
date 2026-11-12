@@ -202,6 +202,12 @@ export default async function PatientRecordPage({
                   <span>
                     {a.title}
                     {a.published ? null : <span className="type-small text-content-muted"> · draft, not visible yet</span>}
+                    {a.published && a.total > 0 ? (
+                      <span className="type-small text-content-muted tabular-nums">
+                        {" "}
+                        · {a.completed} of {a.total} {a.total === 1 ? "lesson" : "lessons"} complete
+                      </span>
+                    ) : null}
                   </span>
                   <UnassignButton patientId={record.id} assignmentId={a.id} title={a.title} />
                 </li>

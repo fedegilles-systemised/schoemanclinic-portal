@@ -281,14 +281,14 @@ isOneToOne: false
                   ]
                 },"education_courses": {
                   Row: {
-                    "archived_at": string | null,"created_at": string,"created_by": string,"description": string | null,"id": string,"published": boolean,"title": string,"updated_at": string
+                    "archived_at": string | null,"cover_path": string | null,"created_at": string,"created_by": string,"description": string | null,"id": string,"published": boolean,"title": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "archived_at"?: string | null,"created_at"?: string,"created_by": string,"description"?: string | null,"id"?: string,"published"?: boolean,"title": string,"updated_at"?: string
+                    "archived_at"?: string | null,"cover_path"?: string | null,"created_at"?: string,"created_by": string,"description"?: string | null,"id"?: string,"published"?: boolean,"title": string,"updated_at"?: string
                   }
                   Update: {
-                    "archived_at"?: string | null,"created_at"?: string,"created_by"?: string,"description"?: string | null,"id"?: string,"published"?: boolean,"title"?: string,"updated_at"?: string
+                    "archived_at"?: string | null,"cover_path"?: string | null,"created_at"?: string,"created_by"?: string,"description"?: string | null,"id"?: string,"published"?: boolean,"title"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -299,16 +299,42 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
-                },"education_modules": {
+                },"education_files": {
                   Row: {
-                    "archived_at": string | null,"body": string | null,"created_at": string,"id": string,"position": number,"section_id": string,"title": string,"updated_at": string,"video_url": string | null
+                    "archived_at": string | null,"content_type": string,"created_at": string,"created_by": string,"file_name": string,"id": string,"module_id": string,"size_bytes": number,"storage_path": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "archived_at"?: string | null,"body"?: string | null,"created_at"?: string,"id"?: string,"position"?: number,"section_id": string,"title": string,"updated_at"?: string,"video_url"?: string | null
+                    "archived_at"?: string | null,"content_type": string,"created_at"?: string,"created_by": string,"file_name": string,"id"?: string,"module_id": string,"size_bytes": number,"storage_path": string
                   }
                   Update: {
-                    "archived_at"?: string | null,"body"?: string | null,"created_at"?: string,"id"?: string,"position"?: number,"section_id"?: string,"title"?: string,"updated_at"?: string,"video_url"?: string | null
+                    "archived_at"?: string | null,"content_type"?: string,"created_at"?: string,"created_by"?: string,"file_name"?: string,"id"?: string,"module_id"?: string,"size_bytes"?: number,"storage_path"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "education_files_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "staff_profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "education_files_module_id_fkey"
+      columns: ["module_id"]
+isOneToOne: false
+      referencedRelation: "education_modules"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"education_modules": {
+                  Row: {
+                    "archived_at": string | null,"body": string | null,"content": Json | null,"created_at": string,"id": string,"position": number,"published": boolean,"section_id": string,"title": string,"updated_at": string,"video_url": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "archived_at"?: string | null,"body"?: string | null,"content"?: Json | null,"created_at"?: string,"id"?: string,"position"?: number,"published"?: boolean,"section_id": string,"title": string,"updated_at"?: string,"video_url"?: string | null
+                  }
+                  Update: {
+                    "archived_at"?: string | null,"body"?: string | null,"content"?: Json | null,"created_at"?: string,"id"?: string,"position"?: number,"published"?: boolean,"section_id"?: string,"title"?: string,"updated_at"?: string,"video_url"?: string | null
                   }
                   Relationships: [
                     {
@@ -316,6 +342,38 @@ isOneToOne: false
       columns: ["section_id"]
 isOneToOne: false
       referencedRelation: "education_sections"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"education_progress": {
+                  Row: {
+                    "completed_at": string,"completed_by": string,"id": string,"module_id": string,"patient_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "completed_at"?: string,"completed_by": string,"id"?: string,"module_id": string,"patient_id": string
+                  }
+                  Update: {
+                    "completed_at"?: string,"completed_by"?: string,"id"?: string,"module_id"?: string,"patient_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "education_progress_completed_by_fkey"
+      columns: ["completed_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "education_progress_module_id_fkey"
+      columns: ["module_id"]
+isOneToOne: false
+      referencedRelation: "education_modules"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "education_progress_patient_id_fkey"
+      columns: ["patient_id"]
+isOneToOne: false
+      referencedRelation: "patient_profiles"
       referencedColumns: ["id"]
     }
                   ]
@@ -1375,6 +1433,9 @@ isOneToOne: false
 { Args: Record<PropertyKey, never>; Returns: {
               "avatar_path": string,"clinical_role": Database["public"]['Enums']["staff_role"],"full_name": string,"job_title": string,"profile_id": string,"staff_id": string
             }[]
+                           },
+"reorder_course":
+{ Args: { "_course": string,"_order": Json }; Returns: undefined
                            },
 "request_repeat":
 { Args: { "_has_future_appointment": boolean,"_has_side_effects": boolean,"_items": Json,"_note": string,"_patient": string,"_side_effects": string,"_still_losing_weight": boolean,"_wants_appointment": boolean,"_weight_lost_last_month": string }; Returns: string
