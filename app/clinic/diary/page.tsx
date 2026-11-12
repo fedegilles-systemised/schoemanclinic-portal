@@ -30,8 +30,8 @@ function shiftMonth(month: string, by: number): string {
 }
 
 /**
- * The clinic diary: every clinician's bookings by day, week or month, as in Semble. The whole team
- * sees who is booked; opening a patient's record still follows the care team.
+ * The clinic diary: bookings by day, week or month, as in Semble. Admins and PAs see every
+ * clinician's; a doctor, nurse or health coach sees their own. Opening a record follows the care team.
  */
 export default async function DiaryPage({ searchParams }: { searchParams: Promise<{ view?: string; date?: string; staff?: string; location?: string }> }) {
   const user = await getCurrentUser();

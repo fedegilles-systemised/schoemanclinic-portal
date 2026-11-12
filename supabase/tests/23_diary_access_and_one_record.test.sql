@@ -37,8 +37,8 @@ select is((select patient_id from first_booking), 'd0000000-0000-4000-8000-00000
 select is((select count(*)::int from public.patient_profiles), (select n from before), 'no second record is made');
 select is((select first_name || ' ' || last_name from public.patient_profiles where id = 'd0000000-0000-4000-8000-000000000001'), (select first_name || ' ' || last_name from eleanor), 'and nothing typed changes it');
 select ok((select booked_online_at is null from public.patient_profiles where id = 'd0000000-0000-4000-8000-000000000001'), 'nor marks it as made online');
-select ok(exists (select 1 from public.care_team where patient_id = 'd0000000-0000-4000-8000-000000000001' and staff_id = 'b0000000-0000-4000-8000-000000000002'), 'the doctor booked joins her care team');
-select ok(exists (select 1 from public.notifications where body like 'An existing patient%'), 'the team is told it is an existing patient');
+select ok(not exists (select 1 from public.care_team where patient_id = 'd0000000-0000-4000-8000-000000000001' and staff_id = 'b0000000-0000-4000-8000-000000000002'), 'an anonymous booking does not change an existing care team');
+select ok(exists (select 1 from public.notifications where body like 'An existing patient has booked online with a clinician not on their care team%'), 'the team is told the clinician is not on the care team');
 
 -- A new person books twice: one record.
 select pg_temp.become_server();
@@ -53,6 +53,14 @@ create temp table family as select * from public.book_online('a7000000-0000-4000
 create temp table family_two as select * from public.book_online('a7000000-0000-4000-8000-000000000011', 'b0000000-0000-4000-8000-000000000002', pg_temp.slot(6, '12:00'), null, 'Sam', 'Lane', '1989-09-09', 'jo.lane@example.test', '07700 900778');
 reset role;
 select isnt((select patient_id from family_two), (select patient_id from family), 'a family member sharing the email gets their own record');
+
+-- A suspended account is not booked online.
+select set_config('app.system_actor', 'diary-test', true);
+update public.profiles set status = 'suspended' where id = 'a0000000-0000-4000-8000-000000000011';
+select set_config('app.system_actor', '', true);
+select pg_temp.become_server();
+select throws_ok($$ select * from public.book_online('a7000000-0000-4000-8000-000000000011', 'b0000000-0000-4000-8000-000000000001', pg_temp.slot(7, '10:00'), null, 'Eleanor', 'Hart', (select date_of_birth from eleanor), 'eleanor.hart@example.test', '07700 900555') $$, '22023', 'We cannot take this booking online. Please contact the clinic.', 'a suspended account is refused, with the usual message');
+reset role;
 
 select * from finish();
 rollback;

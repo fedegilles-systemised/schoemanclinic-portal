@@ -132,6 +132,13 @@ begin
       and lower(btrim(p.first_name)) = lower(btrim(_first_name));
   end if;
   existing := new_patient is not null;
+  -- A suspended account is not booked online (one message for every refusal).
+  if existing and exists (
+    select 1 from public.patient_profiles p join public.profiles u on u.id = p.user_id
+    where p.id = new_patient and u.status <> 'active'
+  ) then
+    raise exception 'We cannot take this booking online. Please contact the clinic.' using errcode = '22023';
+  end if;
 
   -- Limits against misuse, with one message that says nothing about who has booked: two open online
   -- bookings per person (their record, email or phone), and at most 20 online bookings in any hour for the clinic.
@@ -188,21 +195,27 @@ begin
   values (new_patient, _staff, _location, _starts_at, kind.duration_min, kind.name, 'booked', 'clinic_hub', _type, true)
   returning id into appt;
 
-  -- The clinician booked joins the patient's care team, if not already on it, so they can prepare.
-  insert into public.care_team (patient_id, staff_id, relationship, since)
-  select new_patient, s.id, (case s.clinical_role when 'doctor' then 'doctor' when 'nurse' then 'nurse' else 'health_coach' end)::public.care_relationship, private.london_today()
-  from public.staff_profiles s
-  where s.id = _staff and not exists (
-    select 1 from public.care_team ct
-    where ct.patient_id = new_patient and ct.staff_id = _staff
-      and ct.since <= private.london_today() and (ct.until is null or ct.until > private.london_today())
-  );
+  -- The clinician booked joins the care team of a record this booking made, so they can prepare. An
+  -- existing record's care team is never changed by an anonymous booking (S-168): the team decides.
+  if not existing then
+    insert into public.care_team (patient_id, staff_id, relationship, since)
+    select new_patient, s.id, (case s.clinical_role when 'doctor' then 'doctor' when 'nurse' then 'nurse' else 'health_coach' end)::public.care_relationship, private.london_today()
+    from public.staff_profiles s
+    where s.id = _staff;
+  end if;
 
   -- Admins and PAs are told, with a link and no name.
   insert into public.notifications (user_id, topic, title, body, link)
   select distinct r.user_id, 'appointments'::public.notification_topic, 'New online booking',
-    case when existing then 'An existing patient has booked online, on their own record.'
-         else 'A new patient has booked online. Check their details and invite them to the portal.' end,
+    case
+      when existing and not exists (
+        select 1 from public.care_team ct
+        where ct.patient_id = new_patient and ct.staff_id = _staff
+          and ct.since <= private.london_today() and (ct.until is null or ct.until > private.london_today())
+      ) then 'An existing patient has booked online with a clinician not on their care team. Check the booking, and add the clinician if right.'
+      when existing then 'An existing patient has booked online, on their own record. Check the booking is expected.'
+      else 'A new patient has booked online. Check their details and invite them to the portal.'
+    end,
     '/clinic/diary/' || appt::text
   from public.user_roles r join public.profiles u on u.id = r.user_id
   where r.role in ('admin', 'pa') and u.status = 'active';
