@@ -54,7 +54,7 @@ export default async function CoursePage({ params, searchParams }: { params: Pro
       {moved === "failed" ? (
         <div className="mb-6">
           <Alert variant="warning">
-            <AlertDescription>The course was changed by someone else at the same time, so that move was not made. Here is the course as it is now: please try again.</AlertDescription>
+            <AlertDescription>Someone else changed the course at the same time, so that move was not made. Try again.</AlertDescription>
           </Alert>
         </div>
       ) : null}
