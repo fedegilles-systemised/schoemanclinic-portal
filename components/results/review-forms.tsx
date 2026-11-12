@@ -4,6 +4,8 @@ import { useActionState, useState } from "react";
 
 import { FormMessage } from "@/components/profile/form-message";
 import { Button } from "@/components/ui/button";
+import { ConfirmButton } from "@/components/ui/confirm-button";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { releaseReport, saveComments, type ResultsFormState } from "@/lib/results/actions";
 
@@ -53,7 +55,7 @@ export function ReleaseForm({ reportId, orderedBy }: { reportId: string; ordered
           ? orderedBy.isYou
             ? "You ordered these tests."
             : `Ordered by ${orderedBy.name}. Your sign-off will show that another doctor signed off.`
-          : "There is no order for this report (results from an outside lab or the patient)."}
+          : "No order: results from an outside lab or from the patient."}
       </p>
       <fieldset className="flex flex-col gap-2">
         <legend className="type-eyebrow mb-1 text-content-muted">Sign-off</legend>
@@ -79,9 +81,7 @@ export function ReleaseForm({ reportId, orderedBy }: { reportId: string; ordered
       </fieldset>
       {outcome === "action" ? (
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="release-action" className="type-eyebrow text-content-muted">
-            The action (for the team, not shown to the patient)
-          </label>
+          <Label htmlFor="release-action">The action (for the team, not shown to the patient)</Label>
           <Textarea id="release-action" name="actionNote" maxLength={2000} required />
         </div>
       ) : null}
@@ -96,9 +96,13 @@ export function ReleaseForm({ reportId, orderedBy }: { reportId: string; ordered
       </p>
       <FormMessage state={state} />
       <div>
-        <Button type="submit" loading={pending}>
+        <ConfirmButton
+          loading={pending}
+          confirmTitle="Sign off and release this report?"
+          confirmText="The patient will see every result and be told. Your sign-off is recorded for audit and cannot be changed."
+        >
           Sign off and release
-        </Button>
+        </ConfirmButton>
       </div>
     </form>
   );

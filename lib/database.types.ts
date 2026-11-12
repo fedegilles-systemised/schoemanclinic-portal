@@ -557,14 +557,14 @@ isOneToOne: false
                   ]
                 },"lab_report_signoffs": {
                   Row: {
-                    "action_note": string | null,"ordered_by": string | null,"outcome": string,"patient_id": string,"report_id": string,"signed_at": string,"signed_by": string
+                    "action_note": string | null,"id": string,"ordered_by": string | null,"outcome": string,"patient_id": string,"report_id": string,"signed_at": string,"signed_by": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "action_note"?: string | null,"ordered_by"?: string | null,"outcome": string,"patient_id": string,"report_id": string,"signed_at"?: string,"signed_by": string
+                    "action_note"?: string | null,"id": string,"ordered_by"?: string | null,"outcome": string,"patient_id": string,"report_id": string,"signed_at"?: string,"signed_by": string
                   }
                   Update: {
-                    "action_note"?: string | null,"ordered_by"?: string | null,"outcome"?: string,"patient_id"?: string,"report_id"?: string,"signed_at"?: string,"signed_by"?: string
+                    "action_note"?: string | null,"id"?: string,"ordered_by"?: string | null,"outcome"?: string,"patient_id"?: string,"report_id"?: string,"signed_at"?: string,"signed_by"?: string
                   }
                   Relationships: [
                     {

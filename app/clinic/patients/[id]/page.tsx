@@ -50,7 +50,7 @@ function NoteOptions({ options }: { options: TreatmentOptions }) {
   if (!hasAnyOption(options)) return <p className="type-small mt-4 text-content-muted">No treatment options were recorded on this note.</p>;
   return (
     <div className="mt-4 border-t border-surface-border pt-4">
-      <div className="type-eyebrow mb-2 text-content-muted">Treatment options</div>
+      <h4 className="type-eyebrow mb-2 text-content-muted">Treatment options</h4>
       <ul className="type-small flex flex-col gap-1">
         {OPTION_CHECKS.map(([key, , label]) => (
           <li key={key}>

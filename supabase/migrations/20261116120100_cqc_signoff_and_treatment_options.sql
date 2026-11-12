@@ -16,6 +16,8 @@
 
 create table public.lab_report_signoffs (
   report_id uuid primary key,
+  -- The same value as report_id, so the audit log (which records a row's id) names the report.
+  id uuid not null unique check (id = report_id),
   patient_id uuid not null references public.patient_profiles (id) on delete restrict,
   outcome text not null check (outcome in ('action', 'no_action')),
   action_note text check (char_length(btrim(action_note)) between 1 and 2000),
@@ -48,11 +50,15 @@ end;
 $$;
 create trigger lab_report_signoffs_permanent before update or delete on public.lab_report_signoffs
   for each row execute function private.reject_signoff_change();
+-- Emptying the table would skip the row triggers above, so it is refused too.
+create trigger lab_report_signoffs_no_truncate before truncate on public.lab_report_signoffs
+  for each statement execute function private.reject_signoff_change();
 
 alter table public.lab_report_signoffs enable row level security;
 alter table public.lab_report_signoffs force row level security;
 revoke all on table public.lab_report_signoffs from public, anon, authenticated;
-revoke update, delete, truncate on public.lab_report_signoffs from service_role;
+-- Not even server code may write one: only release_report (as the table owner) does.
+revoke insert, update, delete, truncate, references, trigger on public.lab_report_signoffs from service_role;
 grant select on public.lab_report_signoffs to authenticated;
 
 create policy "Staff who can open the record read sign-offs" on public.lab_report_signoffs
@@ -101,8 +107,8 @@ begin
       patient_comment = nullif(btrim(_comment), '')
   where id = _report;
 
-  insert into public.lab_report_signoffs (report_id, patient_id, outcome, action_note, signed_by, ordered_by)
-  values (_report, r.patient_id, _outcome, case when _outcome = 'action' then btrim(_action_note) end, staff, orderer);
+  insert into public.lab_report_signoffs (report_id, id, patient_id, outcome, action_note, signed_by, ordered_by)
+  values (_report, _report, r.patient_id, _outcome, case when _outcome = 'action' then btrim(_action_note) end, staff, orderer);
 
   if r.lab_order_id is not null then
     update public.lab_orders set status = 'reviewed' where id = r.lab_order_id and status = 'results_in';

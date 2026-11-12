@@ -54,7 +54,10 @@ reset role;
 -- Nobody changes or removes a sign-off, not even the database owner.
 select throws_ok($$ update public.lab_report_signoffs set outcome = 'no_action', action_note = null where report_id = '14000000-0000-4000-8000-000000000004' $$, '42501', null, 'a sign-off cannot be changed');
 select throws_ok($$ delete from public.lab_report_signoffs where report_id = '14000000-0000-4000-8000-000000000004' $$, '42501', null, 'or removed');
+select throws_ok($$ truncate public.lab_report_signoffs $$, '42501', null, 'or emptied');
 select is((select count(*)::int from public.audit_log where entity = 'lab_report_signoffs'), 2, 'each sign-off is in the audit log');
+select is((select count(*)::int from public.audit_log where entity = 'lab_report_signoffs' and entity_id = '14000000-0000-4000-8000-000000000004'), 1, 'under its report''s id');
+select ok(not has_table_privilege('service_role', 'public.lab_report_signoffs', 'insert'), 'server code cannot write a sign-off either');
 
 -- Treatment options in a note: set on the draft, fixed once signed.
 select pg_temp.become('a0000000-0000-4000-8000-000000000001');

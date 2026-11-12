@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { getCurrentUser } from "@/lib/auth/session";
 import { getMyStaffId } from "@/lib/data/patient-record";
 import { getReport } from "@/lib/data/results";
-import { formatDate, formatLongDate, formatRange } from "@/lib/format";
+import { formatDate, formatLongDate, formatRange, formatTime } from "@/lib/format";
 import { resultStatus, valueClass } from "@/lib/results";
 import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
@@ -89,7 +89,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
 
       {released ? (
         <section aria-labelledby="signoff" className="mt-10 max-w-3xl">
-          <SectionHeader id="signoff" title="Sign-" accent="off" className="mb-3" />
+          <SectionHeader id="signoff" title="Doctor's " accent="sign-off" className="mb-3" />
           {report.signoff ? (
             <dl className="type-body grid gap-x-6 gap-y-2 border border-surface-border bg-surface-raised p-4 sm:grid-cols-[max-content_1fr]">
               <dt className="text-content-muted">Outcome</dt>
@@ -102,12 +102,12 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
               ) : null}
               <dt className="text-content-muted">Signed off by</dt>
               <dd>
-                {report.signoff.signedByName}, {formatDate(report.signoff.signedAt)}
+                {report.signoff.signedByName}, {formatDate(report.signoff.signedAt)} at {formatTime(report.signoff.signedAt)}
               </dd>
               <dt className="text-content-muted">Ordered by</dt>
               <dd>
-                {report.signoff.orderedByName ?? "No order (outside results)"}
-                {report.signoff.byOtherDoctor ? <span className="text-status-warning"> · signed off by a different doctor</span> : null}
+                {report.signoff.orderedByName ?? "No order: results from an outside lab or from the patient"}
+                {report.signoff.byOtherDoctor ? <span className="text-content-muted"> · signed off by a different doctor</span> : null}
               </dd>
             </dl>
           ) : (
