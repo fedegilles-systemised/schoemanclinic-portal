@@ -97,7 +97,7 @@ comment on column public.patient_feedback.quote_checked_by is 'Who checked the c
 create index patient_feedback_quote_checked_by_idx on public.patient_feedback (quote_checked_by);
 
 -- An admin, PA or doctor who can read the feedback marks its comments as checked for use as
--- evidence, or takes the check back. Only answers the patient agreed may be quoted, with a comment.
+-- evidence, or takes the check back. Only positive answers the patient agreed may be quoted, with a comment.
 create function private.check_feedback_quote(_feedback uuid, _checked boolean)
 returns void
 language plpgsql
@@ -115,8 +115,8 @@ begin
   if _checked is null then
     raise exception 'Say whether the quote is checked.' using errcode = '22023';
   end if;
-  if _checked and (f.answered_at is null or not f.may_quote or (f.went_well is null and f.could_improve is null)) then
-    raise exception 'Only comments the patient agreed may be quoted can be checked.' using errcode = '22023';
+  if _checked and (f.rating is distinct from 'green' or not f.may_quote or (f.went_well is null and f.could_improve is null)) then
+    raise exception 'Only positive comments the patient agreed may be quoted can be checked.' using errcode = '22023';
   end if;
   update public.patient_feedback
   set quote_checked_by = case when _checked then staff end,

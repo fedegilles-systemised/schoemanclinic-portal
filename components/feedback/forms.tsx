@@ -108,8 +108,8 @@ export function QuoteCheckForm({ feedbackId, checked }: { feedbackId: string; ch
       <input type="hidden" name="checked" value={checked ? "no" : "yes"} />
       <FormMessage state={state} />
       <div>
-        <Button type="submit" variant={checked ? "outline" : "secondary"} loading={pending}>
-          {checked ? "Take the check back" : "Mark as checked"}
+        <Button type="submit" size="sm" variant={checked ? "outline" : "secondary"} loading={pending}>
+          {checked ? "Remove from the evidence" : "Mark as checked"}
         </Button>
       </div>
     </form>

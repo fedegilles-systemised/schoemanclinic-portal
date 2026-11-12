@@ -81,13 +81,13 @@ export default async function ClinicFeedbackDetailPage({ params }: { params: Pro
           <CardTitle>Use as CQC evidence</CardTitle>
           <p className="type-body">
             The patient agreed their comments may be used without their name. Before they are, check the comments name nobody and say
-            nothing about their health. Only checked comments are in the evidence download.
+            nothing about their health. Only checked comments are in the CQC evidence download.
           </p>
-          {feedback.quoteChecked ? (
-            <p className="type-small text-content-muted">
-              Checked by {quoteCheckedBy} on {formatDate(feedback.quoteChecked.at)}.
-            </p>
-          ) : null}
+          <p className="type-small text-content-muted">
+            {feedback.quoteChecked
+              ? `Checked by ${quoteCheckedBy} on ${formatDate(feedback.quoteChecked.at)}, ${formatTime(feedback.quoteChecked.at)}. In the CQC evidence download.`
+              : "Not checked yet. Not in the CQC evidence download."}
+          </p>
           <QuoteCheckForm feedbackId={feedback.id} checked={Boolean(feedback.quoteChecked)} />
         </Card>
       ) : null}

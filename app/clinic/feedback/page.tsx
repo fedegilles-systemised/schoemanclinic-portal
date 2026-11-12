@@ -36,7 +36,12 @@ function FeedbackTable({ rows, showDue }: { rows: FeedbackRow[]; showDue: boolea
             </TableCell>
             <TableCell className="tabular-nums">{r.answeredAt ? formatDate(r.answeredAt) : ""}</TableCell>
             <TableCell className="tabular-nums">{r.score ?? ""}</TableCell>
-            <TableCell>{r.rating ? <RatingPill rating={r.rating} /> : null}</TableCell>
+            <TableCell>
+              {r.rating ? <RatingPill rating={r.rating} /> : null}
+              {r.rating === "green" && r.mayQuote && (r.wentWell || r.couldImprove) && !r.quoteChecked ? (
+                <span className="type-small block text-content-muted">Not checked</span>
+              ) : null}
+            </TableCell>
             {showDue ? (
               <TableCell className={r.followUpDue && r.followUpDue < today ? "font-medium text-status-danger" : undefined}>
                 {r.followUpDue ? formatDate(r.followUpDue) : ""}
@@ -73,17 +78,24 @@ export default async function ClinicFeedbackPage() {
         eyebrow="Patients"
         title="Patient "
         accent="feedback"
-        description={`Last 90 days: ${recent.length} ${recent.length === 1 ? "answer" : "answers"}, ${count("green")} positive, ${count("amber")} mixed and ${count("red")} needing attention. Every patient who answers is offered the Google review link.${toCheck > 0 ? ` ${toCheck} positive ${toCheck === 1 ? "comment is" : "comments are"} waiting to be checked before ${toCheck === 1 ? "it goes" : "they go"} into the CQC download.` : ""}`}
+        description={`Last 90 days: ${recent.length} ${recent.length === 1 ? "answer" : "answers"}, ${count("green")} positive, ${count("amber")} mixed and ${count("red")} needing attention. Every patient who answers is offered the Google review link.`}
       >
         <div className="flex flex-wrap gap-6">
           <Link href="/clinic/feedback/export?set=evidence" prefetch={false} className="type-button-label text-content no-underline">
-            Download positive feedback for CQC (CSV)
+            Download the CQC evidence (CSV)
           </Link>
           <Link href="/clinic/feedback/export?set=all" prefetch={false} className="type-button-label text-content no-underline">
             Download the full log (CSV)
           </Link>
         </div>
       </PageHeader>
+
+      {toCheck > 0 ? (
+        <p className="type-body mb-6">
+          {toCheck} positive {toCheck === 1 ? "comment is" : "comments are"} waiting to be checked before {toCheck === 1 ? "it goes" : "they go"} into the CQC
+          evidence. Open {toCheck === 1 ? "it" : "each one"} from the table below, marked &ldquo;Not checked&rdquo;.
+        </p>
+      ) : null}
 
       <section aria-labelledby="follow-up" className="mb-12 flex flex-col gap-4">
         <SectionHeader id="follow-up" title="Waiting for a " accent="follow-up" />

@@ -27,7 +27,7 @@ function friendly(message: string | undefined, fallback = GENERIC_FAILURE): stri
     "The follow-up has already been recorded.",
     "Describe the follow-up, in up to 2,000 characters.",
     "This survey has not been answered.",
-    "Only comments the patient agreed may be quoted can be checked.",
+    "Only positive comments the patient agreed may be quoted can be checked.",
   ];
   return message && known.includes(message) ? message : fallback;
 }
@@ -130,7 +130,7 @@ export async function checkQuote(_state: FeedbackFormState, formData: FormData):
   if (error) return { error: friendly(error.message, "You cannot check this feedback.") };
   revalidatePath("/clinic/feedback", "layout");
   return {
-    saved: parsed.data.checked === "yes" ? "Checked. These comments are now in the evidence download." : "Check taken back. These comments are no longer in the evidence download.",
+    saved: parsed.data.checked === "yes" ? "Checked. These comments are now in the CQC evidence download." : "Removed. These comments are no longer in the CQC evidence download.",
     sentAt: Date.now(),
   };
 }
