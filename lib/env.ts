@@ -65,6 +65,14 @@ const transcriptionSchema = z.object({
   SITE_URL: z.url(),
 });
 
+const stripeSchema = z.object({
+  // The clinic's Stripe secret key (Developers > API keys). sk_test_ while testing, sk_live_ when live.
+  STRIPE_SECRET_KEY: z.string().regex(/^(sk|rk)_(test|live)_[A-Za-z0-9]+$/, "must be a Stripe secret or restricted key"),
+  // The signing secret of the webhook endpoint <SITE_URL>/api/stripe/webhook (Developers > Webhooks).
+  STRIPE_WEBHOOK_SECRET: z.string().regex(/^whsec_[A-Za-z0-9]+$/, "must be a Stripe webhook signing secret"),
+  SITE_URL: z.url(),
+});
+
 export type PublicEnv = z.infer<typeof publicSchema>;
 
 function assertServer(): void {
@@ -190,6 +198,30 @@ export function isTranscriptionConfigured(): boolean {
     TRANSCRIPTION_WEBHOOK_SECRET: process.env.TRANSCRIPTION_WEBHOOK_SECRET,
     SITE_URL: process.env.SITE_URL,
   }).success;
+}
+
+function stripeInput() {
+  return {
+    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+    STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+    SITE_URL: process.env.SITE_URL,
+  };
+}
+
+/** Server-only Stripe variables, for lib/stripe/. */
+export function getStripeEnv(): z.infer<typeof stripeSchema> {
+  assertServer();
+  const parsed = stripeSchema.safeParse(stripeInput());
+  if (!parsed.success) {
+    throw new Error(`Invalid Stripe environment: ${formatIssues(parsed.error)}`);
+  }
+  return parsed.data;
+}
+
+/** True when Stripe is connected, so the portal takes the repeat prescription fee online. */
+export function isStripeConfigured(): boolean {
+  assertServer();
+  return stripeSchema.safeParse(stripeInput()).success;
 }
 
 /**

@@ -23,6 +23,7 @@ import { getUpcomingAppointments } from "@/lib/data/appointments";
 import { getPatientAssignments, getReadings, listCourses } from "@/lib/data/education";
 import { getConsents } from "@/lib/data/consents";
 import { listDocuments } from "@/lib/data/documents";
+import { getCatalogue } from "@/lib/data/prescriptions";
 import { getClinicalSummary, getGuardians, getMyStaffId, getPatientRecord, getRecordings, getSafeguardingAlerts } from "@/lib/data/patient-record";
 import { listQuestions } from "@/lib/data/questions";
 import { todayInLondon } from "@/lib/calendar/time";
@@ -73,7 +74,7 @@ export default async function PatientRecordPage({
   const canManageDocuments = user.roles.some((role) => role === "doctor" || role === "nurse" || role === "pa");
   const today = todayInLondon();
   const myStaffId = canWrite ? await getMyStaffId(user.id) : null;
-  const [assignments, library, readings, appointments, summary, documents, questions, safeguarding, consents] = await Promise.all([
+  const [assignments, library, readings, appointments, summary, documents, questions, safeguarding, consents, medicineList] = await Promise.all([
     getPatientAssignments(record.id),
     listCourses(),
     getReadings(record.id, 30),
@@ -83,6 +84,7 @@ export default async function PatientRecordPage({
     listQuestions({ patientId: record.id, open: true }),
     isDoctor ? getSafeguardingAlerts(record.id) : Promise.resolve([]),
     getConsents(record.id),
+    isDoctor ? getCatalogue() : Promise.resolve([]),
   ]);
   const assignable = library.filter((course) => course.published && !assignments.some((a) => a.courseId === course.id));
   const recordings = await getRecordings(record.id);
@@ -127,6 +129,8 @@ export default async function PatientRecordPage({
         medications={summary.medications}
         canAddAllergy={canManageDocuments}
         canDiagnose={isDoctor}
+        canPrescribe={isDoctor}
+        listNames={medicineList.map((m) => m.name)}
         today={today}
       />
 

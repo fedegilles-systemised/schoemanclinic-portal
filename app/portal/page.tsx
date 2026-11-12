@@ -4,7 +4,7 @@ import { ArrowRight, CalendarDays, MapPin } from "lucide-react";
 
 import { ComingSoon } from "@/components/shell/coming-soon";
 import { AlertBar } from "@/components/ui/alert-bar";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Card,
   CardActions,
@@ -217,11 +217,9 @@ export default async function PortalHomePage() {
                 Request a repeat now so it arrives in time.
               </CardDescription>
               <CardActions>
-                <ComingSoon>
-                  <Button variant="secondary" size="sm" disabled>
-                    Request repeat
-                  </Button>
-                </ComingSoon>
+                <Link href="/portal/prescriptions/new" className={buttonVariants({ variant: "secondary", size: "sm" })}>
+                  Request repeat
+                </Link>
               </CardActions>
             </Card>
           ) : (

@@ -273,3 +273,98 @@ export function documentSharedEmail({
     text: `${hello}\n\n${line}\n\nOpen your documents: ${portalUrl}\n\n${textFooter(reason)}`,
   };
 }
+
+/** The clinic's inbox is told a repeat prescription has been paid for. No name and no medicine. */
+export function repeatPaidAlertEmail({ siteUrl, requestUrl }: Base & { requestUrl: string }): EmailContent {
+  const reason = "You are receiving this email because this address receives the clinic's repeat prescription alerts.";
+  const line = "A repeat prescription request has been paid for and is ready to be looked at. Sign in to Clinic Hub to see it.";
+  return {
+    subject: "A paid repeat prescription request is waiting",
+    html: renderEmail({
+      siteUrl,
+      preheader: line,
+      eyebrow: "Prescriptions",
+      title: { before: "A repeat request is ", accent: "paid" },
+      body: paragraph("Hello,") + paragraph(escapeHtml(line)) + button("Open the request", requestUrl) + paragraph(SIGN_OFF_HTML),
+      reason,
+    }),
+    text: `Hello,\n\n${line}\n\nOpen the request: ${requestUrl}\n\n${textFooter(reason)}`,
+  };
+}
+
+/** A patient is told their repeat request and payment have reached the clinic. */
+export function repeatReceivedEmail({
+  siteUrl,
+  firstName,
+  portalUrl,
+}: Base & { firstName?: string; portalUrl: string }): EmailContent {
+  const hello = firstName ? `Dear ${firstName},` : "Hello,";
+  const line = "Thank you. We have received your repeat prescription request and your payment. The clinic will review it, and you can follow its progress in your portal.";
+  const reason = "You are receiving this email because you requested a repeat prescription in your portal.";
+  return {
+    subject: "We have received your repeat prescription request",
+    html: renderEmail({
+      siteUrl,
+      preheader: line,
+      eyebrow: "Prescriptions",
+      title: { before: "Request ", accent: "received" },
+      body: paragraph(escapeHtml(hello)) + paragraph(escapeHtml(line)) + button("Follow your request", portalUrl) + paragraph(SIGN_OFF_HTML),
+      reason,
+    }),
+    text: `${hello}\n\n${line}\n\nFollow your request: ${portalUrl}\n\n${textFooter(reason)}`,
+  };
+}
+
+const REPEAT_UPDATE_LINES = {
+  approved: { subject: "Your repeat prescription request is approved", accent: "approved", line: "Your repeat prescription request has been approved. We will let you know when it has gone to the pharmacy." },
+  sent_to_pharmacy: { subject: "Your repeat prescription has gone to the pharmacy", accent: "sent", line: "Your repeat prescription has been sent to the pharmacy." },
+  declined: { subject: "An update on your repeat prescription request", accent: "update", line: "There is an update on your repeat prescription request. For your privacy, the details are in your portal." },
+} as const;
+
+/** A patient is told their repeat request has moved on. The clinic's note stays in the portal. */
+export function repeatUpdateEmail({
+  siteUrl,
+  firstName,
+  portalUrl,
+  status,
+}: Base & { firstName?: string; portalUrl: string; status: keyof typeof REPEAT_UPDATE_LINES }): EmailContent {
+  const hello = firstName ? `Dear ${firstName},` : "Hello,";
+  const { subject, accent, line } = REPEAT_UPDATE_LINES[status];
+  const reason = "You are receiving this email because you requested a repeat prescription in your portal.";
+  return {
+    subject,
+    html: renderEmail({
+      siteUrl,
+      preheader: line,
+      eyebrow: "Prescriptions",
+      title: { before: "Your request: ", accent },
+      body: paragraph(escapeHtml(hello)) + paragraph(escapeHtml(line)) + button("View your request", portalUrl) + paragraph(SIGN_OFF_HTML),
+      reason,
+    }),
+    text: `${hello}\n\n${line}\n\nView your request: ${portalUrl}\n\n${textFooter(reason)}`,
+  };
+}
+
+/** A patient is reminded, three weeks ahead, that a prescription will run out. Never which one. */
+export function runOutReminderEmail({
+  siteUrl,
+  firstName,
+  portalUrl,
+}: Base & { firstName?: string; portalUrl: string }): EmailContent {
+  const hello = firstName ? `Dear ${firstName},` : "Hello,";
+  const line =
+    "One of your prescriptions runs out within the next three weeks. Please request a repeat in your portal now, so there is time to prepare it and send it to you.";
+  const reason = "You are receiving this email because you have a prescription with The Schoeman Clinic.";
+  return {
+    subject: "Time to request your repeat prescription",
+    html: renderEmail({
+      siteUrl,
+      preheader: line,
+      eyebrow: "Prescriptions",
+      title: { before: "Time to ", accent: "reorder" },
+      body: paragraph(escapeHtml(hello)) + paragraph(escapeHtml(line)) + button("Request a repeat", portalUrl) + paragraph(SIGN_OFF_HTML),
+      reason,
+    }),
+    text: `${hello}\n\n${line}\n\nRequest a repeat: ${portalUrl}\n\n${textFooter(reason)}`,
+  };
+}

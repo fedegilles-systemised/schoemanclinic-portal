@@ -55,7 +55,7 @@ const NAV: Record<PortalKind, NavGroup[]> = {
         { label: "Upload results", icon: Upload },
         { label: "Education", icon: GraduationCap, href: "/portal/education" },
         { label: "Wearables", icon: Watch, href: "/portal/wearables" },
-        { label: "Prescriptions", icon: Pill },
+        { label: "Prescriptions", icon: Pill, href: "/portal/prescriptions" },
         { label: "Appointments", icon: CalendarDays, href: "/portal/appointments" },
         { label: "Ask the clinic", icon: MessageSquare, href: "/portal/questions" },
         { label: "Letters and documents", icon: FileText, href: "/portal/documents" },
@@ -77,6 +77,7 @@ const NAV: Record<PortalKind, NavGroup[]> = {
       items: [
         { label: "Patient list", icon: Users, href: "/clinic/patients" },
         { label: "Questions", icon: MessageSquare, href: "/clinic/questions" },
+        { label: "Prescriptions", icon: Pill, href: "/clinic/prescriptions", roles: ["doctor", "pa", "admin"] },
         { label: "Results review", icon: ClipboardList, href: "/clinic/results", countKey: "review" },
         { label: "Import queue", icon: Inbox, href: "/clinic/results#imports", countKey: "imports", roles: ["pa", "doctor", "nurse", "admin"] },
         { label: "Lab orders", icon: FlaskConical },
