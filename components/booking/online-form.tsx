@@ -11,7 +11,7 @@ import { bookOnline, type OnlineBookingState } from "@/lib/booking/online-action
 const initial: OnlineBookingState = {};
 
 /** The new patient's details for an online booking. */
-export function OnlineBookingForm({ typeId, staffId, startsAt, locationId }: { typeId: string; staffId: string; startsAt: string; locationId: string | null }) {
+export function OnlineBookingForm({ typeId, staffId, startsAt, locationId, turnstileSiteKey }: { typeId: string; staffId: string; startsAt: string; locationId: string | null; turnstileSiteKey: string | null }) {
   const [state, action, pending] = useActionState(bookOnline, initial);
   return (
     <form action={action} className="flex flex-col gap-5">
@@ -62,6 +62,7 @@ export function OnlineBookingForm({ typeId, staffId, startsAt, locationId }: { t
           , and agree to the clinic contacting me about this appointment.
         </span>
       </label>
+      {turnstileSiteKey ? <div className="cf-turnstile" data-sitekey={turnstileSiteKey} data-theme="light" /> : null}
       <FormMessage state={state} />
       <div>
         <Button type="submit" loading={pending}>

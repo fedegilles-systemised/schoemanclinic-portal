@@ -155,7 +155,7 @@ export function appointmentEmail({
   cancelled,
   moved = false,
   portalUrl,
-}: Base & { firstName?: string; when: string; clinicianName: string; cancelled: boolean; moved?: boolean; portalUrl: string }): EmailContent {
+}: Base & { firstName?: string; when: string; clinicianName: string; cancelled: boolean; moved?: boolean; portalUrl: string | null }): EmailContent {
   const hello = firstName ? `Dear ${firstName},` : "Hello,";
   const line = cancelled
     ? `Your appointment with ${clinicianName} on ${when} has been cancelled.`
@@ -181,11 +181,11 @@ export function appointmentEmail({
         paragraph(escapeHtml(hello)) +
         paragraph(escapeHtml(line)) +
         paragraph(escapeHtml(policy)) +
-        button("View your appointments", portalUrl) +
+        (portalUrl ? button("View your appointments", portalUrl) : "") +
         paragraph(SIGN_OFF_HTML),
       reason,
     }),
-    text: `${hello}\n\n${line}\n\n${policy}\n\nView your appointments: ${portalUrl}\n\n${textFooter(reason)}`,
+    text: `${hello}\n\n${line}\n\n${policy}\n\n${portalUrl ? `View your appointments: ${portalUrl}\n\n` : ""}${textFooter(reason)}`,
   };
 }
 
@@ -430,10 +430,9 @@ export function onlineBookingEmail({
   firstName,
   when,
   clinicianName,
-  appointmentType,
-}: Base & { firstName?: string; when: string; clinicianName: string; appointmentType: string }): EmailContent {
+}: Base & { firstName?: string; when: string; clinicianName: string }): EmailContent {
   const hello = firstName ? `Dear ${firstName},` : "Hello,";
-  const line = `Thank you for booking with The Schoeman Clinic. Your ${appointmentType.toLowerCase()} with ${clinicianName} is booked for ${when}.`;
+  const line = `Thank you for booking with The Schoeman Clinic. Your appointment with ${clinicianName} is booked for ${when}.`;
   const next =
     "Before your appointment the clinic will be in touch to confirm your details and invite you to your patient portal, where you will find forms to complete and, later, your results.";
   const policy = "If you need to change or cancel it, please contact the clinic at least 48 hours before.";

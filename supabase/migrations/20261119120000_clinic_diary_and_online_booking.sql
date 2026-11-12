@@ -47,7 +47,8 @@ returns table (
   clinic_ref text,
   can_open boolean,
   booked_online boolean,
-  new_patient boolean
+  new_patient boolean,
+  source public.appt_source
 )
 language plpgsql
 stable
@@ -68,7 +69,7 @@ begin
     select a.id, a.starts_at, a.duration_min, a.type, a.status, a.clinician_id, a.location_id,
       a.patient_id, p.first_name || ' ' || p.last_name, p.clinic_ref,
       private.in_scope(a.patient_id), a.booked_online,
-      p.booked_online_at is not null and p.user_id is null
+      p.booked_online_at is not null and p.user_id is null, a.source
     from public.appointments a
     join public.patient_profiles p on p.id = a.patient_id
     where a.starts_at < _to
@@ -92,9 +93,12 @@ declare
   kind public.appointment_types;
   local_start timestamp := _starts_at at time zone 'Europe/London';
   local_end timestamp;
+  chosen_location uuid;
 begin
   select * into a from public.appointments x where x.id = _appointment for update;
-  if not found or not private.in_scope(a.patient_id) or not (
+  if not found or not private.in_scope(a.patient_id)
+    or exists (select 1 from public.patient_profiles p where p.id = a.patient_id and p.archived_at is not null)
+    or not (
     private.has_role('admin') or private.has_role('pa') or private.has_role('doctor')
     or private.has_role('nurse') or private.has_role('health_coach')
   ) then
@@ -106,7 +110,10 @@ begin
   if a.source <> 'clinic_hub' then
     raise exception 'This appointment was booked in another system. Move it there.' using errcode = '22023';
   end if;
-  if not exists (select 1 from public.staff_profiles s where s.id = _staff and s.active and s.archived_at is null and s.clinical_role in ('doctor', 'nurse', 'health_coach')) then
+  if not exists (
+    select 1 from public.staff_profiles s join public.profiles u on u.id = s.user_id
+    where s.id = _staff and s.active and s.archived_at is null and u.status = 'active' and s.clinical_role in ('doctor', 'nurse', 'health_coach')
+  ) then
     raise exception 'That clinician cannot be booked.' using errcode = '22023';
   end if;
   if _starts_at <= now() or _starts_at > now() + interval '366 days' then
@@ -119,14 +126,21 @@ begin
     end if;
   end if;
   local_end := local_start + make_interval(mins => a.duration_min);
-  if local_end::date <> local_start::date or not exists (
-    select 1 from public.clinician_availability h
-    where h.staff_id = _staff and h.active
-      and h.weekday = extract(isodow from local_start)
-      and h.start_time <= local_start::time and h.end_time >= local_end::time
-      and (_location is null or h.location_id is null or h.location_id = _location)
-  ) then
+  -- The place comes from the new clinician's hours at that time, unless one is named.
+  select coalesce(_location, h.location_id) into chosen_location
+  from public.clinician_availability h
+  where h.staff_id = _staff and h.active
+    and h.weekday = extract(isodow from local_start)
+    and h.start_time <= local_start::time and h.end_time >= local_end::time
+    and (_location is null or h.location_id is null or h.location_id = _location)
+  order by h.location_id nulls last
+  limit 1;
+  if local_end::date <> local_start::date or not found then
     raise exception 'That time is outside the clinician''s hours.' using errcode = '22023';
+  end if;
+  if chosen_location is not null and a.appointment_type_id is not null
+    and not exists (select 1 from public.locations l where l.id = chosen_location and l.kind = kind.location_kind) then
+    raise exception 'That location does not suit this appointment.' using errcode = '22023';
   end if;
   perform 1 from public.staff_profiles where id = _staff for no key update;
   if exists (
@@ -137,8 +151,9 @@ begin
   ) then
     raise exception 'That time is already taken. Please choose another.' using errcode = '23505';
   end if;
+  -- A confirmed booking stays confirmed.
   update public.appointments
-  set clinician_id = _staff, starts_at = _starts_at, location_id = _location, status = 'booked'
+  set clinician_id = _staff, starts_at = _starts_at, location_id = chosen_location
   where id = _appointment;
 end;
 $$;
@@ -217,7 +232,7 @@ begin
   if _date_of_birth is null or _date_of_birth > current_date or _date_of_birth < date '1900-01-01' then
     raise exception 'Enter your date of birth.' using errcode = '22023';
   end if;
-  if _date_of_birth > (current_date - interval '18 years')::date then
+  if _date_of_birth > (private.london_today() - interval '18 years')::date then
     raise exception 'Online booking is for adults. Please call the clinic to book for a child.' using errcode = '22023';
   end if;
   if address !~ '^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$' or char_length(address) > 254 then
@@ -226,18 +241,26 @@ begin
   if _phone is null or btrim(_phone) !~ '^\+?[0-9 ()-]{7,20}$' then
     raise exception 'Enter a phone number.' using errcode = '22023';
   end if;
-  -- One person may hold two open online bookings at most.
+  -- Limits against misuse, with one message that says nothing about who has booked: two open online
+  -- bookings per email and per phone number, and at most 20 online bookings in any hour for the clinic.
   if (
     select count(*) from public.appointments a join public.patient_profiles p on p.id = a.patient_id
-    where a.booked_online and lower(p.contact_email) = address and a.status in ('booked', 'confirmed') and a.starts_at > now()
-  ) >= 2 then
-    raise exception 'You already have bookings with us. Please contact the clinic to book more.' using errcode = '22023';
+    where a.booked_online and a.status in ('booked', 'confirmed') and a.starts_at > now()
+      and (lower(p.contact_email) = address or regexp_replace(p.contact_phone, '[^0-9]', '', 'g') = regexp_replace(_phone, '[^0-9]', '', 'g'))
+  ) >= 2 or (
+    select count(*) from public.appointments a where a.booked_online and a.created_at > now() - interval '1 hour'
+  ) >= 20 then
+    raise exception 'We cannot take this booking online. Please contact the clinic.' using errcode = '22023';
   end if;
-  if not exists (select 1 from public.staff_profiles s where s.id = _staff and s.active and s.archived_at is null and s.clinical_role in ('doctor', 'nurse', 'health_coach')) then
+  if not exists (
+    select 1 from public.staff_profiles s join public.profiles u on u.id = s.user_id
+    where s.id = _staff and s.active and s.archived_at is null and u.status = 'active' and s.clinical_role in ('doctor', 'nurse', 'health_coach')
+  ) then
     raise exception 'That clinician cannot be booked.' using errcode = '22023';
   end if;
-  if _starts_at <= now() + interval '24 hours' or _starts_at > now() + interval '120 days' then
-    raise exception 'Choose a time from tomorrow up to four months ahead.' using errcode = '22023';
+  -- The booking page offers three weeks; the database allows a few days more and nothing beyond.
+  if _starts_at <= now() + interval '24 hours' or _starts_at > now() + interval '25 days' then
+    raise exception 'Choose a time at least a day ahead, within the next three weeks.' using errcode = '22023';
   end if;
   if _location is not null and not exists (select 1 from public.locations l where l.id = _location and l.kind = kind.location_kind) then
     raise exception 'That location does not suit this appointment.' using errcode = '22023';
@@ -270,12 +293,17 @@ begin
   values (new_patient, _staff, _location, _starts_at, kind.duration_min, kind.name, 'booked', 'clinic_hub', _type, true)
   returning id into appt;
 
+  -- The clinician booked joins the patient's care team, so they can open the record and prepare.
+  insert into public.care_team (patient_id, staff_id, relationship, since)
+  select new_patient, s.id, (case s.clinical_role when 'doctor' then 'doctor' when 'nurse' then 'nurse' else 'health_coach' end)::public.care_relationship, private.london_today()
+  from public.staff_profiles s where s.id = _staff;
+
   -- Admins and PAs are told, with a link and no name.
   insert into public.notifications (user_id, topic, title, body, link)
   select distinct r.user_id, 'appointments'::public.notification_topic, 'New online booking',
     'A new patient has booked online. Check their details and invite them to the portal.', '/clinic/diary/' || appt::text
   from public.user_roles r join public.profiles u on u.id = r.user_id
-  where r.role in ('admin', 'pa') and u.status <> 'suspended';
+  where r.role in ('admin', 'pa') and u.status = 'active';
 
   perform set_config('app.system_actor', '', true);
   appointment_id := appt;
@@ -288,7 +316,7 @@ $$;
 
 create function public.clinic_diary(_from timestamptz, _to timestamptz)
 returns table (id uuid, starts_at timestamptz, duration_min integer, type text, status public.appt_status, clinician_id uuid, location_id uuid,
-  patient_id uuid, patient_name text, clinic_ref text, can_open boolean, booked_online boolean, new_patient boolean)
+  patient_id uuid, patient_name text, clinic_ref text, can_open boolean, booked_online boolean, new_patient boolean, source public.appt_source)
 language sql stable security invoker set search_path = ''
 as $$ select * from private.clinic_diary(_from, _to); $$;
 create function public.move_appointment(_appointment uuid, _staff uuid, _starts_at timestamptz, _location uuid default null)

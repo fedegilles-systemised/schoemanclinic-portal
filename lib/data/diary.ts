@@ -17,6 +17,7 @@ export type DiaryEntry = {
   canOpen: boolean;
   bookedOnline: boolean;
   newPatient: boolean;
+  source: string;
 };
 
 export type DiaryClinician = { staffId: string; profileId: string; name: string; role: string };
@@ -42,6 +43,7 @@ export async function getDiary(fromIso: string, toIso: string): Promise<DiaryEnt
     canOpen: r.can_open,
     bookedOnline: r.booked_online,
     newPatient: r.new_patient,
+    source: r.source,
   }));
 }
 

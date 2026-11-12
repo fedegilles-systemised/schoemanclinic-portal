@@ -25,7 +25,7 @@ export async function afterChange(appointmentId: string, change: BookingChange |
     const { data: a } = await admin
       .from("appointments")
       .select(
-        "id, patient_id, starts_at, duration_min, type, external_id, source, booked_online, clinician:staff_profiles(user_id, profile:profiles(full_name)), patient:patient_profiles(clinic_ref, first_name, user_id)",
+        "id, patient_id, starts_at, duration_min, type, external_id, source, booked_online, clinician:staff_profiles(user_id, profile:profiles(full_name)), patient:patient_profiles(clinic_ref, first_name, user_id, booked_online_at)",
       )
       .eq("id", appointmentId)
       .maybeSingle();
@@ -73,12 +73,15 @@ export async function afterChange(appointmentId: string, change: BookingChange |
     const first = a.patient?.first_name;
     const hello = first ? `Hello ${first}` : "Hello";
 
-    // A new patient who booked online has no portal yet: their confirmation says what happens next.
-    if (kind === "booked" && a.booked_online && !a.patient?.user_id) {
+    // A record made by an online booking, not yet set up with a portal account, is messaged through
+    // Resend only and greeted without the typed name (S-160, S-161).
+    const unchecked = Boolean(a.patient?.booked_online_at) && !a.patient?.user_id;
+    if (kind === "booked" && a.booked_online && unchecked) {
       return await notifyPatient(a.patient_id, {
         topic: "appointments",
-        email: onlineBookingEmail({ siteUrl, firstName: first, when, clinicianName, appointmentType: a.type }),
-        whatsapp: `${hello}, your ${a.type.toLowerCase()} with ${clinicianName} is booked for ${when}. The clinic will be in touch before your appointment.`,
+        resendOnly: true,
+        email: onlineBookingEmail({ siteUrl, when, clinicianName }),
+        whatsapp: `Hello, your appointment with ${clinicianName} is booked for ${when}. The clinic will be in touch before your appointment.`,
       });
     }
 
@@ -88,10 +91,13 @@ export async function afterChange(appointmentId: string, change: BookingChange |
       cancelled: `Your appointment on ${when} has been cancelled.`,
       moved: `Your appointment has moved to ${when}.`,
     };
+    // Someone with no portal account yet gets no portal notice or link.
+    const hasPortal = Boolean(a.patient?.user_id);
     return await notifyPatient(a.patient_id, {
       topic: "appointments",
-      notice: { title: titles[kind], body: bodies[kind], link: "/portal/appointments" },
-      email: appointmentEmail({ siteUrl, firstName: first, when, clinicianName, cancelled: kind === "cancelled", moved: kind === "moved", portalUrl }),
+      resendOnly: unchecked,
+      notice: hasPortal ? { title: titles[kind], body: bodies[kind], link: "/portal/appointments" } : undefined,
+      email: appointmentEmail({ siteUrl, firstName: first, when, clinicianName, cancelled: kind === "cancelled", moved: kind === "moved", portalUrl: hasPortal ? portalUrl : null }),
       whatsapp:
         kind === "cancelled"
           ? `${hello}, your appointment on ${when} has been cancelled. Please contact the clinic if you would like a new time.`

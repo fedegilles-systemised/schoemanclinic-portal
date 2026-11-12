@@ -8,7 +8,23 @@ import { cn } from "@/lib/utils";
 const SWATCHES = ["border-l-secondary", "border-l-status-info", "border-l-status-success", "border-l-status-warning", "border-l-primary", "border-l-content-muted"] as const;
 export function swatchFor(staffId: string | null, clinicians: DiaryClinician[]): string {
   const index = clinicians.findIndex((c) => c.staffId === staffId);
-  return SWATCHES[(index < 0 ? SWATCHES.length - 1 : index) % SWATCHES.length]!;
+  return index < 0 ? "border-l-surface-border" : SWATCHES[index % SWATCHES.length]!;
+}
+
+/** What a booking says to a screen reader and in its tooltip: everything the block may cut off. */
+function describe(entry: DiaryEntry, clinicians: DiaryClinician[], withDay = false): string {
+  const clinician = clinicians.find((c) => c.staffId === entry.clinicianId)?.name ?? "no clinician";
+  const { day, time } = londonParts(entry.startsAt);
+  return [
+    `${withDay ? `${dayHeading(day)}, ` : ""}${time}`,
+    entry.patientName,
+    entry.type,
+    `with ${clinician}`,
+    entry.status === "no_show" ? "did not attend" : null,
+    entry.newPatient ? "new patient, booked online" : null,
+  ]
+    .filter(Boolean)
+    .join(", ");
 }
 
 /** A row of the legend: each clinician's colour and name. */
@@ -96,9 +112,13 @@ function Booking({
   const height = Math.max((entry.durationMin / 60) * HOUR_REM, 1.5);
   const clinician = clinicians.find((c) => c.staffId === entry.clinicianId);
   const time = londonParts(entry.startsAt).time;
+  const short = height < 2.75;
+  const label = describe(entry, clinicians, showClinician);
   return (
     <Link
       href={entryHref(entry)}
+      aria-label={label}
+      title={label}
       className={cn(
         "absolute overflow-hidden border border-l-4 border-surface-border bg-surface-raised px-2 py-1 text-content no-underline hover:border-secondary-border",
         swatchFor(entry.clinicianId, clinicians),
@@ -108,8 +128,10 @@ function Booking({
     >
       <span className="type-small block truncate font-medium">
         <span className="tabular-nums">{time}</span> {entry.patientName}
+        {entry.status === "no_show" ? " · did not attend" : ""}
+        {short ? <span className="font-normal text-content-muted"> · {entry.type}</span> : null}
       </span>
-      <span className="type-small block truncate text-content-muted">
+      <span className={cn("type-small block truncate text-content-muted", short && "sr-only")}>
         {entry.type}
         {showClinician && clinician ? ` · ${clinician.name}` : ""}
         {entry.newPatient ? " · new, booked online" : ""}
@@ -220,7 +242,8 @@ export function MonthView({ month, entries, clinicians, today, query }: { month:
     day = addDays(day, 7);
   }
   return (
-    <table className="w-full table-fixed border-collapse border border-surface-border bg-surface">
+    <div className="overflow-x-auto">
+    <table className="w-full min-w-3xl table-fixed border-collapse border border-surface-border bg-surface">
       <thead>
         <tr>
           {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
@@ -240,7 +263,8 @@ export function MonthView({ month, entries, clinicians, today, query }: { month:
                 <td key={day} className={cn("h-28 border border-surface-border p-1.5 align-top", !inMonth && "bg-surface-sunken")}>
                   <Link
                     href={`/clinic/diary?view=day&date=${day}${query}`}
-                    className={cn("type-small mb-1 inline-block px-1 tabular-nums no-underline", day === today ? "bg-primary text-primary-content" : "text-content-muted")}
+                    aria-current={day === today ? "date" : undefined}
+                    className={cn("type-small mb-1 inline-block px-1 tabular-nums no-underline", day === today ? "bg-primary font-medium text-primary-content" : "text-content-muted")}
                     aria-label={`${dayHeading(day)}: ${list.length} ${list.length === 1 ? "booking" : "bookings"}`}
                   >
                     {Number(day.slice(8))}
@@ -248,7 +272,12 @@ export function MonthView({ month, entries, clinicians, today, query }: { month:
                   <ul className="flex flex-col gap-0.5">
                     {list.slice(0, 3).map((e) => (
                       <li key={e.id}>
-                        <Link href={entryHref(e)} className={cn("type-small block truncate border-l-4 pl-1 text-content no-underline hover:underline", swatchFor(e.clinicianId, clinicians))}>
+                        <Link
+                          href={entryHref(e)}
+                          aria-label={describe(e, clinicians, true)}
+                          title={describe(e, clinicians, true)}
+                          className={cn("type-small block truncate border-l-4 pl-1 text-content no-underline hover:underline", swatchFor(e.clinicianId, clinicians))}
+                        >
                           <span className="tabular-nums">{londonParts(e.startsAt).time}</span> {e.patientName}
                         </Link>
                       </li>
@@ -266,5 +295,6 @@ export function MonthView({ month, entries, clinicians, today, query }: { month:
         ))}
       </tbody>
     </table>
+    </div>
   );
 }

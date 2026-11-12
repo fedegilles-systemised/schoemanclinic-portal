@@ -89,5 +89,29 @@ reset role;
 select is((select clinician_id from public.appointments where id = (select appointment_id from booked)), 'b0000000-0000-4000-8000-000000000002'::uuid, 'the clinician changed');
 select is((select starts_at from public.appointments where id = (select appointment_id from booked)), pg_temp.slot('15:00'), 'and the time');
 
+-- The booked clinician joins the new patient's care team; a confirmed booking stays confirmed when moved.
+select ok(exists (select 1 from public.care_team where patient_id = (select patient_id from booked) and staff_id = 'b0000000-0000-4000-8000-000000000001' and relationship = 'doctor'), 'the doctor booked joins the care team');
+select set_config('app.system_actor', 'diary-test', true);
+update public.appointments set status = 'confirmed' where id = (select appointment_id from booked);
+select set_config('app.system_actor', '', true);
+select pg_temp.become('a0000000-0000-4000-8000-000000000003');
+select lives_ok($$ select public.move_appointment((select appointment_id from booked), 'b0000000-0000-4000-8000-000000000002', pg_temp.slot('16:00')) $$, 'a confirmed booking is moved');
+reset role;
+select is((select status::text from public.appointments where id = (select appointment_id from booked)), 'confirmed', 'and stays confirmed');
+
+-- The same phone number counts towards the limit, whatever the email; the message names nobody.
+select pg_temp.become_server();
+select throws_ok($$ select * from public.book_online('a7000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000002', pg_temp.slot('09:00'), null, 'Someone', 'Else', '1970-02-02', 'other@example.test', '07700 900123') $$, '22023', 'We cannot take this booking online. Please contact the clinic.', 'the same phone number cannot book a third time');
+select throws_ok($$ select * from public.book_online('a7000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000002', now() + interval '40 days', null, 'Cara', 'Moss', '1970-02-02', 'cara@example.test', '07700 900999') $$, '22023', null, 'not beyond the three weeks offered');
+reset role;
+
+-- A cancelled booking leaves the diary.
+select set_config('app.system_actor', 'diary-test', true);
+update public.appointments set status = 'cancelled' where id = (select appointment_id from booked);
+select set_config('app.system_actor', '', true);
+select pg_temp.become('a0000000-0000-4000-8000-000000000003');
+select is((select count(*)::int from public.clinic_diary(now(), now() + interval '7 days') where id = (select appointment_id from booked)), 0, 'a cancelled booking is not in the diary');
+reset role;
+
 select * from finish();
 rollback;

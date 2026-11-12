@@ -1388,7 +1388,7 @@ isOneToOne: false
                            },
 "clinic_diary":
 { Args: { "_from": string,"_to": string }; Returns: {
-              "booked_online": boolean,"can_open": boolean,"clinic_ref": string,"clinician_id": string,"duration_min": number,"id": string,"location_id": string,"new_patient": boolean,"patient_id": string,"patient_name": string,"starts_at": string,"status": Database["public"]['Enums']["appt_status"],"type": string
+              "booked_online": boolean,"can_open": boolean,"clinic_ref": string,"clinician_id": string,"duration_min": number,"id": string,"location_id": string,"new_patient": boolean,"patient_id": string,"patient_name": string,"source": Database["public"]['Enums']["appt_source"],"starts_at": string,"status": Database["public"]['Enums']["appt_status"],"type": string
             }[]
                            },
 "move_appointment":

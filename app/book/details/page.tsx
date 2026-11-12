@@ -1,4 +1,6 @@
+import { headers } from "next/headers";
 import Link from "next/link";
+import Script from "next/script";
 import { notFound } from "next/navigation";
 import { ArrowLeft, CalendarDays, Clock, UserRound } from "lucide-react";
 import { z } from "zod";
@@ -21,6 +23,8 @@ export default async function BookDetailsPage({ searchParams }: { searchParams: 
   const clinician = clinicians.find((c) => c.staffId === query.staff);
   if (!type || !clinician || !starts.success) notFound();
   const { day, time } = londonParts(starts.data);
+  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || null;
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
 
   return (
     <>
@@ -46,7 +50,8 @@ export default async function BookDetailsPage({ searchParams }: { searchParams: 
           </p>
         </CardContent>
       </Card>
-      <OnlineBookingForm typeId={type.id} staffId={clinician.staffId} startsAt={starts.data} locationId={location.success ? location.data : null} />
+      {siteKey ? <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" strategy="afterInteractive" nonce={nonce} async defer /> : null}
+      <OnlineBookingForm typeId={type.id} staffId={clinician.staffId} startsAt={starts.data} locationId={location.success ? location.data : null} turnstileSiteKey={siteKey} />
     </>
   );
 }

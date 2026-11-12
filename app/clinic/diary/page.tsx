@@ -66,7 +66,7 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
   return (
     <>
       <PageHeader eyebrow="Diary" title={`${heading} `} description={`${entries.length} ${entries.length === 1 ? "booking" : "bookings"}${staff !== "all" ? ` for ${shown[0]?.name ?? "one clinician"}` : ""}.`}>
-        <Button variant="secondary" size="sm" asChild>
+        <Button size="sm" asChild>
           <Link href="/clinic/diary/book">
             <Plus aria-hidden />
             New booking

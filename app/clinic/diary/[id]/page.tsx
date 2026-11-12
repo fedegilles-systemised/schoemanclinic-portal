@@ -26,16 +26,27 @@ export default async function DiaryEntryPage({ params, searchParams }: { params:
   if (user.isSuspended || !user.isStaff) redirect("/clinic");
 
   // The diary is read a day at a time; without a date (a link from a notice), the booking's own row says which day.
-  let day = isDay(date) ? date : null;
-  if (!day) {
-    const supabase = await createClient();
-    const row = await supabase.from("appointments").select("starts_at").eq("id", id).maybeSingle();
-    day = row.data ? londonParts(row.data.starts_at).day : null;
-  }
+  const supabase = await createClient();
+  // Read through row-level security: present for staff who can open the record, so a booking that
+  // has just been moved or cancelled is still found.
+  const own = await supabase.from("appointments").select("starts_at, status").eq("id", id).maybeSingle();
+  let day = own.data ? londonParts(own.data.starts_at).day : isDay(date) ? date : null;
   if (!day) notFound();
+  if (own.data?.status === "cancelled") {
+    return (
+      <>
+        <Link href={`/clinic/diary?view=day&date=${day}`} className="type-small mb-4 inline-flex items-center gap-1.5 text-content-muted no-underline">
+          <ArrowLeft className="size-4" aria-hidden />
+          Diary
+        </Link>
+        <PageHeader eyebrow="Booking" title="This booking is " accent="cancelled" description="It no longer shows in the diary. The clinician's calendar is updated where it is connected." />
+      </>
+    );
+  }
   const [entries, { clinicians, locations }] = await Promise.all([getDiary(londonInstant(day, "00:00"), londonInstant(addDays(day, 1), "00:00")), getDiaryPeople()]);
   const entry = entries.find((e) => e.id === id);
   if (!entry) notFound();
+  day = londonParts(entry.startsAt).day;
   const clinician = clinicians.find((c) => c.staffId === entry.clinicianId);
   const place = locations.find((l) => l.id === entry.locationId);
   const time = londonParts(entry.startsAt).time ?? "";
@@ -55,13 +66,13 @@ export default async function DiaryEntryPage({ params, searchParams }: { params:
         <div className="mb-6">
           <Alert variant="info">
             <AlertDescription>
-              A new patient booked this online. Check their details on their record, add them to a care team and invite them to the portal before the appointment.
+              A new patient booked this online. Before the appointment, a PA or admin checks their details on their record and invites them to the portal.
             </AlertDescription>
           </Alert>
         </div>
       ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+      <div className="grid gap-6 shell:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <Card>
           <CardContent className="flex flex-col gap-3">
             <p className="type-body flex items-center gap-2">
@@ -74,10 +85,12 @@ export default async function DiaryEntryPage({ params, searchParams }: { params:
             </p>
             <p className="type-body flex items-center gap-2">
               <UserRound className="size-4 text-content-muted" aria-hidden />
+              <span className="sr-only">Clinician: </span>
               {clinician?.name ?? "No clinician"}
             </p>
             <p className="type-body flex items-center gap-2">
               <MapPin className="size-4 text-content-muted" aria-hidden />
+              <span className="sr-only">Location: </span>
               {place?.name ?? "Not set"}
             </p>
             {entry.canOpen ? (
@@ -90,7 +103,7 @@ export default async function DiaryEntryPage({ params, searchParams }: { params:
           </CardContent>
         </Card>
 
-        {entry.canOpen && future && (entry.status === "booked" || entry.status === "confirmed") ? (
+        {entry.canOpen && entry.source === "clinic_hub" && future && (entry.status === "booked" || entry.status === "confirmed") ? (
           <Card>
             <CardHeader>
               <CardTitle>Change this booking</CardTitle>

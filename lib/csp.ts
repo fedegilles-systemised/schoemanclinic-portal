@@ -30,7 +30,8 @@ export function contentSecurityPolicy(nonce: string): string {
     "font-src 'self'",
     `connect-src 'self' ${supabase.http} ${supabase.ws}${isDev ? " ws://localhost:* ws://127.0.0.1:*" : ""}`.trim(),
     // Lesson videos play in the YouTube, Vimeo or Loom player, and nothing else may be framed.
-    `frame-src ${VIDEO_FRAME_SOURCES.join(" ")}`,
+    // and Cloudflare Turnstile, the check against bots on the public booking page.
+    `frame-src ${VIDEO_FRAME_SOURCES.join(" ")} https://challenges.cloudflare.com`,
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

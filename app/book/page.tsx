@@ -44,7 +44,7 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
         <ul className="grid gap-3 sm:grid-cols-2">
           {types.map((t) => (
             <li key={t.id}>
-              <Link href={`/book?type=${t.id}${staff ? `&staff=${staff}` : ""}`} aria-current={t.id === type?.id ? "true" : undefined} className="block h-full text-content no-underline">
+              <Link href={`/book?type=${t.id}${staff ? `&staff=${staff}` : ""}#step-staff`} aria-current={t.id === type?.id ? "true" : undefined} className="block h-full text-content no-underline">
                 <Card className={cn("h-full gap-2 hover:border-secondary-border", t.id === type?.id && "border-secondary-border bg-surface-selected")}>
                   <span className="type-body font-medium">{t.name}</span>
                   <span className="type-small flex items-center gap-3 text-content-muted">
@@ -66,15 +66,15 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
       </section>
 
       {type ? (
-        <section aria-labelledby="step-staff" className="mb-10 flex flex-col gap-4">
-          <h2 id="step-staff" className="type-card-title">
+        <section id="step-staff" aria-labelledby="step-staff-title" className="mb-10 flex scroll-mt-6 flex-col gap-4">
+          <h2 id="step-staff-title" className="type-card-title">
             2. Who you would like to see
           </h2>
           <ul className="flex flex-wrap gap-2">
             {[{ staffId: "any", name: "First available", jobTitle: "Any of our clinicians" }, ...clinicians].map((c) => (
               <li key={c.staffId}>
                 <Link
-                  href={`/book?type=${type.id}&staff=${c.staffId}`}
+                  href={`/book?type=${type.id}&staff=${c.staffId}#step-time`}
                   aria-current={c.staffId === staff ? "true" : undefined}
                   className={cn("flex flex-col border px-4 py-2.5 text-content no-underline hover:border-secondary-border", c.staffId === staff ? "border-secondary-border bg-surface-selected" : "border-surface-border bg-surface-raised")}
                 >
@@ -88,8 +88,8 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
       ) : null}
 
       {type && days ? (
-        <section aria-labelledby="step-time" className="flex flex-col gap-4">
-          <h2 id="step-time" className="type-card-title">
+        <section id="step-time" aria-labelledby="step-time-title" className="flex scroll-mt-6 flex-col gap-4">
+          <h2 id="step-time-title" className="type-card-title">
             3. Time
           </h2>
           {days.every((d) => d.slots.length === 0) ? (
@@ -108,7 +108,7 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
                         return (
                           <li key={slot.startsAt}>
                             <Button variant="outline" size="sm" asChild>
-                              <Link href={href} aria-label={`${dayHeading(d.day)} at ${time}${staff === "any" ? ` with ${nameOf.get(slot.staffId)}` : ""}`}>
+                              <Link href={href} aria-label={`${time}, ${dayHeading(d.day)}${staff === "any" ? `, with ${nameOf.get(slot.staffId)}` : ""}`}>
                                 <span className="tabular-nums">{time}</span>
                               </Link>
                             </Button>
