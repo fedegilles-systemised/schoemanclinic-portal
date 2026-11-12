@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { allowAuthAttempt } from "@/lib/auth/throttle";
-import { afterChange } from "@/lib/booking/follow-up";
+import { afterChange, patientWasTold, tellTeamPatientNotTold } from "@/lib/booking/follow-up";
 import { getOnlineClinicians, getOnlineTypes, stillFreeInGoogle } from "@/lib/booking/online";
 import { getTurnstileSecret } from "@/lib/env";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -111,6 +111,7 @@ export async function bookOnline(_state: OnlineBookingState, formData: FormData)
     if (error && known.includes(error.message)) return { error: error.message };
     return { error: "We could not book that. Please try again, or call the clinic." };
   }
-  await afterChange(data[0].appointment_id, "booked");
+  const delivery = await afterChange(data[0].appointment_id, "booked");
+  if (!patientWasTold(delivery)) await tellTeamPatientNotTold(data[0].appointment_id, delivery);
   redirect("/book/done");
 }
