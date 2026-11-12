@@ -16,6 +16,11 @@ export type PatientMessage = {
   email: EmailContent;
   /** Plain text for WhatsApp. Like every message, never a value, a diagnosis or a medicine. */
   whatsapp: string;
+  /**
+   * Send through Resend only, never GoHighLevel: for a record made by an anonymous online booking
+   * that the team has not checked, so typed details cannot change a GoHighLevel contact.
+   */
+  resendOnly?: boolean;
 };
 
 export type Delivery = {
@@ -62,7 +67,7 @@ export async function notifyPatient(patientId: string, message: PatientMessage):
       await admin.from("notifications").insert({ user_id: p.user_id, topic: message.topic, ...message.notice });
     }
 
-    let ghl = isGhlConfigured();
+    let ghl = isGhlConfigured() && !message.resendOnly;
     // The GoHighLevel contact is looked up afresh on every send with today's details, so a changed
     // email or phone is used at once. Only the details the chosen channels need are sent. If that
     // contact already belongs to another patient (a family sharing an email or phone), GoHighLevel is

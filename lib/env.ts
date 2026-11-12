@@ -245,6 +245,13 @@ export function getGoogleReviewUrl(): string | null {
   return parsed.success ? parsed.data : null;
 }
 
+/** Cloudflare Turnstile's secret for the public booking page, if set. */
+export function getTurnstileSecret(): string | null {
+  assertServer();
+  const value = process.env.TURNSTILE_SECRET_KEY;
+  return value && value.length >= 20 && value.length <= 200 ? value : null;
+}
+
 /** Server-only session variables, for lib/supabase/session-cookies.ts. */
 export function getSessionEnv(): z.infer<typeof sessionSchema> {
   assertServer();

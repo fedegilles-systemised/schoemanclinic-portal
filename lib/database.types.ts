@@ -7,14 +7,14 @@ export type Database = {
           Tables: {
             "appointments": {
                   Row: {
-                    "appointment_type_id": string | null,"booked_by": string | null,"clinician_id": string | null,"created_at": string,"duration_min": number,"external_id": string | null,"id": string,"location_id": string | null,"patient_id": string,"source": Database["public"]['Enums']["appt_source"],"starts_at": string,"status": Database["public"]['Enums']["appt_status"],"synced_at": string | null,"type": string
+                    "appointment_type_id": string | null,"booked_online": boolean,"booked_by": string | null,"clinician_id": string | null,"created_at": string,"duration_min": number,"external_id": string | null,"id": string,"location_id": string | null,"patient_id": string,"source": Database["public"]['Enums']["appt_source"],"starts_at": string,"status": Database["public"]['Enums']["appt_status"],"synced_at": string | null,"type": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "appointment_type_id"?: string | null,"booked_by"?: string | null,"clinician_id"?: string | null,"created_at"?: string,"duration_min": number,"external_id"?: string | null,"id"?: string,"location_id"?: string | null,"patient_id": string,"source": Database["public"]['Enums']["appt_source"],"starts_at": string,"status"?: Database["public"]['Enums']["appt_status"],"synced_at"?: string | null,"type": string
+                    "appointment_type_id"?: string | null,"booked_online"?: boolean,"booked_by"?: string | null,"clinician_id"?: string | null,"created_at"?: string,"duration_min": number,"external_id"?: string | null,"id"?: string,"location_id"?: string | null,"patient_id": string,"source": Database["public"]['Enums']["appt_source"],"starts_at": string,"status"?: Database["public"]['Enums']["appt_status"],"synced_at"?: string | null,"type": string
                   }
                   Update: {
-                    "appointment_type_id"?: string | null,"booked_by"?: string | null,"clinician_id"?: string | null,"created_at"?: string,"duration_min"?: number,"external_id"?: string | null,"id"?: string,"location_id"?: string | null,"patient_id"?: string,"source"?: Database["public"]['Enums']["appt_source"],"starts_at"?: string,"status"?: Database["public"]['Enums']["appt_status"],"synced_at"?: string | null,"type"?: string
+                    "appointment_type_id"?: string | null,"booked_online"?: boolean,"booked_by"?: string | null,"clinician_id"?: string | null,"created_at"?: string,"duration_min"?: number,"external_id"?: string | null,"id"?: string,"location_id"?: string | null,"patient_id"?: string,"source"?: Database["public"]['Enums']["appt_source"],"starts_at"?: string,"status"?: Database["public"]['Enums']["appt_status"],"synced_at"?: string | null,"type"?: string
                   }
                   Relationships: [
                     {
@@ -39,14 +39,14 @@ isOneToOne: false
                   ]
                 },"appointment_types": {
                   Row: {
-                    "active": boolean,"bookable_by_patients": boolean,"created_at": string,"description": string | null,"duration_min": number,"id": string,"location_kind": Database["public"]['Enums']["location_kind"],"name": string,"updated_at": string
+                    "active": boolean,"bookable_online": boolean,"bookable_by_patients": boolean,"created_at": string,"description": string | null,"duration_min": number,"id": string,"location_kind": Database["public"]['Enums']["location_kind"],"name": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "active"?: boolean,"bookable_by_patients"?: boolean,"created_at"?: string,"description"?: string | null,"duration_min": number,"id"?: string,"location_kind": Database["public"]['Enums']["location_kind"],"name": string,"updated_at"?: string
+                    "active"?: boolean,"bookable_online"?: boolean,"bookable_by_patients"?: boolean,"created_at"?: string,"description"?: string | null,"duration_min": number,"id"?: string,"location_kind": Database["public"]['Enums']["location_kind"],"name": string,"updated_at"?: string
                   }
                   Update: {
-                    "active"?: boolean,"bookable_by_patients"?: boolean,"created_at"?: string,"description"?: string | null,"duration_min"?: number,"id"?: string,"location_kind"?: Database["public"]['Enums']["location_kind"],"name"?: string,"updated_at"?: string
+                    "active"?: boolean,"bookable_online"?: boolean,"bookable_by_patients"?: boolean,"created_at"?: string,"description"?: string | null,"duration_min"?: number,"id"?: string,"location_kind"?: Database["public"]['Enums']["location_kind"],"name"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     
@@ -965,14 +965,14 @@ isOneToOne: false
                   ]
                 },"patient_profiles": {
                   Row: {
-                    "archived_at": string | null,"clinic_ref": string,"contact_email": string | null,"contact_phone": string | null,"country": string | null,"created_at": string,"date_of_birth": string,"first_name": string,"gender_identity": string | null,"ghl_contact_id": string | null,"id": string,"last_name": string,"primary_clinician_id": string | null,"semble_patient_id": string | null,"sex": string | null,"stripe_customer_id": string | null,"updated_at": string,"user_id": string | null
+                    "archived_at": string | null,"clinic_ref": string,"booked_online_at": string | null,"contact_email": string | null,"contact_phone": string | null,"country": string | null,"created_at": string,"date_of_birth": string,"first_name": string,"gender_identity": string | null,"ghl_contact_id": string | null,"id": string,"last_name": string,"primary_clinician_id": string | null,"semble_patient_id": string | null,"sex": string | null,"stripe_customer_id": string | null,"updated_at": string,"user_id": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "archived_at"?: string | null,"clinic_ref": string,"contact_email"?: string | null,"contact_phone"?: string | null,"country"?: string | null,"created_at"?: string,"date_of_birth": string,"first_name": string,"gender_identity"?: string | null,"ghl_contact_id"?: string | null,"id"?: string,"last_name": string,"primary_clinician_id"?: string | null,"semble_patient_id"?: string | null,"sex"?: string | null,"stripe_customer_id"?: string | null,"updated_at"?: string,"user_id"?: string | null
+                    "archived_at"?: string | null,"clinic_ref": string,"booked_online_at"?: string | null,"contact_email"?: string | null,"contact_phone"?: string | null,"country"?: string | null,"created_at"?: string,"date_of_birth": string,"first_name": string,"gender_identity"?: string | null,"ghl_contact_id"?: string | null,"id"?: string,"last_name": string,"primary_clinician_id"?: string | null,"semble_patient_id"?: string | null,"sex"?: string | null,"stripe_customer_id"?: string | null,"updated_at"?: string,"user_id"?: string | null
                   }
                   Update: {
-                    "archived_at"?: string | null,"clinic_ref"?: string,"contact_email"?: string | null,"contact_phone"?: string | null,"country"?: string | null,"created_at"?: string,"date_of_birth"?: string,"first_name"?: string,"gender_identity"?: string | null,"ghl_contact_id"?: string | null,"id"?: string,"last_name"?: string,"primary_clinician_id"?: string | null,"semble_patient_id"?: string | null,"sex"?: string | null,"stripe_customer_id"?: string | null,"updated_at"?: string,"user_id"?: string | null
+                    "archived_at"?: string | null,"clinic_ref"?: string,"booked_online_at"?: string | null,"contact_email"?: string | null,"contact_phone"?: string | null,"country"?: string | null,"created_at"?: string,"date_of_birth"?: string,"first_name"?: string,"gender_identity"?: string | null,"ghl_contact_id"?: string | null,"id"?: string,"last_name"?: string,"primary_clinician_id"?: string | null,"semble_patient_id"?: string | null,"sex"?: string | null,"stripe_customer_id"?: string | null,"updated_at"?: string,"user_id"?: string | null
                   }
                   Relationships: [
                     {
@@ -1380,6 +1380,29 @@ isOneToOne: false
                            },
 "submit_feedback":
 { Args: { "_could_improve": string,"_feedback": string,"_may_quote": boolean,"_score": number,"_wants_contact": boolean,"_went_well": string }; Returns: string
+                           },
+"book_online":
+{ Args: { "_date_of_birth": string,"_email": string,"_first_name": string,"_last_name": string,"_location": string | null,"_phone": string,"_staff": string,"_starts_at": string,"_type": string }; Returns: {
+              "appointment_id": string,"patient_id": string
+            }[]
+                           },
+"clinic_diary":
+{ Args: { "_from": string,"_to": string }; Returns: {
+              "booked_online": boolean,"can_open": boolean,"clinic_ref": string,"clinician_id": string,"duration_min": number,"id": string,"location_id": string,"new_patient": boolean,"patient_id": string,"patient_name": string,"source": Database["public"]['Enums']["appt_source"],"starts_at": string,"status": Database["public"]['Enums']["appt_status"],"type": string
+            }[]
+                           },
+"move_appointment":
+{ Args: { "_appointment": string,"_location"?: string,"_staff": string,"_starts_at": string }; Returns: undefined
+                           },
+"online_booking_clinicians":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "full_name": string,"job_title": string,"profile_id": string,"staff_id": string
+            }[]
+                           },
+"online_busy":
+{ Args: { "_from": string,"_staff": string,"_to": string }; Returns: {
+              "ends_at": string,"starts_at": string
+            }[]
                            },
 "accept_invitation":
 { Args: { "_date_of_birth"?: string,"_full_name"?: string,"_token_hash": string,"_user_id": string }; Returns: Database["public"]['Enums']["invitation_kind"]

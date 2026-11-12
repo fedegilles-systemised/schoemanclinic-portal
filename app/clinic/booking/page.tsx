@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
-import { AddHoursForm, AddTypeForm, RemoveHoursButton, TypeActiveButton, WEEKDAYS } from "@/components/booking/settings-forms";
+import { AddHoursForm, AddTypeForm, RemoveHoursButton, TypeActiveButton, TypeOnlineButton, WEEKDAYS } from "@/components/booking/settings-forms";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader, SectionHeader } from "@/components/ui/page-header";
@@ -19,7 +19,7 @@ export default async function BookingSettingsPage() {
   if (user.isSuspended || !user.isStaff) redirect("/clinic");
   const supabase = await createClient();
   const [types, hours, directory, locations, myStaffId] = await Promise.all([
-    supabase.from("appointment_types").select("id, name, duration_min, location_kind, bookable_by_patients, active").order("name"),
+    supabase.from("appointment_types").select("id, name, duration_min, location_kind, bookable_by_patients, bookable_online, active").order("name"),
     supabase.from("clinician_availability").select("id, staff_id, weekday, start_time, end_time, location_id").eq("active", true).order("weekday").order("start_time"),
     supabase.rpc("get_staff_directory"),
     supabase.from("locations").select("id, name").order("name"),
@@ -49,7 +49,7 @@ export default async function BookingSettingsPage() {
                 <TableHead>Appointment</TableHead>
                 <TableHead>Length</TableHead>
                 <TableHead>Where</TableHead>
-                <TableHead>Online booking</TableHead>
+                <TableHead>Who can book</TableHead>
                 {user.isAdmin ? (
                   <TableHead>
                     <span className="sr-only">Action</span>
@@ -66,10 +66,16 @@ export default async function BookingSettingsPage() {
                   </TableCell>
                   <TableCell className="tabular-nums">{t.duration_min} min</TableCell>
                   <TableCell>{t.location_kind === "video" ? "Video" : "In clinic"}</TableCell>
-                  <TableCell>{t.bookable_by_patients ? "Patients and staff" : "Staff only"}</TableCell>
+                  <TableCell>
+                    {t.bookable_by_patients ? "Patients and staff" : "Staff only"}
+                    {t.bookable_online ? <span className="type-small block text-content-muted">New patients online too</span> : null}
+                  </TableCell>
                   {user.isAdmin ? (
                     <TableCell>
-                      <TypeActiveButton id={t.id} active={t.active} name={t.name} />
+                      <div className="flex flex-wrap items-center gap-1">
+                        <TypeOnlineButton id={t.id} online={t.bookable_online} name={t.name} />
+                        <TypeActiveButton id={t.id} active={t.active} name={t.name} />
+                      </div>
                     </TableCell>
                   ) : null}
                 </TableRow>
