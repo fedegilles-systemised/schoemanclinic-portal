@@ -6,8 +6,8 @@
 --    questions in words and the answers given, who submitted it and when. Repeat prescription
 --    requests, questions to the clinic and feedback are copied in as they are made, and the ones
 --    made before this migration are copied in once below. Nothing changes or removes a copy.
--- 2. Feedback. The day after an appointment is marked completed, the daily job asks the patient
---    for feedback (at most once every 90 days), with one reminder after three days. A patient, or a
+-- 2. Feedback. The day after an appointment (completed, or booked or confirmed and over), the
+--    daily job asks the patient for feedback (at most once every 90 days), with one reminder after three days. A patient, or a
 --    guardian who can act, answers in the portal. A score of 9 or 10 is green, 7 or 8 amber, and 0
 --    to 6, or asking to be contacted, is red. Everyone is offered the Google review link: who is
 --    asked never depends on the answer. Amber and red alert admins and PAs (red also the patient's
@@ -304,14 +304,19 @@ begin
     select distinct on (a.patient_id) a.id, a.patient_id
     from public.appointments a
     join public.patient_profiles p on p.id = a.patient_id
-    where a.status = 'completed'
+    -- Completed, or still booked or confirmed once it has ended: nothing yet marks a visit completed
+    -- (the GoHighLevel and Semble sync is planned), and cancelled visits and no-shows are left out.
+    where (
+        a.status = 'completed'
+        or (a.status in ('booked', 'confirmed') and a.starts_at + make_interval(mins => a.duration_min) < now())
+      )
       and (a.starts_at at time zone 'Europe/London')::date between today - 3 and today - 1
       and p.archived_at is null
       and (
         exists (select 1 from public.profiles u where u.id = p.user_id and u.status <> 'suspended')
         or exists (
           select 1 from public.patient_guardians g join public.profiles u on u.id = g.guardian_user_id
-          where g.patient_id = p.id and g.can_act and u.status <> 'suspended'
+          where g.patient_id = p.id and g.can_act and g.verified_by is not null and u.status <> 'suspended'
         )
       )
       and not exists (select 1 from public.patient_feedback f where f.appointment_id = a.id)
@@ -344,7 +349,9 @@ begin
   return query
     update public.patient_feedback f
     set reminded_at = now()
-    where f.answered_at is null and f.reminded_at is null
+    from public.patient_profiles p
+    where p.id = f.patient_id and p.archived_at is null
+      and f.answered_at is null and f.reminded_at is null
       and f.sent_at <= now() - interval '3 days' and f.expires_at > now()
     returning f.id, f.patient_id;
   perform set_config('app.system_actor', '', true);

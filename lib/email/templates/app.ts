@@ -380,7 +380,7 @@ export function feedbackRequestEmail({
 }: Base & { firstName?: string; surveyUrl: string; reminder: boolean }): EmailContent {
   const hello = firstName ? `Dear ${firstName},` : "Hello,";
   const line = reminder
-    ? "A few days ago we asked how your recent appointment went. If you have a minute, we would value your answer. It takes less than a minute, and every answer is read by the clinic."
+    ? "A few days ago we asked how your recent appointment went. We would value your answer if you have a moment. It takes less than a minute, and every answer is read by the clinic."
     : "Thank you for your recent appointment. We would value a minute of your time to hear how it went. Every answer is read by the clinic.";
   const reason = "You are receiving this email because you recently had an appointment with The Schoeman Clinic.";
   return {

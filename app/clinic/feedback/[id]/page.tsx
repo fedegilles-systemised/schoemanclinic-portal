@@ -16,7 +16,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Feedback · Clinic Hub" };
 
-const yes = (v: boolean | null) => (v === null ? "" : v ? "Yes" : "No");
+const yes = (v: boolean | null) => (v === null ? "No answer" : v ? "Yes" : "No");
 
 export default async function ClinicFeedbackDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

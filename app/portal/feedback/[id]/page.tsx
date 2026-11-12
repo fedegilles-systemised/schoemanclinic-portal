@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 
 import { FeedbackForm } from "@/components/feedback/forms";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { getSurvey } from "@/lib/data/feedback";
@@ -35,9 +37,11 @@ export default async function FeedbackPage({ params }: { params: Promise<{ id: s
             <CardContent className="flex flex-col gap-4">
               <p className="type-body">If you have a moment, a review on Google helps other people find the clinic. Every review is welcome.</p>
               <div>
-                <a href={reviewUrl} target="_blank" rel="noopener noreferrer" className="type-button-label text-content">
-                  Leave a Google review
-                </a>
+                <Button variant="secondary" asChild>
+                  <a href={reviewUrl} target="_blank" rel="noopener noreferrer">
+                    Leave a Google review<span className="sr-only"> (opens in a new tab)</span>
+                  </a>
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -50,7 +54,13 @@ export default async function FeedbackPage({ params }: { params: Promise<{ id: s
     return (
       <>
         <PageHeader eyebrow="Your feedback" title="This survey has " accent="closed" />
-        <p className="type-body">Thank you for thinking of us. If there is anything you would like to tell the clinic, use Ask the clinic.</p>
+        <p className="type-body">
+          Thank you for thinking of us. If there is anything you would like to tell the clinic, use{" "}
+          <Link href="/portal/questions" className="text-content">
+            Ask the clinic
+          </Link>
+          .
+        </p>
       </>
     );
   }
@@ -59,9 +69,9 @@ export default async function FeedbackPage({ params }: { params: Promise<{ id: s
     <>
       <PageHeader
         eyebrow="Your feedback"
-        title="How was your "
+        title="How was the "
         accent="appointment"
-        description={`It takes less than a minute. Every answer is read by the clinic${forSomeoneElse ? `. This survey is about ${patient.first_name}'s appointment` : ""}.`}
+        description={`It takes less than a minute, and every answer is read by the clinic.${forSomeoneElse ? ` This survey is about ${patient.first_name}'s appointment.` : ""}`}
       />
       {patient.can_act ? (
         <Card>

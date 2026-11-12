@@ -9,7 +9,7 @@ export const RATING_LABELS: Record<Rating, string> = {
 
 /** The questions, word for word as the database copies them to the patient's record. */
 export const FEEDBACK_QUESTIONS = {
-  score: "How likely are you to recommend The Schoeman Clinic to a friend or family member?",
+  score: "How likely are you to recommend The Schoeman Clinic to a friend or family member? (0 to 10)",
   wentWell: "What went well?",
   couldImprove: "What could we do better?",
   wantsContact: "Would you like someone from the clinic to contact you?",

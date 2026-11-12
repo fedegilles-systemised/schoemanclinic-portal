@@ -95,11 +95,18 @@ export default async function PortalHomePage() {
       ) : null}
 
       {survey ? (
-        <AlertBar tone="info" icon={MessageSquareText} lead="How was the appointment?" className="mb-6">
-          <Link href={`/portal/feedback/${survey}`} className="text-content">
-            Tell us in less than a minute
-          </Link>
-          .
+        <AlertBar
+          tone="info"
+          icon={MessageSquareText}
+          lead="How was the appointment?"
+          className="mb-6"
+          action={
+            <Button variant="secondary" size="sm" asChild>
+              <Link href={`/portal/feedback/${survey}`}>Give feedback</Link>
+            </Button>
+          }
+        >
+          Tell us in less than a minute.
         </AlertBar>
       ) : null}
 

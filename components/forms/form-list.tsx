@@ -1,3 +1,5 @@
+import { ChevronDown } from "lucide-react";
+
 import type { FormSubmission } from "@/lib/data/forms";
 import { formatDate, formatTime } from "@/lib/format";
 
@@ -13,9 +15,12 @@ export function FormList({ forms, submitterName }: { forms: FormSubmission[]; su
         return (
           <li key={form.id}>
             <details className="group">
-              <summary className="type-body flex cursor-pointer flex-wrap items-center justify-between gap-2 px-4 py-3">
-                <span className="font-medium">{form.title}</span>
-                <span className="type-small text-content-muted">
+              <summary className="type-body flex cursor-pointer list-none flex-wrap items-center justify-between gap-2 px-4 py-3 hover:bg-surface-selected [&::-webkit-details-marker]:hidden">
+                <span className="flex items-center gap-2 font-medium">
+                  <ChevronDown className="size-4 transition-transform group-open:rotate-180" aria-hidden />
+                  {form.title}
+                </span>
+                <span className="type-small text-content-muted tabular-nums">
                   {formatDate(form.submittedAt)}, {formatTime(form.submittedAt)}
                   {by ? ` · ${by}` : ""}
                 </span>

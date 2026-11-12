@@ -46,6 +46,17 @@ reset role;
 select pg_temp.become_server();
 select is((select count(*)::int from public.queue_feedback() where patient_id = 'd0000000-0000-4000-8000-000000000001'), 1, 'the daily job makes a survey for yesterday''s appointment');
 select is((select count(*)::int from public.queue_feedback()), 0, 'and not again');
+reset role;
+-- A confirmed visit that has ended counts too, as nothing marks visits completed yet; a no-show does not.
+select set_config('app.system_actor', 'forms-test', true);
+insert into public.appointments (id, patient_id, starts_at, duration_min, type, status, source) values
+  ('f0000000-0000-4000-8000-0000000000f2', 'd0000000-0000-4000-8000-000000000002', now() - interval '1 day', 30, 'Follow-up', 'confirmed', 'clinic_hub'),
+  ('f0000000-0000-4000-8000-0000000000f3', 'd0000000-0000-4000-8000-000000000003', now() - interval '1 day', 30, 'Follow-up', 'no_show', 'clinic_hub');
+select set_config('app.system_actor', '', true);
+select pg_temp.become_server();
+create temp table queued_now as select * from public.queue_feedback();
+select ok(exists (select 1 from queued_now where patient_id = 'd0000000-0000-4000-8000-000000000002'), 'a confirmed visit that has ended is asked about');
+select ok(not exists (select 1 from queued_now where patient_id = 'd0000000-0000-4000-8000-000000000003'), 'a no-show is not asked');
 select throws_ok($$ insert into public.patient_feedback (patient_id) values ('d0000000-0000-4000-8000-000000000001') $$, '42501', null, 'server code cannot write feedback directly');
 reset role;
 select is((select metadata ->> 'system' from public.audit_log where entity = 'patient_feedback' order by id desc limit 1), 'feedback', 'the survey is in the audit log as sent by the feedback job');

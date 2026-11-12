@@ -34,8 +34,8 @@ function FeedbackTable({ rows, showDue }: { rows: FeedbackRow[]; showDue: boolea
               </Link>
               <span className="type-small text-content-muted"> · {r.clinicRef}</span>
             </TableCell>
-            <TableCell>{r.answeredAt ? formatDate(r.answeredAt) : ""}</TableCell>
-            <TableCell>{r.score ?? ""}</TableCell>
+            <TableCell className="tabular-nums">{r.answeredAt ? formatDate(r.answeredAt) : ""}</TableCell>
+            <TableCell className="tabular-nums">{r.score ?? ""}</TableCell>
             <TableCell>{r.rating ? <RatingPill rating={r.rating} /> : null}</TableCell>
             {showDue ? (
               <TableCell className={r.followUpDue && r.followUpDue < today ? "font-medium text-status-danger" : undefined}>
@@ -72,25 +72,25 @@ export default async function ClinicFeedbackPage() {
         eyebrow="Patients"
         title="Patient "
         accent="feedback"
-        description={`Last 90 days: ${recent.length} answers, ${count("green")} positive, ${count("amber")} mixed and ${count("red")} needing attention. Every patient who answers is offered the Google review link.`}
+        description={`Last 90 days: ${recent.length} ${recent.length === 1 ? "answer" : "answers"}, ${count("green")} positive, ${count("amber")} mixed and ${count("red")} needing attention. Every patient who answers is offered the Google review link.`}
       >
         <div className="flex flex-wrap gap-6">
           <Link href="/clinic/feedback/export?set=evidence" prefetch={false} className="type-button-label text-content no-underline">
-            Positive feedback for CQC (CSV)
+            Download positive feedback for CQC (CSV)
           </Link>
           <Link href="/clinic/feedback/export?set=all" prefetch={false} className="type-button-label text-content no-underline">
-            Full log (CSV)
+            Download the full log (CSV)
           </Link>
         </div>
       </PageHeader>
 
       <section aria-labelledby="follow-up" className="mb-12 flex flex-col gap-4">
-        <SectionHeader id="follow-up" title="To follow " accent="up" />
+        <SectionHeader id="follow-up" title="Waiting for a " accent="follow-up" />
         {toFollowUp.length === 0 ? <EmptyState>Nothing waiting.</EmptyState> : <FeedbackTable rows={toFollowUp} showDue />}
       </section>
 
       <section aria-labelledby="recent" className="flex flex-col gap-4">
-        <SectionHeader id="recent" title="Recent " accent="feedback" />
+        <SectionHeader id="recent" title="Latest " accent="answers" />
         {rows.length === 0 ? <EmptyState>No feedback yet.</EmptyState> : <FeedbackTable rows={rows.slice(0, 100)} showDue={false} />}
       </section>
     </>

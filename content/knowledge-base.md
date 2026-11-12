@@ -456,7 +456,7 @@ Doctors add a patient's medicines on the record, with the day each supply starts
 
 **Who:** the patient, or a guardian who can act; admins, PAs and the patient's doctors follow up. **Status:** built (Dr Schoeman's CQC email of 8 November 2026, point 1).
 
-1. The day after an appointment is marked completed, a daily job asks the patient for feedback by email, and by WhatsApp if they chose it. A patient is asked at most once every 90 days, and only if they or a guardian can sign in. One reminder goes three days later. A survey closes after 30 days.
+1. One to three days after an appointment, a daily job asks the patient for feedback. It counts a visit marked completed, or one still booked or confirmed once it has ended, because the diary sync does not mark visits completed yet. Cancelled visits and no-shows are left out. The survey goes by email, and by WhatsApp if they chose it. A patient is asked at most once every 90 days, and only if they or a guardian can sign in. One reminder goes three days later. A survey closes after 30 days.
 2. In the portal they answer: how likely they are to recommend the clinic (0 to 10), what went well, what could be better, whether they would like to be contacted, and whether their comments may be used without their name as evidence.
 3. The answer is rated. 9 or 10 is green (positive). 7 or 8 is amber (mixed). 0 to 6, or asking to be contacted, is red (needs attention).
 4. Everyone who answers is offered the clinic's Google review link, whatever they said. Asking only happy patients for reviews breaks Google's rules and the CMA's guidance on reviews.

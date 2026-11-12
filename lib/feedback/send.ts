@@ -20,14 +20,14 @@ export async function sendFeedbackSurveys(): Promise<{ sent: number; reminded: n
   const send = async (row: { feedback_id: string; patient_id: string }, reminder: boolean) => {
     const patient = await admin.from("patient_profiles").select("first_name").eq("id", row.patient_id).maybeSingle();
     const link = `/portal/feedback/${row.feedback_id}`;
-    const name = patient.data?.first_name ?? "";
+    const hello = patient.data?.first_name ? `Hello ${patient.data.first_name}` : "Hello";
     await notifyPatient(row.patient_id, {
       topic: "messages",
       notice: { title: reminder ? "A reminder: how was your appointment?" : "How was your appointment?", body: "Tell us in less than a minute.", link },
       email: feedbackRequestEmail({ siteUrl, firstName: patient.data?.first_name, surveyUrl: `${siteUrl}${link}`, reminder }),
       whatsapp: reminder
-        ? `Hello ${name}, a reminder that we would value your feedback on your recent appointment. It takes less than a minute in your portal.`
-        : `Hello ${name}, thank you for your recent appointment. We would value your feedback: it takes less than a minute in your portal.`,
+        ? `${hello}, a reminder that we would value your feedback on your recent appointment. It takes less than a minute in your portal.`
+        : `${hello}, thank you for your recent appointment. We would value your feedback: it takes less than a minute in your portal.`,
     });
   };
 
