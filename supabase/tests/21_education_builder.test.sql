@@ -88,6 +88,31 @@ select ok(not private.can_read_education_object('courses/e2000000-0000-4000-8000
 reset role;
 
 select ok(not has_function_privilege('anon', 'public.reorder_course(uuid, jsonb)', 'execute'), 'nobody signed out reorders');
+
+-- Storage: only admins upload, only to the two allowed paths; patients read only what they may.
+select pg_temp.become('a0000000-0000-4000-8000-000000000006');
+select lives_ok($$ insert into storage.objects (bucket_id, name) values ('education', 'files/e2200000-0000-4000-8000-000000000001/e2300000-0000-4000-8000-000000000003.pdf') $$, 'an admin uploads a lesson file');
+select throws_ok($$ insert into storage.objects (bucket_id, name) values ('education', 'other/thing.pdf') $$, '42501', null, 'but not to any other path');
+select throws_ok($$ insert into storage.objects (bucket_id, name) values ('education', 'courses/e2000000-0000-4000-8000-000000000001/cover-e2300000-0000-4000-8000-000000000008.webp') $$, '42501', null, 'nor a WebP cover');
+reset role;
+select pg_temp.become('a0000000-0000-4000-8000-000000000001');
+select throws_ok($$ insert into storage.objects (bucket_id, name) values ('education', 'files/e2200000-0000-4000-8000-000000000001/e2300000-0000-4000-8000-000000000004.pdf') $$, '42501', null, 'a doctor cannot upload');
+reset role;
+select set_config('app.system_actor', 'education-test', true);
+insert into storage.objects (bucket_id, name) values
+  ('education', 'files/e2200000-0000-4000-8000-000000000001/e2300000-0000-4000-8000-000000000001.pdf'),
+  ('education', 'files/e2200000-0000-4000-8000-000000000003/e2300000-0000-4000-8000-000000000002.pdf');
+select set_config('app.system_actor', '', true);
+select pg_temp.become('a0000000-0000-4000-8000-000000000011');
+select is((select count(*)::int from storage.objects where bucket_id = 'education' and name like 'files/%e2300000-0000-4000-8000-00000000000_.pdf' and name in ('files/e2200000-0000-4000-8000-000000000001/e2300000-0000-4000-8000-000000000001.pdf', 'files/e2200000-0000-4000-8000-000000000003/e2300000-0000-4000-8000-000000000002.pdf')), 1, 'the patient lists only the file of her published lesson');
+reset role;
+select pg_temp.become('a0000000-0000-4000-8000-000000000012');
+select is((select count(*)::int from storage.objects where bucket_id = 'education'), 0, 'another patient lists nothing in the bucket');
+reset role;
+select pg_temp.become('a0000000-0000-4000-8000-000000000006');
+select lives_ok($$ insert into public.education_modules (section_id, title) values ('e2100000-0000-4000-8000-000000000001', 'Left as default') $$, 'a lesson added without saying');
+reset role;
+select ok(not (select published from public.education_modules where title = 'Left as default'), 'starts as a draft');
 select ok(exists (select 1 from public.audit_log where entity = 'education_progress'), 'progress is in the audit log');
 
 select * from finish();

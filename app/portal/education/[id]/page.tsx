@@ -19,10 +19,10 @@ export default async function PortalCoursePage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ lesson?: string }>;
+  searchParams: Promise<{ lesson?: string; saved?: string }>;
 }) {
   const { id } = await params;
-  const { lesson } = await searchParams;
+  const { lesson, saved } = await searchParams;
   if (!z.uuid().safeParse(id).success) notFound();
   // Row-level security returns the course only if it is published and on this person's portal.
   const [course, mine, patient] = await Promise.all([getCourse(id), getPortalCourseIds(), getPortalPatientId()]);
@@ -37,7 +37,7 @@ export default async function PortalCoursePage({
         Your courses
       </Link>
       <PageHeader eyebrow="Course" title={`${course.title} `} description={course.description ?? undefined} />
-      <CoursePlayer course={course} lessonId={lessonId} completed={completed} basePath={`/portal/education/${course.id}`} mode="patient" canComplete={patient.canAct} />
+      <CoursePlayer course={course} lessonId={lessonId} completed={completed} basePath={`/portal/education/${course.id}`} mode="patient" canComplete={patient.canAct} saveFailed={saved === "0"} />
     </>
   );
 }

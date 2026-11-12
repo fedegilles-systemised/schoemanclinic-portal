@@ -44,7 +44,7 @@ export default async function PortalEducationPage() {
                     <p className="type-small text-content-muted tabular-nums">
                       {done} of {total} {total === 1 ? "lesson" : "lessons"} complete
                     </p>
-                    <div className="h-1.5 w-full bg-surface-sunken" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent} aria-label={`${course.title} progress`}>
+                    <div className="h-1.5 w-full bg-surface-sunken" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent} aria-valuetext={`${done} of ${total} lessons complete`} aria-label={`${course.title} progress`}>
                       <div className="h-full bg-secondary" style={{ width: `${percent}%` }} />
                     </div>
                   </div>

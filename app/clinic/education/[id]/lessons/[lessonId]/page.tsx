@@ -43,8 +43,8 @@ export default async function LessonEditorPage({ params }: { params: Promise<{ i
         </div>
       </PageHeader>
 
-      <div className="grid gap-8 lg:grid-cols-[16rem_minmax(0,1fr)]">
-        <nav aria-label="Lessons in this course" className="flex flex-col gap-4 lg:sticky lg:top-6 lg:self-start">
+      <div className="grid gap-8 shell:grid-cols-[16rem_minmax(0,1fr)]">
+        <nav aria-label="Lessons in this course" className="order-2 flex flex-col gap-4 shell:sticky shell:top-6 shell:order-1 shell:self-start">
           {course.sections.map((s) => (
             <div key={s.id} className="flex flex-col gap-1">
               <span className="type-eyebrow text-content-muted">{s.title}</span>
@@ -66,7 +66,7 @@ export default async function LessonEditorPage({ params }: { params: Promise<{ i
           ))}
         </nav>
 
-        <div className="flex min-w-0 flex-col gap-6">
+        <div className="order-1 flex min-w-0 flex-col gap-6 shell:order-2">
           <Card>
             <CardContent>
               <LessonEditorForm

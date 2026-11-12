@@ -11,6 +11,7 @@ import { allowAuthAttempt } from "@/lib/auth/throttle";
 import { getPortalPatientId } from "@/lib/data/education";
 import { cleanLessonDoc } from "@/lib/education/content";
 import { extensionFor, fileKind, MAX_FILE_BYTES } from "@/lib/files";
+import { stripImageMetadata } from "@/lib/image-metadata";
 import { getMyStaffId } from "@/lib/data/patient-record";
 import { createClient } from "@/lib/supabase/server";
 
@@ -160,9 +161,11 @@ export async function uploadCover(_state: EducationFormState, formData: FormData
   const bytes = new Uint8Array(await file.arrayBuffer());
   const type = fileKind(bytes);
   if (type !== "image/png" && type !== "image/jpeg") return { error: "Use a JPEG or PNG image." };
+  const clean = stripImageMetadata(bytes, type);
+  if (!clean) return { error: "That image could not be read. Try saving it again as a JPEG or PNG." };
   const supabase = await createClient();
   const path = `courses/${courseId.data}/cover-${randomUUID()}.${extensionFor(type)}`;
-  const upload = await supabase.storage.from("education").upload(path, bytes, { contentType: type, upsert: false });
+  const upload = await supabase.storage.from("education").upload(path, clean, { contentType: type, upsert: false });
   if (upload.error) return { error: "The image could not be saved. Please try again." };
   const { error } = await supabase.from("education_courses").update({ cover_path: path }).eq("id", courseId.data);
   if (error) return { error: GENERIC_FAILURE };
@@ -315,9 +318,10 @@ export async function moveItem(formData: FormData): Promise<void> {
     }
   }
   const supabase = await createClient();
-  await supabase.rpc("reorder_course", { _course: courseId, _order: outline });
+  const { error } = await supabase.rpc("reorder_course", { _course: courseId, _order: outline });
   revalidatePath(`/clinic/education/${courseId}`, "layout");
   revalidatePath("/portal/education", "layout");
+  if (error) redirect(`/clinic/education/${courseId}?moved=failed`);
 }
 
 /** Attaches a PDF handout or an image to a lesson. */
@@ -332,18 +336,21 @@ export async function uploadLessonFile(_state: EducationFormState, formData: For
   const bytes = new Uint8Array(await file.arrayBuffer());
   const type = fileKind(bytes);
   if (!type) return { error: "Use a PDF, JPEG or PNG file." };
+  // Photos lose their hidden location, time and device details before patients can download them.
+  const clean = type === "application/pdf" ? bytes : stripImageMetadata(bytes, type);
+  if (!clean) return { error: "That image could not be read. Try saving it again as a JPEG or PNG." };
   const name = (file.name || "File").replace(/[\u0000-\u001f]/g, "").trim().slice(0, 200) || "File";
   const supabase = await createClient();
   const id = randomUUID();
   const path = `files/${parsed.data.lessonId}/${id}.${extensionFor(type)}`;
-  const upload = await supabase.storage.from("education").upload(path, bytes, { contentType: type, upsert: false });
+  const upload = await supabase.storage.from("education").upload(path, clean, { contentType: type, upsert: false });
   if (upload.error) return { error: "The file could not be saved. Please try again." };
   const { error } = await supabase.from("education_files").insert({
     module_id: parsed.data.lessonId,
     storage_path: path,
     file_name: name,
     content_type: type,
-    size_bytes: file.size,
+    size_bytes: clean.length,
     created_by: staffId,
   });
   if (error) return { error: GENERIC_FAILURE };

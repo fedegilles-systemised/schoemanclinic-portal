@@ -275,12 +275,7 @@ export function LessonEditorForm({
         </div>
         {video.startsWith("https://") ? <LessonVideo url={video} title={title} /> : null}
       </div>
-      <div className="flex flex-col gap-1.5">
-        <span id="lesson-text-label" className="type-body font-medium">
-          Lesson text
-        </span>
-        <RichTextEditor name="content" initial={content} labelledBy="lesson-text-label" />
-      </div>
+      <RichTextEditor name="content" initial={content} label="Lesson text" />
       <label className="type-body flex items-center gap-2">
         <input type="checkbox" name="published" defaultChecked={published} className="size-4 accent-secondary" />
         Published: patients given this course can see this lesson

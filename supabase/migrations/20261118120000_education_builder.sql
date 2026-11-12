@@ -14,9 +14,9 @@ alter table public.education_courses
   add constraint education_courses_cover_path check (
     cover_path is null
     or (split_part(cover_path, '/', 1) = 'courses' and split_part(cover_path, '/', 2) = id::text
-        and cover_path ~ '^courses/[0-9a-f-]{36}/cover-[0-9a-f-]{36}\.(png|jpg|webp)$')
+        and cover_path ~ '^courses/[0-9a-f-]{36}/cover-[0-9a-f-]{36}\.(png|jpg)$')
   );
-comment on column public.education_courses.cover_path is 'The cover image in the education bucket: courses/<course id>/cover-<random id>.<png|jpg|webp>.';
+comment on column public.education_courses.cover_path is 'The cover image in the education bucket: courses/<course id>/cover-<random id>.<png|jpg>.';
 grant update (cover_path) on public.education_courses to authenticated;
 
 -- Lessons: formatted content and a draft state --------------------------------------------------------
@@ -24,8 +24,10 @@ grant update (cover_path) on public.education_courses to authenticated;
 alter table public.education_modules
   add column content jsonb check (content is null or (jsonb_typeof(content) = 'object' and pg_column_size(content) <= 200000)),
   add column published boolean not null default true;
+-- Lessons made before the builder count as published; every new lesson starts as a draft.
+alter table public.education_modules alter column published set default false;
 comment on column public.education_modules.content is 'The lesson text from the editor: a document of headings, paragraphs, lists, quotes and links, checked by the server before it is saved. Replaces body for new lessons.';
-comment on column public.education_modules.published is 'A draft lesson is seen by the team only. Lessons made before the builder count as published.';
+comment on column public.education_modules.published is 'A draft lesson is seen by the team only. New lessons start as drafts; lessons made before the builder count as published.';
 grant insert (content, published) on public.education_modules to authenticated;
 grant update (content, published) on public.education_modules to authenticated;
 
@@ -229,7 +231,7 @@ grant execute on function private.reorder_course(uuid, jsonb), public.reorder_co
 -- Storage: covers and lesson files in a private bucket -----------------------------------------------------
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-values ('education', 'education', false, 20971520, array['application/pdf', 'image/png', 'image/jpeg', 'image/webp']);
+values ('education', 'education', false, 20971520, array['application/pdf', 'image/png', 'image/jpeg']);
 
 -- Who may read an object in the education bucket: staff, or a patient or guardian for the cover of a
 -- course given to them or a file of a lesson they can read.
@@ -269,7 +271,7 @@ create policy "Admins upload education files" on storage.objects
     bucket_id = 'education'
     and (select private.has_role('admin'))
     and (
-      name ~ '^courses/[0-9a-f-]{36}/cover-[0-9a-f-]{36}\.(png|jpg|webp)$'
+      name ~ '^courses/[0-9a-f-]{36}/cover-[0-9a-f-]{36}\.(png|jpg)$'
       or name ~ '^files/[0-9a-f-]{36}/[0-9a-f-]{36}\.(pdf|png|jpg)$'
     )
   );

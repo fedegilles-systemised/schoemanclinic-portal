@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import { AddLessonForm, ArchivePartButton, CoverForm, EditCourseForm, RenameSectionForm, SectionForm } from "@/components/education/forms";
 import { MoveButtons } from "@/components/education/move-buttons";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader, SectionHeader } from "@/components/ui/page-header";
@@ -20,8 +21,9 @@ export const metadata: Metadata = { title: "Course · Clinic Hub" };
  * add to, with each lesson opening in the editor; the course details and cover beside it. The rest
  * of the team reads the outline and previews lessons as a patient sees them.
  */
-export default async function CoursePage({ params }: { params: Promise<{ id: string }> }) {
+export default async function CoursePage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ moved?: string }> }) {
   const { id } = await params;
+  const { moved } = await searchParams;
   if (!z.uuid().safeParse(id).success) notFound();
   const user = await getCurrentUser();
   if (!user) redirect("/login");
@@ -48,6 +50,14 @@ export default async function CoursePage({ params }: { params: Promise<{ id: str
           Preview as a patient
         </Link>
       </PageHeader>
+
+      {moved === "failed" ? (
+        <div className="mb-6">
+          <Alert variant="warning">
+            <AlertDescription>The course was changed by someone else at the same time, so that move was not made. Here is the course as it is now: please try again.</AlertDescription>
+          </Alert>
+        </div>
+      ) : null}
 
       <div className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="flex min-w-0 flex-col gap-8">
@@ -84,8 +94,8 @@ export default async function CoursePage({ params }: { params: Promise<{ id: str
                           {lesson.title}
                         </Link>
                         <span className="flex items-center gap-2 text-content-muted">
-                          {lesson.videoUrl ? <PlayCircle className="size-4" aria-label="Has a video" /> : null}
-                          {lesson.files.length ? <FileText className="size-4" aria-label={`${lesson.files.length} ${lesson.files.length === 1 ? "file" : "files"}`} /> : null}
+                          {lesson.videoUrl ? <PlayCircle className="size-4" role="img" aria-label="Has a video" /> : null}
+                          {lesson.files.length ? <FileText className="size-4" role="img" aria-label={`${lesson.files.length} ${lesson.files.length === 1 ? "file" : "files"}`} /> : null}
                         </span>
                         <StatusPill tone={lesson.published ? "success" : "neutral"} icon={lesson.published ? CircleCheck : PencilLine} label={lesson.published ? "Published" : "Draft"} />
                         {admin ? (

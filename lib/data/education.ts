@@ -11,7 +11,7 @@ export type CourseSummary = {
   published: boolean;
   moduleCount: number;
   coverUrl: string | null;
-  /** The ids of the lessons the reader can see, for progress. */
+  /** The ids of the published lessons, for a patient's progress. */
   lessonIds: string[];
 };
 export type LessonFile = { id: string; name: string; contentType: string; sizeBytes: number; url: string | null };
@@ -49,14 +49,18 @@ export async function listCourses(): Promise<CourseSummary[]> {
   const [courses, sections, modules] = await Promise.all([
     supabase.from("education_courses").select("id, title, description, published, cover_path").is("archived_at", null).order("title"),
     supabase.from("education_sections").select("id, course_id").is("archived_at", null),
-    supabase.from("education_modules").select("id, section_id").is("archived_at", null),
+    supabase.from("education_modules").select("id, section_id, published").is("archived_at", null),
   ]);
   if (courses.error || sections.error || modules.error) throw new Error("Could not load the courses.");
   const courseOf = new Map(sections.data.map((s) => [s.id, s.course_id]));
   const lessonsOf = new Map<string, string[]>();
+  const publishedOf = new Map<string, string[]>();
   for (const m of modules.data) {
     const course = courseOf.get(m.section_id);
-    if (course) lessonsOf.set(course, [...(lessonsOf.get(course) ?? []), m.id]);
+    if (!course) continue;
+    lessonsOf.set(course, [...(lessonsOf.get(course) ?? []), m.id]);
+    // A team member who is also a patient reads drafts too; progress counts published lessons only.
+    if (m.published) publishedOf.set(course, [...(publishedOf.get(course) ?? []), m.id]);
   }
   const covers = await signedUrls(courses.data.flatMap((c) => (c.cover_path ? [c.cover_path] : [])));
   return courses.data.map((c) => ({
@@ -66,7 +70,7 @@ export async function listCourses(): Promise<CourseSummary[]> {
     published: c.published,
     moduleCount: lessonsOf.get(c.id)?.length ?? 0,
     coverUrl: c.cover_path ? (covers.get(c.cover_path) ?? null) : null,
-    lessonIds: lessonsOf.get(c.id) ?? [],
+    lessonIds: publishedOf.get(c.id) ?? [],
   }));
 }
 
@@ -136,7 +140,7 @@ export async function getCourse(courseId: string): Promise<Course | null> {
     published: course.data.published,
     coverUrl: course.data.cover_path ? (urls.get(course.data.cover_path) ?? null) : null,
     moduleCount: sectionList.reduce((n, s) => n + s.modules.length, 0),
-    lessonIds: sectionList.flatMap((s) => s.modules.map((m) => m.id)),
+    lessonIds: sectionList.flatMap((s) => s.modules.filter((m) => m.published).map((m) => m.id)),
     sections: sectionList,
   };
 }
