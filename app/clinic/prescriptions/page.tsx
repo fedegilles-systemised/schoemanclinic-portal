@@ -8,6 +8,8 @@ import { PageHeader, SectionHeader } from "@/components/ui/page-header";
 import { getCurrentUser } from "@/lib/auth/session";
 import { listRepeatRequests } from "@/lib/data/prescriptions";
 import { isStripeConfigured } from "@/lib/env";
+import { formatMoney } from "@/lib/format";
+import { REPEAT_FEE_PENCE } from "@/lib/prescriptions/constants";
 
 export const metadata: Metadata = { title: "Prescriptions · Clinic Hub" };
 
@@ -34,7 +36,7 @@ export default async function ClinicPrescriptionsPage() {
         description={
           paysOnline
             ? "Paid requests wait here for a decision. Prescribe in SignatureRx, then mark the request sent to the pharmacy."
-            : "Online payment is not switched on, so check the £30 fee has been paid before you go ahead. Prescribe in SignatureRx, then mark the request sent to the pharmacy."
+            : `Online payment is not switched on, so check the ${formatMoney(REPEAT_FEE_PENCE)} fee has been paid before you go ahead. Prescribe in SignatureRx, then mark the request sent to the pharmacy.`
         }
       >
         {keepsList ? (

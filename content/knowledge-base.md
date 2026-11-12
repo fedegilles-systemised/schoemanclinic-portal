@@ -84,7 +84,7 @@ This table is what the database enforces since the clinic's decisions of 11 Nove
 | Imported PDFs and extracted values | - | - | Read, decide (matched to their patients) | Read, decide (matched to their patients) | Read, decide, including unmatched | - | Read, decide, including unmatched |
 | Letters and documents | What the clinic shared, upload own | Same, upload if can act | Read, add, change | Read, add, change | Read, add, change | Read | Read |
 | Questions to the clinic | Read, ask | Read, ask if can act | Read, change status | Read | Read, change status | Read | Read, change status |
-| Repeat prescription requests | Read, request, withdraw before paying | Read, request and withdraw if can act | Read, change status | Read | Read, request for a patient, change status | Read | Read, change status |
+| Repeat prescription requests | Read, request, withdraw before paying | Read, request and withdraw if can act | Read, change status | Read | Read, request for a patient, change status | Read | Read |
 | Education courses | Courses added to their portal | Same | Read the library, add to a patient's portal | Same as doctor | Same as doctor | Same as doctor | Read, build and publish courses, add to any patient's portal |
 | Wearable readings | Read, add, remove their own | Read, add if can act | Read | Read | Read | Read | Read |
 | Own notifications and preferences | Read, change | Read, change | Read, change | Read, change | Read, change | Read, change | Read, change |
@@ -364,8 +364,8 @@ For a new patient the clinic reference (SC- and six digits) is made automaticall
 3. For a weight-loss medicine (Mounjaro, Ozempic, Wegovy, semaglutide) they answer whether they are still losing weight, how much in the last month, and whether they have side effects.
 4. They review the request, then pay the £30 administration fee on Stripe's own page. Without Stripe keys the request is sent unpaid and the clinic arranges the fee.
 5. When Stripe confirms the payment, admins, PAs and the patient's doctors are told in Clinic Hub, the clinic inbox is emailed, and the patient gets a receipt.
-6. A doctor, PA or admin approves, declines (with a reason the patient reads in the portal) or marks it sent to the pharmacy, after prescribing in SignatureRx. The patient is told at each step, without the note or any medicine named.
-7. An unpaid request can be withdrawn by the patient side or the team.
+6. A doctor or PA approves, declines (with a reason the patient reads in the portal) or marks it sent to the pharmacy, after prescribing in SignatureRx. The patient is told at each step, without the note or any medicine named.
+7. An unpaid request can be withdrawn by the patient side, a doctor or a PA. Without online payment, the team is told of each new request as it arrives.
 
 Doctors add a patient's medicines on the record, with the day each supply starts and how long it lasts, and renew, pause or stop them there. Admins and doctors keep the clinic's medicine list, which starts with the Typeform's list. Patients are reminded three weeks before a prescription runs out: on the home screen, on the Prescriptions page, and by a daily email or WhatsApp, unless a repeat for it is already on its way.
 

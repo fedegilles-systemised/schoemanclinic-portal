@@ -274,17 +274,19 @@ export function documentSharedEmail({
   };
 }
 
-/** The clinic's inbox is told a repeat prescription has been paid for. No name and no medicine. */
-export function repeatPaidAlertEmail({ siteUrl, requestUrl }: Base & { requestUrl: string }): EmailContent {
+/** The clinic's inbox is told a repeat prescription request needs the team. No name and no medicine. */
+export function repeatPaidAlertEmail({ siteUrl, requestUrl, paid }: Base & { requestUrl: string; paid: boolean }): EmailContent {
   const reason = "You are receiving this email because this address receives the clinic's repeat prescription alerts.";
-  const line = "A repeat prescription request has been paid for and is ready to be looked at. Sign in to Clinic Hub to see it.";
+  const line = paid
+    ? "A repeat prescription request has been paid for and is ready to be looked at. Sign in to Clinic Hub to see it."
+    : "A patient has requested a repeat prescription. Online payment is not switched on, so please check the fee. Sign in to Clinic Hub to see it.";
   return {
-    subject: "A paid repeat prescription request is waiting",
+    subject: paid ? "A paid repeat prescription request is waiting" : "A new repeat prescription request is waiting",
     html: renderEmail({
       siteUrl,
       preheader: line,
       eyebrow: "Prescriptions",
-      title: { before: "A repeat request is ", accent: "paid" },
+      title: paid ? { before: "A repeat request is ", accent: "paid" } : { before: "A new repeat ", accent: "request" },
       body: paragraph("Hello,") + paragraph(escapeHtml(line)) + button("Open the request", requestUrl) + paragraph(SIGN_OFF_HTML),
       reason,
     }),
@@ -316,7 +318,7 @@ export function repeatReceivedEmail({
 }
 
 const REPEAT_UPDATE_LINES = {
-  approved: { subject: "Your repeat prescription request is approved", accent: "approved", line: "Your repeat prescription request has been approved. We will let you know when it has gone to the pharmacy." },
+  approved: { subject: "Your repeat prescription request is approved", accent: "approved", line: "Your repeat prescription request has been approved. You can follow it in your portal until it goes to the pharmacy." },
   sent_to_pharmacy: { subject: "Your repeat prescription has gone to the pharmacy", accent: "sent", line: "Your repeat prescription has been sent to the pharmacy." },
   declined: { subject: "An update on your repeat prescription request", accent: "update", line: "There is an update on your repeat prescription request. For your privacy, the details are in your portal." },
 } as const;

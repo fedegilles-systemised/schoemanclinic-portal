@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Plus, X } from "lucide-react";
 
@@ -76,6 +76,15 @@ export function RepeatRequestForm({
   const [note, setNote] = useState("");
   const [reviewing, setReviewing] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
+  // Moving between the form and the review puts focus on the new step's heading, so keyboard and
+  // screen-reader users are not left on a control that has gone.
+  const reviewHeading = useRef<HTMLHeadingElement>(null);
+  const formHeading = useRef<HTMLHeadingElement>(null);
+  const moved = useRef(false);
+  useEffect(() => {
+    if (!moved.current) return;
+    (reviewing ? reviewHeading : formHeading).current?.focus();
+  }, [reviewing]);
 
   const weightLossNames = useMemo(() => list.filter((m) => m.weightLoss).map((m) => m.name), [list]);
   const medicineName = (line: Line): string => {
@@ -134,7 +143,9 @@ export function RepeatRequestForm({
       <form action={action} className="flex flex-col gap-6">
         {hidden}
         <div className="flex flex-col gap-2">
-          <h2 className="type-h3">Please check your request</h2>
+          <h2 ref={reviewHeading} tabIndex={-1} className="type-card-title outline-none">
+            Please check your request
+          </h2>
           <ul className="flex flex-col divide-y divide-surface-border border border-surface-border">
             {lines.map((line) => (
               <li key={line.key} className="type-body flex flex-wrap justify-between gap-2 px-4 py-2">
@@ -165,8 +176,8 @@ export function RepeatRequestForm({
         <Alert variant="info">
           <AlertDescription>
             {paysOnline
-              ? `Dr Gina Schoeman reviews every request. There is an administration fee of ${feeLabel}, paid securely on the next page.`
-              : `Dr Gina Schoeman reviews every request. There is an administration fee of ${feeLabel}; the clinic will contact you about payment.`}
+              ? `A doctor reviews every request. There is an administration fee of ${feeLabel}, paid securely on the next page.`
+              : `A doctor reviews every request. There is an administration fee of ${feeLabel}; the clinic will contact you about payment.`}
           </AlertDescription>
         </Alert>
         <FormMessage state={state} />
@@ -174,7 +185,15 @@ export function RepeatRequestForm({
           <Button type="submit" loading={pending}>
             {paysOnline ? `Pay ${feeLabel} and send` : "Send request"}
           </Button>
-          <Button type="button" variant="outline" onClick={() => setReviewing(false)} disabled={pending}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              moved.current = true;
+              setReviewing(false);
+            }}
+            disabled={pending}
+          >
             Change my answers
           </Button>
         </div>
@@ -185,7 +204,7 @@ export function RepeatRequestForm({
   return (
     <div className="flex flex-col gap-8">
       <section aria-labelledby="medicines-heading" className="flex flex-col gap-4">
-        <h2 id="medicines-heading" className="type-h3">
+        <h2 id="medicines-heading" ref={formHeading} tabIndex={-1} className="type-card-title outline-none">
           Medicines
         </h2>
         <p className="type-body text-content-muted">Choose up to ten. If yours is not listed, choose &quot;Not listed&quot; and type it in.</p>
@@ -224,7 +243,13 @@ export function RepeatRequestForm({
               </div>
               <div>
                 {lines.length > 1 ? (
-                  <Button type="button" variant="ghost" size="sm" onClick={() => setLines((current) => current.filter((l) => l.key !== line.key))}>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    aria-label={`Remove medicine ${index + 1}`}
+                    onClick={() => setLines((current) => current.filter((l) => l.key !== line.key))}
+                  >
                     <X aria-hidden />
                     Remove
                   </Button>
@@ -258,7 +283,7 @@ export function RepeatRequestForm({
       </section>
 
       <section aria-labelledby="appointment-heading" className="flex flex-col gap-4">
-        <h2 id="appointment-heading" className="type-h3">
+        <h2 id="appointment-heading" className="type-card-title">
           Your next appointment
         </h2>
         <p className="type-body text-content-muted">
@@ -271,7 +296,11 @@ export function RepeatRequestForm({
             <YesNoField name="wants" legend="Would you like to book one now?" value={wantsAppointment} onChange={setWantsAppointment} />
             {wantsAppointment === "yes" ? (
               <p className="type-body">
-                You can <Link href="/portal/appointments">book an appointment</Link> once you have sent this request.
+                You can{" "}
+                <Link href="/portal/appointments" className="text-secondary underline underline-offset-4 hover:text-content">
+                  book an appointment
+                </Link>{" "}
+                once you have sent this request.
               </p>
             ) : null}
           </>
@@ -280,7 +309,7 @@ export function RepeatRequestForm({
 
       {needsWeightQuestions ? (
         <section aria-labelledby="weight-heading" className="flex flex-col gap-4">
-          <h2 id="weight-heading" className="type-h3">
+          <h2 id="weight-heading" className="type-card-title">
             Weight-loss medicine
           </h2>
           <p className="type-body text-content-muted">You have asked for a weight-loss medicine, so we need a few more answers.</p>
@@ -302,7 +331,7 @@ export function RepeatRequestForm({
       ) : null}
 
       <section aria-labelledby="note-heading" className="flex flex-col gap-1.5">
-        <h2 id="note-heading" className="type-h3 mb-2">
+        <h2 id="note-heading" className="type-card-title mb-2">
           Anything else
         </h2>
         <Label htmlFor="request-note">A note for the clinic (optional)</Label>
@@ -310,7 +339,7 @@ export function RepeatRequestForm({
       </section>
 
       {problem ? (
-        <Alert variant="danger">
+        <Alert variant="danger" role="alert">
           <AlertDescription>{problem}</AlertDescription>
         </Alert>
       ) : null}
@@ -320,7 +349,10 @@ export function RepeatRequestForm({
           onClick={() => {
             const issue = check();
             setProblem(issue);
-            if (!issue) setReviewing(true);
+            if (!issue) {
+              moved.current = true;
+              setReviewing(true);
+            }
           }}
         >
           Review request

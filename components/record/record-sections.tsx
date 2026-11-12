@@ -130,7 +130,9 @@ export function ClinicalSummarySection({
                 </div>
                 {canPrescribe ? (
                   <details>
-                    <summary className="type-small cursor-pointer text-content-muted">Renew, pause or stop</summary>
+                    <summary className="type-small cursor-pointer text-content-muted">
+                      Renew, pause or stop<span className="sr-only"> {m.name}</span>
+                    </summary>
                     <div className="pt-3">
                       <ChangeMedicationForm patientId={patientId} medication={m} />
                     </div>
@@ -142,13 +144,13 @@ export function ClinicalSummarySection({
         )}
         {canPrescribe ? (
           <details>
-            <summary className="type-button-label cursor-pointer">Add a medicine</summary>
+            <summary className="type-small cursor-pointer text-content-muted">Add a medicine</summary>
             <div className="pt-4">
               <AddMedicationForm patientId={patientId} today={today} listNames={listNames} />
             </div>
           </details>
         ) : (
-          <p className="type-small text-content-muted">Doctors add and renew medicines here. Patients are reminded three weeks before a supply runs out.</p>
+          <p className="type-small text-content-muted">Doctors add and renew medicines here. Patients are sent a reminder three weeks before a supply runs out.</p>
         )}
       </section>
 

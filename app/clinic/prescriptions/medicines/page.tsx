@@ -50,7 +50,7 @@ export default async function MedicineListPage() {
                 {m.name}
                 {m.weightLoss ? <span className="type-small text-content-muted"> · weight loss</span> : null}
               </span>
-              <ListMedicineToggle medicineId={m.id} archived={false} />
+              <ListMedicineToggle medicineId={m.id} name={m.name} archived={false} />
             </li>
           ))}
         </ul>
@@ -62,7 +62,7 @@ export default async function MedicineListPage() {
             {removed.map((m) => (
               <li key={m.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-1">
                 <span className="type-body text-content-muted">{m.name}</span>
-                <ListMedicineToggle medicineId={m.id} archived />
+                <ListMedicineToggle medicineId={m.id} name={m.name} archived />
               </li>
             ))}
           </ul>

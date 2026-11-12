@@ -29,6 +29,8 @@ export default async function ClinicRepeatRequestPage({ params }: { params: Prom
   const requestedBy = names.get(request.requestedBy) ?? "the patient side";
   const decidedBy = request.decidedBy ? names.get(request.decidedBy) : null;
   const open = request.stage === "requested" || request.stage === "approved" || request.stage === "unpaid";
+  // Admins read requests; doctors and PAs move them on (admins write no clinical data).
+  const canDecide = user.roles.some((r) => r === "doctor" || r === "pa");
 
   return (
     <>
@@ -57,14 +59,14 @@ export default async function ClinicRepeatRequestPage({ params }: { params: Prom
         </Card>
       ) : null}
 
-      {open ? (
+      {open && canDecide ? (
         <Card className="mb-6">
           <CardContent>
             <DecisionForm requestId={request.id} status={request.status} paid={request.paidAt !== null} />
           </CardContent>
         </Card>
       ) : null}
-      {request.stage === "unpaid" ? <WithdrawRequestButton requestId={request.id} /> : null}
+      {request.stage === "unpaid" && canDecide ? <WithdrawRequestButton requestId={request.id} byClinic /> : null}
     </>
   );
 }

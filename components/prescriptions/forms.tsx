@@ -1,8 +1,10 @@
 "use client";
 
 import { useActionState } from "react";
+import { TriangleAlert } from "lucide-react";
 
 import { FormMessage } from "@/components/profile/form-message";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { ConfirmButton } from "@/components/ui/confirm-button";
 import { Input } from "@/components/ui/input";
@@ -31,7 +33,7 @@ function Field({ id, label, children }: { id: string; label: string; children: R
   );
 }
 
-export function WithdrawRequestButton({ requestId }: { requestId: string }) {
+export function WithdrawRequestButton({ requestId, byClinic = false }: { requestId: string; byClinic?: boolean }) {
   const [state, action, pending] = useActionState(cancelRepeat, initial);
   return (
     <form action={action} className="flex flex-col gap-2">
@@ -41,7 +43,11 @@ export function WithdrawRequestButton({ requestId }: { requestId: string }) {
           variant="outline"
           loading={pending}
           confirmTitle="Withdraw this request?"
-          confirmText="The clinic will not see it. You can make a new request at any time."
+          confirmText={
+            byClinic
+              ? "It leaves the to-do list and the patient sees it as withdrawn. They can make a new request at any time."
+              : "The clinic will not see it. You can make a new request at any time."
+          }
         >
           Withdraw request
         </ConfirmButton>
@@ -69,7 +75,10 @@ export function DecisionForm({ requestId, status, paid }: { requestId: string; s
     <form action={action} className="flex flex-col gap-4" key={state.sentAt ?? "decision"}>
       <input type="hidden" name="requestId" value={requestId} />
       {!paid ? (
-        <p className="type-body text-status-warning">This request has not been paid for online. Check payment before you go ahead.</p>
+        <Alert variant="warning">
+          <TriangleAlert aria-hidden />
+          <AlertDescription>This request has not been paid for online. Check payment before you go ahead.</AlertDescription>
+        </Alert>
       ) : null}
       <Field id="decision-status" label="Next step">
         <Select id="decision-status" name="status" defaultValue={options[0]?.value}>
@@ -87,7 +96,7 @@ export function DecisionForm({ requestId, status, paid }: { requestId: string; s
       <FormMessage state={state} />
       <div>
         <Button type="submit" loading={pending}>
-          Save
+          Save next step
         </Button>
       </div>
     </form>
@@ -205,13 +214,13 @@ export function AddListMedicineForm() {
   );
 }
 
-export function ListMedicineToggle({ medicineId, archived }: { medicineId: string; archived: boolean }) {
+export function ListMedicineToggle({ medicineId, name, archived }: { medicineId: string; name: string; archived: boolean }) {
   const [state, action, pending] = useActionState(setListMedicineArchived, initial);
   return (
     <form action={action} className="flex items-center gap-2">
       <input type="hidden" name="medicineId" value={medicineId} />
       <input type="hidden" name="archived" value={archived ? "false" : "true"} />
-      <Button type="submit" size="sm" variant="ghost" loading={pending}>
+      <Button type="submit" size="sm" variant="ghost" loading={pending} aria-label={archived ? `Put ${name} back on the list` : `Take ${name} off the list`}>
         {archived ? "Put back" : "Take off the list"}
       </Button>
       {state.error ? <span className="type-small text-status-danger">{state.error}</span> : null}

@@ -43,7 +43,7 @@ samples["app-invitation-guardian"] = invitationEmail({ siteUrl: SITE, firstName:
 samples["app-invitation-team"] = invitationEmail({ siteUrl: SITE, audience: "team", acceptUrl: `${SITE}/invite?token=example`, expiresInDays: 3 });
 samples["app-guardian-access"] = guardianAccessEmail({ siteUrl: SITE, guardianFirstName: "Mark", patientFirstName: "Isla", canAct: true, signInUrl: `${SITE}/login` });
 samples["app-result-ready"] = resultReadyEmail({ siteUrl: SITE, firstName: "Eleanor", portalUrl: `${SITE}/portal` });
-samples["app-repeat-paid-alert"] = repeatPaidAlertEmail({ siteUrl: SITE, requestUrl: `${SITE}/clinic/prescriptions/example` });
+samples["app-repeat-paid-alert"] = repeatPaidAlertEmail({ siteUrl: SITE, requestUrl: `${SITE}/clinic/prescriptions/example`, paid: true });
 samples["app-repeat-received"] = repeatReceivedEmail({ siteUrl: SITE, firstName: "Eleanor", portalUrl: `${SITE}/portal/prescriptions/example` });
 samples["app-repeat-approved"] = repeatUpdateEmail({ siteUrl: SITE, firstName: "Eleanor", portalUrl: `${SITE}/portal/prescriptions/example`, status: "approved" });
 samples["app-repeat-sent"] = repeatUpdateEmail({ siteUrl: SITE, firstName: "Eleanor", portalUrl: `${SITE}/portal/prescriptions/example`, status: "sent_to_pharmacy" });

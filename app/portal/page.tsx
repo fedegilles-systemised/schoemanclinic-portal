@@ -4,7 +4,7 @@ import { ArrowRight, CalendarDays, MapPin } from "lucide-react";
 
 import { ComingSoon } from "@/components/shell/coming-soon";
 import { AlertBar } from "@/components/ui/alert-bar";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardActions,
@@ -212,15 +212,17 @@ export default async function PortalHomePage() {
               <CardTitle>{runningLow.name}</CardTitle>
               <CardDescription>
                 <span className="font-medium text-status-warning">
-                  {runningLow.daysLeft > 0 ? `${runningLow.daysLeft} days left.` : "Your supply has run out."}
+                  {runningLow.daysLeft > 1 ? `${runningLow.daysLeft} days left.` : runningLow.daysLeft === 1 ? "1 day left." : "Your supply has run out."}
                 </span>{" "}
                 Request a repeat now so it arrives in time.
               </CardDescription>
-              <CardActions>
-                <Link href="/portal/prescriptions/new" className={buttonVariants({ variant: "secondary", size: "sm" })}>
-                  Request repeat
-                </Link>
-              </CardActions>
+              {patient.can_act ? (
+                <CardActions>
+                  <Button variant="secondary" size="sm" asChild>
+                    <Link href="/portal/prescriptions/new">Request a repeat</Link>
+                  </Button>
+                </CardActions>
+              ) : null}
             </Card>
           ) : (
             <EmptyState>We will tell you here when a prescription is running low.</EmptyState>

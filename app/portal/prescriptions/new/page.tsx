@@ -31,7 +31,7 @@ export default async function NewRepeatRequestPage() {
         eyebrow="Prescriptions"
         title="Request a "
         accent="repeat"
-        description={`Dr Gina Schoeman reviews every request. There is an administration fee of ${formatMoney(REPEAT_FEE_PENCE)}.`}
+        description={`A doctor reviews every request. There is an administration fee of ${formatMoney(REPEAT_FEE_PENCE)}.`}
       />
       <Card>
         <CardContent>

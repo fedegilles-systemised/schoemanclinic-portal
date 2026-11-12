@@ -4,7 +4,7 @@ import { Pill } from "lucide-react";
 
 import { RequestsTable } from "@/components/prescriptions/parts";
 import { AlertBar } from "@/components/ui/alert-bar";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader, SectionHeader } from "@/components/ui/page-header";
 import { getPortalPatientId } from "@/lib/data/education";
@@ -30,9 +30,9 @@ export default async function PrescriptionsPage() {
         description="Your current medicines, when each supply runs out, and your repeat requests."
       >
         {patient.canAct ? (
-          <Link href="/portal/prescriptions/new" className={buttonVariants({ variant: "primary" })}>
-            Request a repeat
-          </Link>
+          <Button asChild>
+            <Link href="/portal/prescriptions/new">Request a repeat</Link>
+          </Button>
         ) : null}
       </PageHeader>
 
@@ -58,7 +58,7 @@ export default async function PrescriptionsPage() {
                   </span>
                 </span>
                 <span className={m.daysLeft <= RUN_OUT_WARNING_DAYS ? "type-small font-medium text-status-warning" : "type-small text-content-muted"}>
-                  {m.daysLeft > 0 ? `Runs out ${formatDate(m.runOut)}` : "Supply has run out"}
+                  {m.daysLeft <= 0 ? "Supply has run out" : m.daysLeft <= RUN_OUT_WARNING_DAYS ? `Running low: runs out ${formatDate(m.runOut)}` : `Runs out ${formatDate(m.runOut)}`}
                 </span>
               </li>
             ))}
