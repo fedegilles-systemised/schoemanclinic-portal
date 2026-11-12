@@ -80,6 +80,7 @@ export async function afterChange(appointmentId: string, change: BookingChange |
       return await notifyPatient(a.patient_id, {
         topic: "appointments",
         resendOnly: true,
+        alwaysEmail: true,
         email: onlineBookingEmail({ siteUrl, when, clinicianName }),
         whatsapp: `Hello, your appointment with ${clinicianName} is booked for ${when}. The clinic will be in touch before your appointment.`,
       });
@@ -96,8 +97,11 @@ export async function afterChange(appointmentId: string, change: BookingChange |
     return await notifyPatient(a.patient_id, {
       topic: "appointments",
       resendOnly: unchecked,
+      // An online booking is made without signing in, so the patient is always emailed about it, whatever
+      // their email choice, to see one they did not make (S-192).
+      alwaysEmail: kind === "booked" && a.booked_online,
       notice: hasPortal ? { title: titles[kind], body: bodies[kind], link: "/portal/appointments" } : undefined,
-      email: appointmentEmail({ siteUrl, firstName: first, when, clinicianName, cancelled: kind === "cancelled", moved: kind === "moved", portalUrl: hasPortal ? portalUrl : null }),
+      email: appointmentEmail({ siteUrl, firstName: first, when, clinicianName, cancelled: kind === "cancelled", moved: kind === "moved", portalUrl: hasPortal ? portalUrl : null, bookedOnline: kind === "booked" && a.booked_online }),
       whatsapp:
         kind === "cancelled"
           ? `${hello}, your appointment on ${when} has been cancelled. Please contact the clinic if you would like a new time.`
@@ -108,6 +112,40 @@ export async function afterChange(appointmentId: string, change: BookingChange |
   } catch {
     console.error("Booking follow-up not completed.");
     return null;
+  }
+}
+
+/** Was the patient told by email or WhatsApp? */
+export function patientWasTold(delivery: Delivery | null): boolean {
+  return delivery?.email === "sent" || delivery?.whatsapp === "sent";
+}
+
+/**
+ * After an online booking whose confirmation did not reach the patient, admins and PAs are told, with
+ * a link and no name, so someone contacts the patient (S-192). The notice written by book_online is
+ * made before any message is tried, so it cannot say this itself.
+ */
+export async function tellTeamPatientNotTold(appointmentId: string, delivery: Delivery | null): Promise<void> {
+  try {
+    const admin = createAdminClient();
+    const { data: roles, error: readError } = await admin.from("user_roles").select("user_id, profile:profiles!user_roles_user_id_fkey(status)").in("role", ["admin", "pa"]);
+    const recipients = new Set((roles ?? []).filter((r) => r.profile?.status === "active").map((r) => r.user_id));
+    if (readError || recipients.size === 0) {
+      console.error("Team not told that an online booking confirmation was not delivered: no one to tell.");
+      return;
+    }
+    const { error: insertError } = await admin.from("notifications").insert(
+      [...recipients].map((userId) => ({
+        user_id: userId,
+        topic: "appointments" as const,
+        title: "Online booking: patient not told",
+        body: `The confirmation of an online booking did not reach the patient. ${deliveryLine(delivery)}`,
+        link: `/clinic/diary/${appointmentId}`,
+      })),
+    );
+    if (insertError) console.error("Team not told that an online booking confirmation was not delivered.");
+  } catch {
+    console.error("Team not told that an online booking confirmation was not delivered.");
   }
 }
 
