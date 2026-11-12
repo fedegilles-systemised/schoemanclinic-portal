@@ -10,6 +10,7 @@ import { PageHeader, SectionHeader } from "@/components/ui/page-header";
 import { ResultStatusPill } from "@/components/ui/status-pill";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getCurrentUser } from "@/lib/auth/session";
+import { getMyStaffId } from "@/lib/data/patient-record";
 import { getReport } from "@/lib/data/results";
 import { formatDate, formatLongDate, formatRange } from "@/lib/format";
 import { resultStatus, valueClass } from "@/lib/results";
@@ -32,6 +33,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
 
   const isDoctor = Boolean(user?.roles.includes("doctor"));
   const released = report.releasedAt !== null;
+  const myStaffId = isDoctor && user ? await getMyStaffId(user.id) : null;
 
   return (
     <>
@@ -85,6 +87,35 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
         </TableBody>
       </Table>
 
+      {released ? (
+        <section aria-labelledby="signoff" className="mt-10 max-w-3xl">
+          <SectionHeader id="signoff" title="Sign-" accent="off" className="mb-3" />
+          {report.signoff ? (
+            <dl className="type-body grid gap-x-6 gap-y-2 border border-surface-border bg-surface-raised p-4 sm:grid-cols-[max-content_1fr]">
+              <dt className="text-content-muted">Outcome</dt>
+              <dd>{report.signoff.outcome === "action" ? "Action needed" : "No action needed"}</dd>
+              {report.signoff.actionNote ? (
+                <>
+                  <dt className="text-content-muted">Action</dt>
+                  <dd className="whitespace-pre-wrap">{report.signoff.actionNote}</dd>
+                </>
+              ) : null}
+              <dt className="text-content-muted">Signed off by</dt>
+              <dd>
+                {report.signoff.signedByName}, {formatDate(report.signoff.signedAt)}
+              </dd>
+              <dt className="text-content-muted">Ordered by</dt>
+              <dd>
+                {report.signoff.orderedByName ?? "No order (outside results)"}
+                {report.signoff.byOtherDoctor ? <span className="text-status-warning"> · signed off by a different doctor</span> : null}
+              </dd>
+            </dl>
+          ) : (
+            <p className="type-body text-content-muted">Released before sign-offs were recorded.</p>
+          )}
+        </section>
+      ) : null}
+
       {isDoctor ? (
         <div className="mt-10 grid max-w-3xl gap-10">
           <section aria-labelledby="comments">
@@ -96,8 +127,11 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
           </section>
           {released ? null : (
             <section aria-labelledby="release">
-              <SectionHeader id="release" title="Release to " accent="the patient" className="mb-3" />
-              <ReleaseForm reportId={report.id} />
+              <SectionHeader id="release" title="Sign off and " accent="release" className="mb-3" />
+              <ReleaseForm
+                reportId={report.id}
+                orderedBy={report.orderedBy ? { name: report.orderedBy.name, isYou: report.orderedBy.staffId === myStaffId } : null}
+              />
             </section>
           )}
         </div>

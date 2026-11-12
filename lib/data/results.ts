@@ -171,6 +171,10 @@ export type ReportDetail = {
   fileTitle: string | null;
   fileUrl: string | null;
   results: ReportResult[];
+  /** Who ordered the tests; null for external results with no order. */
+  orderedBy: { staffId: string; name: string } | null;
+  /** The doctor's sign-off, made at release. Null before release, and for reports released before sign-off was recorded. */
+  signoff: { outcome: "action" | "no_action"; actionNote: string | null; signedByName: string; orderedByName: string | null; byOtherDoctor: boolean; signedAt: string } | null;
 };
 
 export async function getReport(id: string): Promise<ReportDetail | null> {
@@ -178,7 +182,7 @@ export async function getReport(id: string): Promise<ReportDetail | null> {
   const { data, error } = await supabase
     .from("lab_reports")
     .select(
-      "id, patient_id, document_id, external_lab_name, sample_date, received_at, status, released_at, reviewed_at, patient_comment, patient:patient_profiles(first_name, last_name, clinic_ref), results(id, value_numeric, value_text, unit, ref_low, ref_high, flag, original_value, original_unit, doctor_comment, marker:markers(name, category))",
+      "id, patient_id, document_id, external_lab_name, sample_date, received_at, status, released_at, reviewed_at, patient_comment, order:lab_orders(ordered_by), signoff:lab_report_signoffs(outcome, action_note, signed_by, ordered_by, signed_at), patient:patient_profiles(first_name, last_name, clinic_ref), results(id, value_numeric, value_text, unit, ref_low, ref_high, flag, original_value, original_unit, doctor_comment, marker:markers(name, category))",
     )
     .eq("id", id)
     .maybeSingle();
@@ -197,9 +201,26 @@ export async function getReport(id: string): Promise<ReportDetail | null> {
     }
   }
 
+  // Names for the sign-off trail, from the staff directory the person may read.
+  const directory = await supabase.rpc("get_staff_directory");
+  const staffName = new Map((directory.data ?? []).map((p) => [p.staff_id, p.full_name]));
+  const orderedById = data.order?.ordered_by ?? null;
+  const signoffRow = data.signoff;
+
   return {
     id: data.id,
     patientId: data.patient_id,
+    orderedBy: orderedById ? { staffId: orderedById, name: staffName.get(orderedById) ?? "A former team member" } : null,
+    signoff: signoffRow
+      ? {
+          outcome: signoffRow.outcome === "action" ? "action" : "no_action",
+          actionNote: signoffRow.action_note,
+          signedByName: staffName.get(signoffRow.signed_by) ?? "A former team member",
+          orderedByName: signoffRow.ordered_by ? (staffName.get(signoffRow.ordered_by) ?? "A former team member") : null,
+          byOtherDoctor: signoffRow.ordered_by !== null && signoffRow.ordered_by !== signoffRow.signed_by,
+          signedAt: signoffRow.signed_at,
+        }
+      : null,
     patientName: fullName(data.patient),
     clinicRef: data.patient?.clinic_ref ?? "",
     labName: data.external_lab_name,

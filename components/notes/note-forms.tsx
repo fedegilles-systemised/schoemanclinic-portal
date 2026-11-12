@@ -9,10 +9,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { archiveDraft, createNote, signNote, updateNote, type NoteFormState } from "@/lib/notes/actions";
+import { NO_OPTIONS, OPTION_CHECKS, type TreatmentOptions } from "@/lib/notes/options";
 
 const initial: NoteFormState = {};
 
-function Fields({ idPrefix, title, body }: { idPrefix: string; title: string; body: string }) {
+function Fields({ idPrefix, title, body, options }: { idPrefix: string; title: string; body: string; options: TreatmentOptions }) {
   return (
     <>
       <div className="flex flex-col gap-1.5">
@@ -22,6 +23,19 @@ function Fields({ idPrefix, title, body }: { idPrefix: string; title: string; bo
       <div className="flex flex-col gap-1.5">
         <Label htmlFor={`${idPrefix}-body`}>Note</Label>
         <Textarea id={`${idPrefix}-body`} name="body" defaultValue={body} maxLength={50000} className="min-h-48" required />
+      </div>
+      <fieldset className="flex flex-col gap-2">
+        <legend className="type-eyebrow mb-1 text-content-muted">Treatment options (for audit)</legend>
+        {OPTION_CHECKS.map(([key, , label]) => (
+          <label key={key} className="type-body flex items-center gap-2">
+            <input type="checkbox" name={key} defaultChecked={options[key]} className="size-4 accent-secondary" />
+            {label}
+          </label>
+        ))}
+      </fieldset>
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor={`${idPrefix}-options`}>Options offered (optional)</Label>
+        <Textarea id={`${idPrefix}-options`} name="optionsOffered" defaultValue={options.optionsOffered ?? ""} maxLength={5000} />
       </div>
     </>
   );
@@ -33,7 +47,7 @@ export function NewNoteForm({ patientId }: { patientId: string }) {
   return (
     <form action={action} className="flex flex-col gap-4">
       <input type="hidden" name="patientId" value={patientId} />
-      <Fields idPrefix="new-note" title="" body="" />
+      <Fields idPrefix="new-note" title="" body="" options={NO_OPTIONS} />
       <FormMessage state={state} />
       <div>
         <Button type="submit" loading={pending}>
@@ -45,7 +59,19 @@ export function NewNoteForm({ patientId }: { patientId: string }) {
 }
 
 /** The author's own draft: edit, sign or discard. */
-export function DraftForm({ patientId, noteId, title, body }: { patientId: string; noteId: string; title: string; body: string }) {
+export function DraftForm({
+  patientId,
+  noteId,
+  title,
+  body,
+  options,
+}: {
+  patientId: string;
+  noteId: string;
+  title: string;
+  body: string;
+  options: TreatmentOptions;
+}) {
   const [saveState, saveAction, saving] = useActionState(updateNote, initial);
   const [signState, signAction, signing] = useActionState(signNote, initial);
   const [discardState, discardAction, discarding] = useActionState(archiveDraft, initial);
@@ -55,7 +81,7 @@ export function DraftForm({ patientId, noteId, title, body }: { patientId: strin
       <form action={saveAction} className="flex flex-col gap-4">
         <input type="hidden" name="patientId" value={patientId} />
         <input type="hidden" name="noteId" value={noteId} />
-        <Fields idPrefix={`draft-${noteId}`} title={title} body={body} />
+        <Fields idPrefix={`draft-${noteId}`} title={title} body={body} options={options} />
         <div className="flex flex-wrap gap-2">
           <Button type="submit" variant="outline" loading={saving}>
             Save draft
