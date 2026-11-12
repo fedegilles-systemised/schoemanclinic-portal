@@ -2,6 +2,7 @@ import Link from "next/link";
 import { CircleCheck, CircleMinus, CircleX, ShieldAlert } from "lucide-react";
 
 import { ArchiveDocumentButton, ShareDocumentButton, UploadDocumentForm } from "@/components/documents/forms";
+import { AddMedicationForm, ChangeMedicationForm } from "@/components/prescriptions/forms";
 import { QuestionStatusPill } from "@/components/questions/question-parts";
 import { AllergyForm, DiagnosisForm, RemoveAllergyButton, DiagnosisStatusForm, ResolveAlertButton, SafeguardingForm } from "@/components/record/forms";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +16,7 @@ import type { DocumentRow } from "@/lib/data/documents";
 import type { AllergyRow, DiagnosisRow, MedicationRow, SafeguardingRow } from "@/lib/data/patient-record";
 import type { QuestionSummary } from "@/lib/data/questions";
 import { DOCUMENT_KIND_LABELS, UPLOAD_KINDS } from "@/lib/documents/constants";
-import { formatDate } from "@/lib/format";
+import { addDays, formatDate } from "@/lib/format";
 import { DIAGNOSIS_STATUS_LABELS, SEVERITY_LABELS } from "@/lib/record/constants";
 
 const listClass = "flex flex-col divide-y divide-surface-border border border-surface-border";
@@ -60,7 +61,10 @@ export function SafeguardingSection({ patientId, alerts, today }: { patientId: s
   );
 }
 
-/** Allergies, diagnoses and medicines. Medicines are read-only here until prescribing is connected. */
+/**
+ * Allergies, diagnoses and medicines. Doctors add medicines and renew, pause or stop them here, with
+ * how long each supply lasts, until prescribing through SignatureRx is connected.
+ */
 export function ClinicalSummarySection({
   patientId,
   allergies,
@@ -68,6 +72,8 @@ export function ClinicalSummarySection({
   medications,
   canAddAllergy,
   canDiagnose,
+  canPrescribe,
+  listNames,
   today,
 }: {
   patientId: string;
@@ -76,6 +82,8 @@ export function ClinicalSummarySection({
   medications: MedicationRow[];
   canAddAllergy: boolean;
   canDiagnose: boolean;
+  canPrescribe: boolean;
+  listNames: string[];
   today: string;
 }) {
   return (
@@ -110,19 +118,40 @@ export function ClinicalSummarySection({
         ) : (
           <ul className={listClass}>
             {medications.map((m) => (
-              <li key={m.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-2">
-                <span>
-                  {m.name}
-                  <span className="type-small text-content-muted">
-                    {m.dose ? ` · ${m.dose}` : ""} · {m.kind === "supplement" ? "supplement" : "prescription"} · since {formatDate(m.startDate)}
+              <li key={m.id} className="flex flex-col gap-2 px-4 py-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span>
+                    {m.name}
+                    <span className="type-small text-content-muted">
+                      {m.dose ? ` · ${m.dose}` : ""} · {m.kind === "supplement" ? "supplement" : "prescription"} · runs out {formatDate(addDays(m.startDate, m.supplyDays))}
+                    </span>
                   </span>
-                </span>
-                {m.status === "active" ? null : <Badge variant="outline">{m.status === "paused" ? "Paused" : "Stopped"}</Badge>}
+                  {m.status === "active" ? null : <Badge variant="outline">{m.status === "paused" ? "Paused" : "Stopped"}</Badge>}
+                </div>
+                {canPrescribe ? (
+                  <details>
+                    <summary className="type-small cursor-pointer text-content-muted">
+                      Renew, pause or stop<span className="sr-only"> {m.name}</span>
+                    </summary>
+                    <div className="pt-3">
+                      <ChangeMedicationForm patientId={patientId} medication={m} />
+                    </div>
+                  </details>
+                ) : null}
               </li>
             ))}
           </ul>
         )}
-        <p className="type-small text-content-muted">Prescriptions are added through SignatureRx once it is connected.</p>
+        {canPrescribe ? (
+          <details>
+            <summary className="type-small cursor-pointer text-content-muted">Add a medicine</summary>
+            <div className="pt-4">
+              <AddMedicationForm patientId={patientId} today={today} listNames={listNames} />
+            </div>
+          </details>
+        ) : (
+          <p className="type-small text-content-muted">Doctors add and renew medicines here. Patients are sent a reminder three weeks before a supply runs out.</p>
+        )}
       </section>
 
       <section aria-labelledby="diagnoses" className="flex flex-col gap-4 lg:col-span-2">

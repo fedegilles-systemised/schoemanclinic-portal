@@ -84,7 +84,7 @@ This table is what the database enforces since the clinic's decisions of 11 Nove
 | Imported PDFs and extracted values | - | - | Read, decide (matched to their patients) | Read, decide (matched to their patients) | Read, decide, including unmatched | - | Read, decide, including unmatched |
 | Letters and documents | What the clinic shared, upload own | Same, upload if can act | Read, add, change | Read, add, change | Read, add, change | Read | Read |
 | Questions to the clinic | Read, ask | Read, ask if can act | Read, change status | Read | Read, change status | Read | Read, change status |
-| Repeat prescription requests | Read, request | Read, request if can act | Read, change status | Read | Read, request for a patient, change status | Read | Read |
+| Repeat prescription requests | Read, request, withdraw before paying | Read, request and withdraw if can act | Read, change status | Read | Read, request for a patient, change status | Read | Read |
 | Education courses | Courses added to their portal | Same | Read the library, add to a patient's portal | Same as doctor | Same as doctor | Same as doctor | Read, build and publish courses, add to any patient's portal |
 | Wearable readings | Read, add, remove their own | Read, add if can act | Read | Read | Read | Read | Read |
 | Own notifications and preferences | Read, change | Read, change | Read, change | Read, change | Read, change | Read, change | Read, change |
@@ -236,7 +236,7 @@ Each flow names who acts, the steps, whether it needs data from another system (
 | 5 | Results by PDF import | Built without AI: values entered by hand | None | Yes (inbound) |
 | 6 | Doctor reviews and releases | Built | GoHighLevel | Proposed |
 | 7 | Patient reads results and trends | Built | None | No |
-| 8 | Request a repeat prescription | Planned | Stripe, GoHighLevel | Proposed |
+| 8 | Request a repeat prescription | Built; Stripe needs the clinic's keys; SignatureRx not connected | Stripe | Yes |
 | 9 | Ask the clinic | Built | Clinic Hub | Built |
 | 10 | Appointments and bloods due date | Read built, sync planned | GoHighLevel, Semble | No |
 | 11 | A guardian acts for a patient | Planned | None | Proposed |
@@ -357,17 +357,21 @@ For a new patient the clinic reference (SC- and six digits) is made automaticall
 
 ### 8. Request a repeat prescription
 
-**Who:** a patient or a guardian who can act, or a PA for a patient. **Status:** planned.
+**Who:** a patient or a guardian who can act (a PA for a patient is allowed by the database; the clinic screen for it is not built). **Status:** built, replacing the clinic's Typeform. Online payment starts when the clinic's Stripe keys are added.
 
-1. The patient picks a current medicine and adds a note.
-2. The patient pays the repeat fee, set at £30 in the data model, through Stripe.
-3. A task is created in GoHighLevel for the team, and the request shows as "requested".
-4. A doctor or PA approves or declines. An approval is passed to SignatureRx, where the doctor signs with a PIN, and to the pharmacy. The request moves to "sent to pharmacy".
-5. The patient sees the status at each step.
+1. The patient chooses up to ten medicines: their current medicines, medicines on the clinic's list, or one typed in when it is not listed. Each is for one or two months' supply (Dr Schoeman, 10 November 2026).
+2. They say whether a future appointment is booked; the portal answers yes for them when it can see one. With none booked they are asked whether they would like to book, and pointed to booking. It does not block the request.
+3. For a weight-loss medicine (Mounjaro, Ozempic, Wegovy, semaglutide) they answer whether they are still losing weight, how much in the last month, and whether they have side effects.
+4. They review the request, then pay the £30 administration fee on Stripe's own page. Without Stripe keys the request is sent unpaid and the clinic arranges the fee.
+5. When Stripe confirms the payment, admins, PAs and the patient's doctors are told in Clinic Hub, the clinic inbox is emailed, and the patient gets a receipt.
+6. A doctor or PA approves, declines (with a reason the patient reads in the portal) or marks it sent to the pharmacy, after prescribing in SignatureRx. The patient is told at each step, without the note or any medicine named.
+7. An unpaid request can be withdrawn by the patient side, a doctor or a PA. Without online payment, the team is told of each new request as it arrives.
 
-**Data in/out:** Stripe for the fee; GoHighLevel for the task. Prescribing itself is done in SignatureRx, so Clinic Hub only tracks the request (proposed). **Email:** proposed, a receipt and a status update.
+Doctors add a patient's medicines on the record, with the day each supply starts and how long it lasts, and renew, pause or stop them there. Admins and doctors keep the clinic's medicine list, which starts with the Typeform's list. Patients are reminded three weeks before a prescription runs out: on the home screen, on the Prescriptions page, and by a daily email or WhatsApp, unless a repeat for it is already on its way.
 
-**Questions:** is the fee refunded if a request is declined? Who pays for a guardian's request? How does an approved request reach Semble and the pharmacy? Which medicines may be requested, and how often?
+**Data in/out:** Stripe is told the amount and the request's reference only, never a name, email or medicine. Prescribing itself is done in SignatureRx, not yet connected. **Email:** receipt, each status change, the clinic alert and the three-week reminder, none naming a medicine.
+
+**Questions:** is the fee refunded if a request is declined (refunds are made in Stripe for now)? Should "no future appointment" block a request rather than warn? Could PCCA's Nexa portal or SignatureRx take approved repeats automatically?
 
 ### 9. Ask the clinic
 
@@ -453,7 +457,7 @@ Clinic Hub connects to nine systems. Supabase and Resend are in place (Resend on
 | --- | --- | --- | --- | --- |
 | Supabase | The database, sign-in and private file storage | Both | Everything Clinic Hub stores | Built. Region and data processing agreement to be confirmed |
 | Vercel | Hosting, page-speed measures, visit counts | Out | Page address (without query), device and performance data. No cookies | Set-up in progress |
-| Stripe | Payments for bloods and repeat-request fees | Both | Payment amounts and a reference. The clinic never holds card details | Planned |
+| Stripe | Payments for bloods and repeat-request fees | Both | Payment amounts and a reference. The clinic never holds card details | Repeat fees built; needs the clinic's keys. Bloods planned |
 | Lab partners (TDL is named) | Results by electronic feed; barcodes | In (and out, proposed) | Results per marker, with the barcode that links them to an order | Planned |
 | GoHighLevel | Patient email and WhatsApp (as texts its plug-in diverts), tasks, invoices, marketing | Out | Contact details and message text; never a result value | Built; needs the clinic's key |
 | Semble | Being retired in stages: notes and bookings now live in Clinic Hub | In | Records to move across | Migration planned |
@@ -489,7 +493,10 @@ Every message has a template in the clinic's look. The sign-in emails (reset, ch
 | Bloods ordered, and a reminder before the due date | An order is created; the due date nears | The patient | GoHighLevel (proposed) | Planned |
 | Payment receipt | Stripe confirms a payment | The payer | Stripe or GoHighLevel (proposed) | Planned |
 | A result is ready | A doctor releases a report | The patient | Resend, from Clinic Hub, following the patient's choice for results emails | Built. A guardian is not emailed yet |
-| Repeat request update | The request is approved, declined or sent | The patient | GoHighLevel (proposed) | Planned |
+| Repeat request received | Stripe confirms the repeat fee | The patient | GoHighLevel, or Resend without it | Built |
+| Repeat request update | The request is approved, declined or sent | The patient | GoHighLevel, or Resend without it | Built. The reason for a decline is read in the portal |
+| Repeat request paid | Stripe confirms the repeat fee | Admins, PAs and the patient's doctors in Clinic Hub; the clinic inbox by email | Resend | Built |
+| Prescription running out | Three weeks before a supply ends, daily | The patient | GoHighLevel, or Resend without it | Built |
 | Question answered | The team replies | The patient | GoHighLevel | Planned |
 | Guardian link created | A PA verifies a guardian | The guardian | Resend (proposed) | Template built; the flow is planned |
 | Results PDF received | A PDF is emailed to the clinic's inbox | The import queue, not a person | The clinic's mailbox | Planned (inbound) |
@@ -632,7 +639,7 @@ The clinic answered the rest on 11 November. Those answers are under Decisions a
 - A PA can create a link that lets a guardian act, with no second approver. A patient cannot remove a guardian; a PA or an admin does, from the patient's record. Built. Age and consent rules for under-18s are still to be set. (Question 5)
 - Doctors invite their own patients. A new patient a doctor invites joins that doctor's care team as primary doctor. Whenever a doctor or an admin is invited, drgina@theschoemanclinic.com is emailed, as well as the notice in the portal bell. No second approval. Built. (Question 6)
 - The roles are doctor, nurse, health coach, PA and admin, plus patients and guardians. A nurse works like a doctor on the patients of their care team: reads the record, enters results, records allergies and writes notes. Diagnoses, prescribing, safeguarding alerts and releasing results stay with doctors. Built. (Question 7)
-- Repeat prescriptions are requested three weeks before they run out. When the patient has paid, the admins, the PAs and the doctor are told that payment is made and the prescription is to be offered. Not built yet: needs payments and prescriptions. (Question 13)
+- Repeat prescriptions are requested three weeks before they run out. When the patient has paid, the admins, the PAs and the doctor are told that payment is made and the prescription is to be offered. Built, with Stripe for the fee; prescribing in SignatureRx is not connected yet. (Question 13)
 - Replies to questions show in the portal with a status. The page says it is not for emergencies. Response times are agreed later. Built. (Question 14)
 - Everything moves into Clinic Hub. Clinical notes are written here, and a signed note is final: nobody edits or corrects it (decided 12 November). Staff connect their own Google Calendar. Patients book with the clinicians on their care team, and staff book for any patient they can open, inside each clinician's weekly hours; a booking goes into the clinician's Google Calendar with the clinic reference only, and the patient gets a confirmation. Patients cannot cancel or move a booking; the team does. Built. (Questions 15 and 32)
 - Fathom is replaced. From a patient's record, a doctor, nurse or health coach records the call (their microphone and the call's sound, or the microphone only), and the transcript arrives as a draft note in their name to check and sign. Transcription is by AssemblyAI in the EU. The clinic already has patients' consent to record. Built; needs the AssemblyAI key. Every account is in the clinic's name. (Question 16)
@@ -651,3 +658,4 @@ The clinic answered the rest on 11 November. Those answers are under Decisions a
 - When a doctor, an admin or a guardian who can act is invited, other admins or PAs get a notice in the portal bell, and for doctors and admins an email to Dr Gina Schoeman. The date of birth, and for patients the ID at first sign-in, are the checks. Built. (Question 28)
 - Lab files and imports not yet matched to a patient are for PAs and admins only (decided 12 November). Built.
 - Clinic Hub follows the clinic's four choices for bloods: the clinic's own lab, TDL, a TDL home kit, or the patient's own results. Only TDL and the home kit are paid through Stripe and get a barcode. Not built yet. (Question 33)
+- Repeat prescriptions move from the Typeform into the portal: up to ten medicines at a time, each for one or two months' supply, with the Typeform's appointment and weight-loss questions and the £30 fee through Stripe. Built. (10 and 12 November 2026)

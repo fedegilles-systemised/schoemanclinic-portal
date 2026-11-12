@@ -649,14 +649,14 @@ isOneToOne: false
                   ]
                 },"medications": {
                   Row: {
-                    "archived_at": string | null,"created_at": string,"dose": string | null,"id": string,"instructions": string | null,"kind": Database["public"]['Enums']["med_kind"],"name": string,"patient_id": string,"pharmacy": string | null,"prescriber_id": string | null,"semble_prescription_id": string | null,"start_date": string,"status": Database["public"]['Enums']["med_status"],"supply_days": number
+                    "archived_at": string | null,"created_at": string,"dose": string | null,"id": string,"instructions": string | null,"kind": Database["public"]['Enums']["med_kind"],"name": string,"patient_id": string,"pharmacy": string | null,"prescriber_id": string | null,"run_out_reminded_for": string | null,"semble_prescription_id": string | null,"start_date": string,"status": Database["public"]['Enums']["med_status"],"supply_days": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "archived_at"?: string | null,"created_at"?: string,"dose"?: string | null,"id"?: string,"instructions"?: string | null,"kind": Database["public"]['Enums']["med_kind"],"name": string,"patient_id": string,"pharmacy"?: string | null,"prescriber_id"?: string | null,"semble_prescription_id"?: string | null,"start_date": string,"status"?: Database["public"]['Enums']["med_status"],"supply_days": number
+                    "archived_at"?: string | null,"created_at"?: string,"dose"?: string | null,"id"?: string,"instructions"?: string | null,"kind": Database["public"]['Enums']["med_kind"],"name": string,"patient_id": string,"pharmacy"?: string | null,"prescriber_id"?: string | null,"run_out_reminded_for"?: string | null,"semble_prescription_id"?: string | null,"start_date": string,"status"?: Database["public"]['Enums']["med_status"],"supply_days": number
                   }
                   Update: {
-                    "archived_at"?: string | null,"created_at"?: string,"dose"?: string | null,"id"?: string,"instructions"?: string | null,"kind"?: Database["public"]['Enums']["med_kind"],"name"?: string,"patient_id"?: string,"pharmacy"?: string | null,"prescriber_id"?: string | null,"semble_prescription_id"?: string | null,"start_date"?: string,"status"?: Database["public"]['Enums']["med_status"],"supply_days"?: number
+                    "archived_at"?: string | null,"created_at"?: string,"dose"?: string | null,"id"?: string,"instructions"?: string | null,"kind"?: Database["public"]['Enums']["med_kind"],"name"?: string,"patient_id"?: string,"pharmacy"?: string | null,"prescriber_id"?: string | null,"run_out_reminded_for"?: string | null,"semble_prescription_id"?: string | null,"start_date"?: string,"status"?: Database["public"]['Enums']["med_status"],"supply_days"?: number
                   }
                   Relationships: [
                     {
@@ -811,6 +811,20 @@ isOneToOne: true
                   Relationships: [
                     
                   ]
+                },"prescribable_medicines": {
+                  Row: {
+                    "archived_at": string | null,"created_at": string,"id": string,"name": string,"sort_order": number,"weight_loss": boolean
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "archived_at"?: string | null,"created_at"?: string,"id"?: string,"name": string,"sort_order"?: number,"weight_loss"?: boolean
+                  }
+                  Update: {
+                    "archived_at"?: string | null,"created_at"?: string,"id"?: string,"name"?: string,"sort_order"?: number,"weight_loss"?: boolean
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"question_replies": {
                   Row: {
                     "author_id": string,"body": string,"created_at": string,"from_clinic": boolean,"id": string,"question_id": string
@@ -863,16 +877,54 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
-                },"repeat_requests": {
+                },"repeat_request_items": {
                   Row: {
-                    "created_at": string,"fee_pence": number,"ghl_task_id": string | null,"id": string,"medication_id": string,"note": string | null,"patient_id": string,"requested_at": string,"requested_by": string,"resolved_at": string | null,"status": Database["public"]['Enums']["request_status"],"stripe_payment_intent_id": string | null
+                    "created_at": string,"id": string,"medication_id": string | null,"medicine_id": string | null,"other_name": string | null,"patient_id": string,"request_id": string,"supply_months": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"fee_pence"?: number,"ghl_task_id"?: string | null,"id"?: string,"medication_id": string,"note"?: string | null,"patient_id": string,"requested_at"?: string,"requested_by": string,"resolved_at"?: string | null,"status"?: Database["public"]['Enums']["request_status"],"stripe_payment_intent_id"?: string | null
+                    "created_at"?: string,"id"?: string,"medication_id"?: string | null,"medicine_id"?: string | null,"other_name"?: string | null,"patient_id": string,"request_id": string,"supply_months": number
                   }
                   Update: {
-                    "created_at"?: string,"fee_pence"?: number,"ghl_task_id"?: string | null,"id"?: string,"medication_id"?: string,"note"?: string | null,"patient_id"?: string,"requested_at"?: string,"requested_by"?: string,"resolved_at"?: string | null,"status"?: Database["public"]['Enums']["request_status"],"stripe_payment_intent_id"?: string | null
+                    "created_at"?: string,"id"?: string,"medication_id"?: string | null,"medicine_id"?: string | null,"other_name"?: string | null,"patient_id"?: string,"request_id"?: string,"supply_months"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "repeat_request_items_medication_fkey"
+      columns: ["medication_id","patient_id"]
+isOneToOne: false
+      referencedRelation: "medications"
+      referencedColumns: ["id","patient_id"]
+    },{
+      foreignKeyName: "repeat_request_items_medicine_id_fkey"
+      columns: ["medicine_id"]
+isOneToOne: false
+      referencedRelation: "prescribable_medicines"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "repeat_request_items_patient_id_fkey"
+      columns: ["patient_id"]
+isOneToOne: false
+      referencedRelation: "patient_profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "repeat_request_items_request_fkey"
+      columns: ["request_id","patient_id"]
+isOneToOne: false
+      referencedRelation: "repeat_requests"
+      referencedColumns: ["id","patient_id"]
+    }
+                  ]
+                },"repeat_requests": {
+                  Row: {
+                    "cancelled_at": string | null,"created_at": string,"decided_by": string | null,"decision_note": string | null,"fee_pence": number,"ghl_task_id": string | null,"has_future_appointment": boolean | null,"has_side_effects": boolean | null,"id": string,"medication_id": string | null,"note": string | null,"paid_at": string | null,"patient_id": string,"requested_at": string,"requested_by": string,"resolved_at": string | null,"side_effects": string | null,"status": Database["public"]['Enums']["request_status"],"still_losing_weight": boolean | null,"stripe_checkout_session_id": string | null,"stripe_payment_intent_id": string | null,"wants_appointment": boolean | null,"weight_lost_last_month": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "cancelled_at"?: string | null,"created_at"?: string,"decided_by"?: string | null,"decision_note"?: string | null,"fee_pence"?: number,"ghl_task_id"?: string | null,"has_future_appointment"?: boolean | null,"has_side_effects"?: boolean | null,"id"?: string,"medication_id"?: string | null,"note"?: string | null,"paid_at"?: string | null,"patient_id": string,"requested_at"?: string,"requested_by": string,"resolved_at"?: string | null,"side_effects"?: string | null,"status"?: Database["public"]['Enums']["request_status"],"still_losing_weight"?: boolean | null,"stripe_checkout_session_id"?: string | null,"stripe_payment_intent_id"?: string | null,"wants_appointment"?: boolean | null,"weight_lost_last_month"?: string | null
+                  }
+                  Update: {
+                    "cancelled_at"?: string | null,"created_at"?: string,"decided_by"?: string | null,"decision_note"?: string | null,"fee_pence"?: number,"ghl_task_id"?: string | null,"has_future_appointment"?: boolean | null,"has_side_effects"?: boolean | null,"id"?: string,"medication_id"?: string | null,"note"?: string | null,"paid_at"?: string | null,"patient_id"?: string,"requested_at"?: string,"requested_by"?: string,"resolved_at"?: string | null,"side_effects"?: string | null,"status"?: Database["public"]['Enums']["request_status"],"still_losing_weight"?: boolean | null,"stripe_checkout_session_id"?: string | null,"stripe_payment_intent_id"?: string | null,"wants_appointment"?: boolean | null,"weight_lost_last_month"?: string | null
                   }
                   Relationships: [
                     {
@@ -886,6 +938,12 @@ isOneToOne: false
       columns: ["patient_id"]
 isOneToOne: false
       referencedRelation: "patient_profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "repeat_requests_decided_by_fkey"
+      columns: ["decided_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
       referencedColumns: ["id"]
     },{
       foreignKeyName: "repeat_requests_requested_by_fkey"
@@ -1161,6 +1219,21 @@ isOneToOne: false
 { Args: Record<PropertyKey, never>; Returns: {
               "avatar_path": string,"clinical_role": Database["public"]['Enums']["staff_role"],"full_name": string,"job_title": string,"profile_id": string,"staff_id": string
             }[]
+                           },
+"request_repeat":
+{ Args: { "_has_future_appointment": boolean,"_has_side_effects": boolean,"_items": Json,"_note": string,"_patient": string,"_side_effects": string,"_still_losing_weight": boolean,"_wants_appointment": boolean,"_weight_lost_last_month": string }; Returns: string
+                           },
+"cancel_repeat_request":
+{ Args: { "_request": string }; Returns: undefined
+                           },
+"decide_repeat_request":
+{ Args: { "_note": string,"_request": string,"_status": Database["public"]['Enums']["request_status"] }; Returns: undefined
+                           },
+"mark_repeat_request_paid":
+{ Args: { "_amount": number,"_payment_intent": string,"_request": string,"_session": string }; Returns: boolean
+                           },
+"mark_run_out_reminded":
+{ Args: { "_medication": string,"_run_out": string }; Returns: undefined
                            },
 "close_question":
 { Args: { "_question": string }; Returns: undefined

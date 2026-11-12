@@ -6,7 +6,15 @@ import { copyFileSync, mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 import { authTemplates } from "@/lib/email/templates/auth";
-import { guardianAccessEmail, invitationEmail, resultReadyEmail } from "@/lib/email/templates/app";
+import {
+  guardianAccessEmail,
+  invitationEmail,
+  repeatPaidAlertEmail,
+  repeatReceivedEmail,
+  repeatUpdateEmail,
+  resultReadyEmail,
+  runOutReminderEmail,
+} from "@/lib/email/templates/app";
 
 // The previews are served from .email-preview/ itself (for example `python3 -m http.server 8765`),
 // which holds a copy of the logo, so the images show without the site running.
@@ -35,6 +43,12 @@ samples["app-invitation-guardian"] = invitationEmail({ siteUrl: SITE, firstName:
 samples["app-invitation-team"] = invitationEmail({ siteUrl: SITE, audience: "team", acceptUrl: `${SITE}/invite?token=example`, expiresInDays: 3 });
 samples["app-guardian-access"] = guardianAccessEmail({ siteUrl: SITE, guardianFirstName: "Mark", patientFirstName: "Isla", canAct: true, signInUrl: `${SITE}/login` });
 samples["app-result-ready"] = resultReadyEmail({ siteUrl: SITE, firstName: "Eleanor", portalUrl: `${SITE}/portal` });
+samples["app-repeat-paid-alert"] = repeatPaidAlertEmail({ siteUrl: SITE, requestUrl: `${SITE}/clinic/prescriptions/example`, paid: true });
+samples["app-repeat-received"] = repeatReceivedEmail({ siteUrl: SITE, firstName: "Eleanor", portalUrl: `${SITE}/portal/prescriptions/example` });
+samples["app-repeat-approved"] = repeatUpdateEmail({ siteUrl: SITE, firstName: "Eleanor", portalUrl: `${SITE}/portal/prescriptions/example`, status: "approved" });
+samples["app-repeat-sent"] = repeatUpdateEmail({ siteUrl: SITE, firstName: "Eleanor", portalUrl: `${SITE}/portal/prescriptions/example`, status: "sent_to_pharmacy" });
+samples["app-repeat-declined"] = repeatUpdateEmail({ siteUrl: SITE, firstName: "Eleanor", portalUrl: `${SITE}/portal/prescriptions/example`, status: "declined" });
+samples["app-run-out-reminder"] = runOutReminderEmail({ siteUrl: SITE, firstName: "Eleanor", portalUrl: `${SITE}/portal/prescriptions` });
 
 for (const [name, sample] of Object.entries(samples)) writeFileSync(path.join(folder, `${name}.html`), sample.html);
 writeFileSync(

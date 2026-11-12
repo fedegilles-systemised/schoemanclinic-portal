@@ -212,17 +212,17 @@ export default async function PortalHomePage() {
               <CardTitle>{runningLow.name}</CardTitle>
               <CardDescription>
                 <span className="font-medium text-status-warning">
-                  {runningLow.daysLeft > 0 ? `${runningLow.daysLeft} days left.` : "Your supply has run out."}
+                  {runningLow.daysLeft > 1 ? `${runningLow.daysLeft} days left.` : runningLow.daysLeft === 1 ? "1 day left." : "Your supply has run out."}
                 </span>{" "}
                 Request a repeat now so it arrives in time.
               </CardDescription>
-              <CardActions>
-                <ComingSoon>
-                  <Button variant="secondary" size="sm" disabled>
-                    Request repeat
+              {patient.can_act ? (
+                <CardActions>
+                  <Button variant="secondary" size="sm" asChild>
+                    <Link href="/portal/prescriptions/new">Request a repeat</Link>
                   </Button>
-                </ComingSoon>
-              </CardActions>
+                </CardActions>
+              ) : null}
             </Card>
           ) : (
             <EmptyState>We will tell you here when a prescription is running low.</EmptyState>
