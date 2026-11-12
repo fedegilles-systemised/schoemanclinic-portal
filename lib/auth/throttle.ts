@@ -17,7 +17,8 @@ type ThrottledAction =
   | "booking"
   | "question"
   | "document-upload"
-  | "repeat-request";
+  | "repeat-request"
+  | "feedback";
 
 // A clinic shares one address, so the address limit is well above the account limits.
 const LIMITS: Record<ThrottledAction, { windowSeconds: number; address: number; addressAndAccount: number; account: number }> = {
@@ -39,6 +40,8 @@ const LIMITS: Record<ThrottledAction, { windowSeconds: number; address: number; 
   "document-upload": { windowSeconds: 60 * 60, address: 300, addressAndAccount: 120, account: 120 },
   // Each request opens a payment page and each decision messages a patient, so a script must not be able to flood either.
   "repeat-request": { windowSeconds: 60 * 60, address: 200, addressAndAccount: 40, account: 40 },
+  // Each answer can alert the team, and each follow-up is a permanent record.
+  feedback: { windowSeconds: 60 * 60, address: 200, addressAndAccount: 30, account: 30 },
 };
 
 /** Stored as a hash, so the table holds no plain email or IP address. */

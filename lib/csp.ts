@@ -1,3 +1,5 @@
+import { VIDEO_FRAME_SOURCES } from "@/lib/education/video";
+
 const isDev = process.env.NODE_ENV !== "production";
 
 function supabaseOrigins(): { http: string; ws: string } {
@@ -27,6 +29,8 @@ export function contentSecurityPolicy(nonce: string): string {
     `img-src 'self' data: blob: ${supabase.http}`.trim(),
     "font-src 'self'",
     `connect-src 'self' ${supabase.http} ${supabase.ws}${isDev ? " ws://localhost:* ws://127.0.0.1:*" : ""}`.trim(),
+    // Lesson videos play in the YouTube, Vimeo or Loom player, and nothing else may be framed.
+    `frame-src ${VIDEO_FRAME_SOURCES.join(" ")}`,
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

@@ -235,6 +235,16 @@ export function getSiteUrl(): string {
   return parsed.data.replace(/\/$/, "");
 }
 
+/**
+ * The clinic's Google review link, offered to every patient after they give feedback. Optional:
+ * without it the link is not shown. Only an https address is accepted.
+ */
+export function getGoogleReviewUrl(): string | null {
+  assertServer();
+  const parsed = z.url({ protocol: /^https$/ }).safeParse(process.env.GOOGLE_REVIEW_URL);
+  return parsed.success ? parsed.data : null;
+}
+
 /** Server-only session variables, for lib/supabase/session-cookies.ts. */
 export function getSessionEnv(): z.infer<typeof sessionSchema> {
   assertServer();
