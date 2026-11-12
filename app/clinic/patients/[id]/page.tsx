@@ -10,6 +10,7 @@ import { CancelAppointmentButton } from "@/components/booking/book-slot";
 import { DraftForm, NewNoteForm } from "@/components/notes/note-forms";
 import { CheckRecordingButton, Recorder } from "@/components/recordings/recorder";
 import { RELATIONSHIP_LABELS } from "@/components/patients/care-team-forms";
+import { PatientContactForm } from "@/components/patients/contact-form";
 import { RemoveGuardianButton } from "@/components/patients/guardian-forms";
 import { FormList } from "@/components/forms/form-list";
 import { ClinicalSummarySection, ConsentsSection, DocumentsSection, QuestionsSection, SafeguardingSection } from "@/components/record/record-sections";
@@ -25,6 +26,7 @@ import { getUpcomingAppointments } from "@/lib/data/appointments";
 import { getPatientAssignments, getReadings, listCourses } from "@/lib/data/education";
 import { getConsents } from "@/lib/data/consents";
 import { listDocuments } from "@/lib/data/documents";
+import { getPatientContact } from "@/lib/data/patient-contact";
 import { getCatalogue } from "@/lib/data/prescriptions";
 import { listForms, submitterLabels } from "@/lib/data/forms";
 import { getClinicalSummary, getGuardians, getMyStaffId, getPatientRecord, getRecordings, getSafeguardingAlerts } from "@/lib/data/patient-record";
@@ -114,6 +116,8 @@ export default async function PatientRecordPage({
   const canRecord = canWrite && Boolean(myStaffId) && isTranscriptionConfigured();
   const RECORDING_STATUS = { uploading: "Upload did not finish; record again", transcribing: "Being transcribed", transcribed: "Transcript in notes", failed: "Transcription failed" } as const;
   const managesGuardians = user.roles.some((role) => role === "pa" || role === "admin");
+  const editsContact = user.roles.includes("pa");
+  const contact = editsContact ? await getPatientContact(record.id) : null;
   const guardians = managesGuardians ? await getGuardians(record.id) : [];
   const drafts = record.notes.filter((note) => note.status === "draft");
   const signed = record.notes.filter((note) => note.status === "signed");
@@ -132,6 +136,17 @@ export default async function PatientRecordPage({
           record.careTeam.length ? record.careTeam.map((m) => `${m.name} (${RELATIONSHIP_LABELS[m.relationship]})`).join(", ") : "nobody yet"
         }.`}
       />
+
+      {editsContact && contact ? (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Contact and address</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <PatientContactForm patientId={record.id} contact={contact} />
+          </CardContent>
+        </Card>
+      ) : null}
 
       {booked ? (
         <div className="mb-6">

@@ -205,7 +205,8 @@ export async function getReport(id: string): Promise<ReportDetail | null> {
   const directory = await supabase.rpc("get_staff_directory");
   const staffName = new Map((directory.data ?? []).map((p) => [p.staff_id, p.full_name]));
   const orderedById = data.order?.ordered_by ?? null;
-  const signoffRow = data.signoff;
+  // The sign-off comes back as a list of zero or one (the link is a composite key), never as one object.
+  const signoffRow = data.signoff[0] ?? null;
 
   return {
     id: data.id,
