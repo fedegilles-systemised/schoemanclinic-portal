@@ -98,6 +98,7 @@ select pg_temp.become('a0000000-0000-4000-8000-000000000003');
 select lives_ok($$ select public.move_appointment((select appointment_id from booked), 'b0000000-0000-4000-8000-000000000002', pg_temp.slot('16:00')) $$, 'a confirmed booking is moved');
 reset role;
 select is((select status::text from public.appointments where id = (select appointment_id from booked)), 'confirmed', 'and stays confirmed');
+select ok(exists (select 1 from public.care_team where patient_id = (select patient_id from booked) and staff_id = 'b0000000-0000-4000-8000-000000000002'), 'the clinician it moved to joins the care team');
 
 -- The same phone number counts towards the limit, whatever the email; the message names nobody.
 select pg_temp.become_server();

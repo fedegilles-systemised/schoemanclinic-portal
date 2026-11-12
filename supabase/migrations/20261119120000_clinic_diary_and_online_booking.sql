@@ -155,6 +155,16 @@ begin
   update public.appointments
   set clinician_id = _staff, starts_at = _starts_at, location_id = chosen_location
   where id = _appointment;
+
+  -- The clinician the booking moves to joins the care team, if not already on it, so they can prepare.
+  insert into public.care_team (patient_id, staff_id, relationship, since)
+  select a.patient_id, st.id, (case st.clinical_role when 'doctor' then 'doctor' when 'nurse' then 'nurse' else 'health_coach' end)::public.care_relationship, private.london_today()
+  from public.staff_profiles st
+  where st.id = _staff and not exists (
+    select 1 from public.care_team ct
+    where ct.patient_id = a.patient_id and ct.staff_id = _staff
+      and ct.since <= private.london_today() and (ct.until is null or ct.until > private.london_today())
+  );
 end;
 $$;
 

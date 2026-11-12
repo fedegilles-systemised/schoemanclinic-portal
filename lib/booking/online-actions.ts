@@ -15,7 +15,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
  */
 async function passesBotCheck(token: FormDataEntryValue | null): Promise<boolean> {
   const secret = getTurnstileSecret();
-  if (!secret) return true;
+  // Both keys or neither: with only the secret, the form would show no check and every booking would fail.
+  if (!secret || !process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY) return true;
   if (typeof token !== "string" || token.length === 0 || token.length > 2048) return false;
   try {
     const response = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
