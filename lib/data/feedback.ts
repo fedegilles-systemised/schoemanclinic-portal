@@ -107,14 +107,16 @@ export async function getFeedback(id: string): Promise<FeedbackRow | null> {
   return data ? rowOf(data as unknown as Row) : null;
 }
 
-export type Survey = { id: string; patientId: string; answeredAt: string | null; expiresAt: string };
+export type Survey = { id: string; patientId: string; answeredAt: string | null; expiresAt: string; rating: Rating | null; wantsContact: boolean | null };
 
 /** A survey as the patient sees it: whether it is still open. */
 export async function getSurvey(id: string): Promise<Survey | null> {
   const supabase = await createClient();
-  const { data, error } = await supabase.from("patient_feedback").select("id, patient_id, answered_at, expires_at").eq("id", id).maybeSingle();
+  const { data, error } = await supabase.from("patient_feedback").select("id, patient_id, answered_at, expires_at, rating, wants_contact").eq("id", id).maybeSingle();
   if (error) throw new Error("Could not load the survey.");
-  return data ? { id: data.id, patientId: data.patient_id, answeredAt: data.answered_at, expiresAt: data.expires_at } : null;
+  return data
+    ? { id: data.id, patientId: data.patient_id, answeredAt: data.answered_at, expiresAt: data.expires_at, rating: isRating(data.rating) ? data.rating : null, wantsContact: data.wants_contact }
+    : null;
 }
 
 /** The patient's newest survey still waiting for an answer, for the portal home screen. */

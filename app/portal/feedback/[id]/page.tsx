@@ -16,7 +16,10 @@ export const metadata: Metadata = { title: "Your feedback · The Schoeman Clinic
 
 /**
  * A feedback survey in the portal, and the thank-you once answered. The Google review link is
- * offered to everyone who answers, whatever they said.
+ * offered only after positive feedback (a score of 9 or 10): the clinic's decision of 12 November
+ * 2026, taken knowing that Google's review policy and the CMA's guidance discourage asking only
+ * satisfied patients. Everyone else is told the clinic has their answer, and that it will be in
+ * touch when they asked or when the answer needs a follow-up.
  */
 export default async function FeedbackPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -28,10 +31,22 @@ export default async function FeedbackPage({ params }: { params: Promise<{ id: s
   const forSomeoneElse = patients.length > 1;
 
   if (survey.answeredAt) {
-    const reviewUrl = getGoogleReviewUrl();
+    const reviewUrl = survey.rating === "green" ? getGoogleReviewUrl() : null;
+    const inTouch = survey.rating === "red" || survey.wantsContact;
     return (
       <>
-        <PageHeader eyebrow="Your feedback" title="Thank " accent="you" description="Your answers have reached the clinic, and they are kept with your record." />
+        <PageHeader
+          eyebrow="Your feedback"
+          title="Thank "
+          accent="you"
+          description={
+            inTouch
+              ? "Your answers have reached the clinic, and they are kept with your record. Someone from the clinic will be in touch soon."
+              : survey.rating === "amber"
+                ? "Your answers have reached the clinic, and they are kept with your record. We read every answer and use it to improve."
+                : "Your answers have reached the clinic, and they are kept with your record."
+          }
+        />
         {reviewUrl ? (
           <Card>
             <CardContent className="flex flex-col gap-4">

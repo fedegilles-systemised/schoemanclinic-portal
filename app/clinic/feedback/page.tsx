@@ -78,7 +78,7 @@ export default async function ClinicFeedbackPage() {
         eyebrow="Patients"
         title="Patient "
         accent="feedback"
-        description={`Last 90 days: ${recent.length} ${recent.length === 1 ? "answer" : "answers"}, ${count("green")} positive, ${count("amber")} mixed and ${count("red")} needing attention. Every patient who answers is offered the Google review link.`}
+        description={`Last 90 days: ${recent.length} ${recent.length === 1 ? "answer" : "answers"}, ${count("green")} positive, ${count("amber")} mixed and ${count("red")} needing attention. Patients who give positive feedback are offered the Google review link.`}
       >
         <div className="flex flex-wrap gap-6">
           <Link href="/clinic/feedback/export?set=evidence" prefetch={false} className="type-button-label text-content no-underline">

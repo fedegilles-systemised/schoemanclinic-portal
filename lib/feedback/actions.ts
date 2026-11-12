@@ -38,8 +38,8 @@ const text = (value: FormDataEntryValue | null) => (typeof value === "string" ? 
 /**
  * A patient, or a guardian who can act, answers a feedback survey. Amber and red answers alert the
  * team in Clinic Hub (written by the database) and the clinic inbox, with no name and nothing the
- * patient wrote. Then the patient sees the thank-you page, with the Google review link whatever
- * their answer.
+ * patient wrote. Then the patient sees the thank-you page, with the Google review link after
+ * positive feedback only.
  */
 export async function submitFeedback(_state: FeedbackFormState, formData: FormData): Promise<FeedbackFormState> {
   const user = await getCurrentUser();
