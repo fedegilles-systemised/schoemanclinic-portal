@@ -1,7 +1,8 @@
 import "server-only";
 
-import type { Database } from "@/lib/database.types";
 import { todayInLondon } from "@/lib/calendar/time";
+import type { Database } from "@/lib/database.types";
+import type { TreatmentOptions } from "@/lib/notes/options";
 import { createClient } from "@/lib/supabase/server";
 
 type CareRelationship = Database["public"]["Enums"]["care_relationship"];
@@ -19,6 +20,7 @@ export type RecordNote = {
   signedAt: string | null;
   createdAt: string;
   updatedAt: string;
+  options: TreatmentOptions;
 };
 
 export type PatientRecord = {
@@ -55,7 +57,9 @@ export async function getPatientRecord(patientId: string): Promise<PatientRecord
       .or(`until.is.null,until.gt.${today}`),
     supabase
       .from("clinical_notes")
-      .select("id, title, body, source, status, version, author_id, signed_at, created_at, updated_at")
+      .select(
+        "id, title, body, source, status, version, author_id, signed_at, created_at, updated_at, all_options_discussed, customised_options_discussed, nice_options_discussed, side_effects_discussed, options_offered",
+      )
       .eq("patient_id", patientId)
       .is("archived_at", null)
       .order("created_at", { ascending: false }),
@@ -83,6 +87,13 @@ export async function getPatientRecord(patientId: string): Promise<PatientRecord
       signedAt: n.signed_at,
       createdAt: n.created_at,
       updatedAt: n.updated_at,
+      options: {
+        allOptionsDiscussed: n.all_options_discussed,
+        customisedOptionsDiscussed: n.customised_options_discussed,
+        niceOptionsDiscussed: n.nice_options_discussed,
+        sideEffectsDiscussed: n.side_effects_discussed,
+        optionsOffered: n.options_offered,
+      },
     })),
   };
 }
@@ -146,6 +157,7 @@ export type MedicationRow = {
   kind: Database["public"]["Enums"]["med_kind"];
   status: Database["public"]["Enums"]["med_status"];
   startDate: string;
+  supplyDays: number;
 };
 export type SafeguardingRow = {
   id: string;
@@ -176,7 +188,7 @@ export async function getClinicalSummary(patientId: string): Promise<{ allergies
       .order("created_at", { ascending: false }),
     supabase
       .from("medications")
-      .select("id, name, dose, instructions, kind, status, start_date")
+      .select("id, name, dose, instructions, kind, status, start_date, supply_days")
       .eq("patient_id", patientId)
       .is("archived_at", null)
       .order("start_date", { ascending: false }),
@@ -193,6 +205,7 @@ export async function getClinicalSummary(patientId: string): Promise<{ allergies
       kind: m.kind,
       status: m.status,
       startDate: m.start_date,
+      supplyDays: m.supply_days,
     })),
   };
 }

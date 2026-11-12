@@ -36,6 +36,20 @@ function read(formData: FormData, name: string): string | undefined {
   return typeof value === "string" ? value : undefined;
 }
 
+/** The treatment-option confirmations from the form, as columns. Null when the text is too long. */
+function readOptions(formData: FormData) {
+  const offered = (read(formData, "optionsOffered") ?? "").trim();
+  if (offered.length > 5000) return null;
+  return {
+    all_options_discussed: formData.get("allOptionsDiscussed") === "on",
+    customised_options_discussed: formData.get("customisedOptionsDiscussed") === "on",
+    nice_options_discussed: formData.get("niceOptionsDiscussed") === "on",
+    side_effects_discussed: formData.get("sideEffectsDiscussed") === "on",
+    options_offered: offered || null,
+  };
+}
+const OPTIONS_TOO_LONG = "Use 5,000 characters or fewer for the options offered.";
+
 /** A new draft. Signed notes are final, so nothing here corrects one. */
 export async function createNote(_state: NoteFormState, formData: FormData): Promise<NoteFormState> {
   const { staffId } = await requireWriter();
@@ -43,6 +57,8 @@ export async function createNote(_state: NoteFormState, formData: FormData): Pro
   if (!patientId.success) return { error: GENERIC_FAILURE };
   const fields = noteFields.safeParse({ title: read(formData, "title"), body: read(formData, "body") });
   if (!fields.success) return { error: fields.error.issues[0]?.message ?? GENERIC_FAILURE };
+  const options = readOptions(formData);
+  if (!options) return { error: OPTIONS_TOO_LONG };
 
   const supabase = await createClient();
   const { error } = await supabase.from("clinical_notes").insert({
@@ -50,6 +66,7 @@ export async function createNote(_state: NoteFormState, formData: FormData): Pro
     author_id: staffId,
     title: fields.data.title,
     body: fields.data.body,
+    ...options,
   });
   if (error) return { error: friendly(error) };
   revalidatePath(`/clinic/patients/${patientId.data}`);
@@ -63,10 +80,12 @@ export async function updateNote(_state: NoteFormState, formData: FormData): Pro
   if (!noteId.success || !patientId.success) return { error: GENERIC_FAILURE };
   const fields = noteFields.safeParse({ title: read(formData, "title"), body: read(formData, "body") });
   if (!fields.success) return { error: fields.error.issues[0]?.message ?? GENERIC_FAILURE };
+  const options = readOptions(formData);
+  if (!options) return { error: OPTIONS_TOO_LONG };
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("clinical_notes")
-    .update({ title: fields.data.title, body: fields.data.body })
+    .update({ title: fields.data.title, body: fields.data.body, ...options })
     .eq("id", noteId.data)
     .select("id");
   if (error) return { error: friendly(error) };
@@ -83,10 +102,12 @@ export async function signNote(_state: NoteFormState, formData: FormData): Promi
   if (!noteId.success || !patientId.success) return { error: GENERIC_FAILURE };
   const fields = noteFields.safeParse({ title: read(formData, "title"), body: read(formData, "body") });
   if (!fields.success) return { error: fields.error.issues[0]?.message ?? GENERIC_FAILURE };
+  const options = readOptions(formData);
+  if (!options) return { error: OPTIONS_TOO_LONG };
   const supabase = await createClient();
   const saved = await supabase
     .from("clinical_notes")
-    .update({ title: fields.data.title, body: fields.data.body })
+    .update({ title: fields.data.title, body: fields.data.body, ...options })
     .eq("id", noteId.data)
     .select("id");
   if (saved.error) return { error: friendly(saved.error) };

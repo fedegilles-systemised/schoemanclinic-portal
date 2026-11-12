@@ -173,9 +173,24 @@ export async function releaseReport(_state: ResultsFormState, formData: FormData
   const reportId = idSchema.safeParse(formData.get("reportId"));
   if (!reportId.success) return { error: GENERIC_FAILURE };
   const comment = String(formData.get("comment") ?? "").trim();
+  const signoff = z
+    .discriminatedUnion("outcome", [
+      z.object({ outcome: z.literal("no_action") }),
+      z.object({
+        outcome: z.literal("action"),
+        actionNote: z.string().trim().min(1, "Describe the action.").max(2000, "Use 2,000 characters or fewer for the action."),
+      }),
+    ])
+    .safeParse({ outcome: formData.get("outcome") ?? undefined, actionNote: formData.get("actionNote") ?? undefined });
+  if (!signoff.success) return { error: signoff.error.issues[0]?.code === "invalid_union" ? "Sign the report off: action or no action." : (signoff.error.issues[0]?.message ?? GENERIC_FAILURE) };
 
   const supabase = await createClient();
-  const { error } = await supabase.rpc("release_report", { _report: reportId.data, _comment: comment || undefined });
+  const { error } = await supabase.rpc("release_report", {
+    _report: reportId.data,
+    _comment: comment || undefined,
+    _outcome: signoff.data.outcome,
+    _action_note: signoff.data.outcome === "action" ? signoff.data.actionNote : undefined,
+  });
   if (error) return { error: friendly(error) };
 
   revalidatePath("/clinic", "layout");
@@ -184,8 +199,8 @@ export async function releaseReport(_state: ResultsFormState, formData: FormData
   const problem = await tellPatientByEmail(supabase, reportId.data);
   return {
     saved: problem
-      ? `The report has been released and the patient has been told in the portal. ${problem}`
-      : "The report has been released. The patient has been told.",
+      ? `The report has been signed off and released, and the patient has been told in the portal. ${problem}`
+      : "The report has been signed off and released. The patient has been told.",
   };
 }
 

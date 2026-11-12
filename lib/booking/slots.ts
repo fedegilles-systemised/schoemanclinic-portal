@@ -52,19 +52,34 @@ export async function freeSlots(params: { staffId: string; clinicianUserId: stri
     if (!(error instanceof GoogleDisconnectedError)) console.error("Google busy times not read for booking.");
   }
 
-  const earliest = Date.now() + 60 * 60 * 1000;
+  return computeSlots({ hours: hours.data, blocked, durationMin: params.durationMin, fromDay, days, earliest: Date.now() + 60 * 60 * 1000 });
+}
+
+/**
+ * The free starts, every 15 minutes, inside weekly hours and clear of busy times. Shared by staff and
+ * patient booking and the public booking page.
+ */
+export function computeSlots(input: {
+  hours: { weekday: number; start_time: string; end_time: string; location_id: string | null }[];
+  blocked: [number, number][];
+  durationMin: number;
+  fromDay: string;
+  days: number;
+  earliest: number;
+}): DaySlots[] {
+  const { hours, blocked, durationMin, fromDay, days, earliest } = input;
   const result: DaySlots[] = [];
   for (let i = 0; i < days; i += 1) {
     const day = addDays(fromDay, i);
     const weekday = isoWeekday(day);
     const slots: Slot[] = [];
-    for (const window of hours.data.filter((h) => h.weekday === weekday)) {
+    for (const window of hours.filter((h) => h.weekday === weekday)) {
       const start = minutes(window.start_time);
       const end = minutes(window.end_time);
-      for (let t = start; t + params.durationMin <= end; t += STEP_MIN) {
+      for (let t = start; t + durationMin <= end; t += STEP_MIN) {
         const startsAt = londonInstant(day, hhmm(t));
         const s = Date.parse(startsAt);
-        const e = s + params.durationMin * 60 * 1000;
+        const e = s + durationMin * 60 * 1000;
         if (s < earliest) continue;
         if (blocked.some(([bs, be]) => bs < e && be > s)) continue;
         if (slots.some((slot) => slot.startsAt === startsAt)) continue;

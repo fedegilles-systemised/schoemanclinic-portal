@@ -17,11 +17,15 @@
     "db:advisors": "supabase db advisors --local --level warn --fail-on warn",
     "email:build": "tsx scripts/build-auth-emails.ts",
     "email:preview": "tsx scripts/preview-emails.ts",
-    "email:test": "tsx --env-file=.env.local scripts/send-test-email.ts"
+    "email:test": "tsx --env-file=.env.local scripts/send-test-email.ts",
+    "srx:check": "tsx --env-file=.env.local scripts/signaturerx-check.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.118.0",
+    "@tiptap/pm": "3.33.1",
+    "@tiptap/react": "3.33.1",
+    "@tiptap/starter-kit": "3.33.1",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
     "class-variance-authority": "^0.7.1",

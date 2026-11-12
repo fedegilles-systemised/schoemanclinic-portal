@@ -57,11 +57,29 @@ const ghlSchema = z.object({
   GHL_LOCATION_ID: z.string().min(1),
 });
 
+const signatureRxSchema = z.object({
+  // The OAuth client of the clinic's SignatureRx account (client credentials). Staging while testing,
+  // live once SignatureRx has swapped them. Never in the repository: the password manager, then Vercel.
+  SIGNATURERX_CLIENT_ID: z.string().min(1),
+  SIGNATURERX_CLIENT_SECRET: z.string().min(1),
+  // Only SignatureRx's own addresses are accepted, so a mistyped or tampered value cannot send
+  // prescriber details to another host.
+  SIGNATURERX_BASE_URL: z.enum(["https://stage-srx.signaturerx.co.uk", "https://app.signaturerx.co.uk"]),
+});
+
 const transcriptionSchema = z.object({
   // AssemblyAI, EU region: call recordings are transcribed there. Needs a data processing agreement.
   ASSEMBLYAI_API_KEY: z.string().min(1),
   // Sent back by AssemblyAI with each finished transcript, so nobody else can post one. 32+ characters.
   TRANSCRIPTION_WEBHOOK_SECRET: z.string().min(32),
+  SITE_URL: z.url(),
+});
+
+const stripeSchema = z.object({
+  // The clinic's Stripe secret key (Developers > API keys). sk_test_ while testing, sk_live_ when live.
+  STRIPE_SECRET_KEY: z.string().regex(/^(sk|rk)_(test|live)_[A-Za-z0-9]+$/, "must be a Stripe secret or restricted key"),
+  // The signing secret of the webhook endpoint <SITE_URL>/api/stripe/webhook (Developers > Webhooks).
+  STRIPE_WEBHOOK_SECRET: z.string().regex(/^whsec_[A-Za-z0-9]+$/, "must be a Stripe webhook signing secret"),
   SITE_URL: z.url(),
 });
 
@@ -192,6 +210,64 @@ export function isTranscriptionConfigured(): boolean {
   }).success;
 }
 
+function stripeInput() {
+  return {
+    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+    STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+    SITE_URL: process.env.SITE_URL,
+  };
+}
+
+/** Server-only Stripe variables, for lib/stripe/. */
+export function getStripeEnv(): z.infer<typeof stripeSchema> {
+  assertServer();
+  const parsed = stripeSchema.safeParse(stripeInput());
+  if (!parsed.success) {
+    throw new Error(`Invalid Stripe environment: ${formatIssues(parsed.error)}`);
+  }
+  return parsed.data;
+}
+
+/** True when Stripe is connected, so the portal takes the repeat prescription fee online. */
+export function isStripeConfigured(): boolean {
+  assertServer();
+  return stripeSchema.safeParse(stripeInput()).success;
+}
+
+function signatureRxInput() {
+  return {
+    SIGNATURERX_CLIENT_ID: process.env.SIGNATURERX_CLIENT_ID,
+    SIGNATURERX_CLIENT_SECRET: process.env.SIGNATURERX_CLIENT_SECRET,
+    SIGNATURERX_BASE_URL: process.env.SIGNATURERX_BASE_URL,
+  };
+}
+
+/** Server-only SignatureRx variables, for lib/signaturerx/. */
+export function getSignatureRxEnv(): z.infer<typeof signatureRxSchema> {
+  assertServer();
+  const parsed = signatureRxSchema.safeParse(signatureRxInput());
+  if (!parsed.success) {
+    throw new Error(`Invalid SignatureRx environment: ${formatIssues(parsed.error)}`);
+  }
+  return parsed.data;
+}
+
+/** True when the SignatureRx credentials are set, so the clinic pages can show the connection. */
+export function isSignatureRxConfigured(): boolean {
+  assertServer();
+  return signatureRxSchema.safeParse(signatureRxInput()).success;
+}
+
+/**
+ * True only when SIGNATURERX_SIGNING_ENABLED is exactly "true". It switches on the form where a
+ * doctor types their signing PIN, which Clinic Hub passes straight to SignatureRx and never keeps.
+ * Off by default until the security review of that form is done.
+ */
+export function isSignatureRxSigningEnabled(): boolean {
+  assertServer();
+  return process.env.SIGNATURERX_SIGNING_ENABLED === "true" && isSignatureRxConfigured();
+}
+
 /**
  * The site's public address, for links in messages. Read on its own, so a message through
  * GoHighLevel does not depend on Resend being set up.
@@ -201,6 +277,23 @@ export function getSiteUrl(): string {
   const parsed = z.url().safeParse(process.env.SITE_URL);
   if (!parsed.success) throw new Error("Invalid environment: SITE_URL");
   return parsed.data.replace(/\/$/, "");
+}
+
+/**
+ * The clinic's Google review link, offered to every patient after they give feedback. Optional:
+ * without it the link is not shown. Only an https address is accepted.
+ */
+export function getGoogleReviewUrl(): string | null {
+  assertServer();
+  const parsed = z.url({ protocol: /^https$/ }).safeParse(process.env.GOOGLE_REVIEW_URL);
+  return parsed.success ? parsed.data : null;
+}
+
+/** Cloudflare Turnstile's secret for the public booking page, if set. */
+export function getTurnstileSecret(): string | null {
+  assertServer();
+  const value = process.env.TURNSTILE_SECRET_KEY;
+  return value && value.length >= 20 && value.length <= 200 ? value : null;
 }
 
 /** Server-only session variables, for lib/supabase/session-cookies.ts. */

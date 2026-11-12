@@ -97,7 +97,8 @@ select is(t.val(t.eleanor(), format('select count(*) from public.lab_reports whe
 select is(t.val(t.eleanor(), format('select count(*) from public.results where lab_report_id = %L', (select id from ids where name = 'r1'))), '0', 'or its results');
 select throws_ok($$ select t.val(t.priya(), format('select public.release_report(%L)', (select id from ids where name = 'r1'))) $$, '42501', null, 'a PA cannot release');
 select throws_ok($$ select t.val(t.eleanor(), format('select public.release_report(%L)', (select id from ids where name = 'r1'))) $$, '42501', null, 'a patient cannot release');
-select lives_ok($$ select t.val(t.gina(), format($q$ select public.release_report(%L, 'Looks fine.')::text $q$, (select id from ids where name = 'r1'))) $$, 'a doctor releases it');
+select throws_ok($$ select t.val(t.gina(), format($q$ select public.release_report(%L, 'Looks fine.')::text $q$, (select id from ids where name = 'r1'))) $$, '22023', null, 'a report is not released without a sign-off');
+select lives_ok($$ select t.val(t.gina(), format($q$ select public.release_report(%L, 'Looks fine.', 'no_action')::text $q$, (select id from ids where name = 'r1'))) $$, 'a doctor releases it, signed off with no action');
 select is((select status::text from public.lab_reports where id = (select id from ids where name = 'r1')), 'released', 'the report is released');
 select is((select (released_at is not null and reviewed_at is not null and reviewed_by is not null) from public.lab_reports where id = (select id from ids where name = 'r1')), true, 'with who and when');
 select is(t.val(t.eleanor(), format('select count(*) from public.results where lab_report_id = %L', (select id from ids where name = 'r1'))), '4', 'now the patient sees all four results');
@@ -142,7 +143,7 @@ select throws_ok($$ select t.val(t.priya(), $q$ with x as (insert into public.ma
 select lives_ok($$ select t.val(t.admin(), $q$ with x as (insert into public.marker_conversions (marker_id, from_unit, factor) values (t.m('TSH'), 'uIU/mL', 1) returning 1) select count(*) from x $q$) $$, 'an admin can');
 
 select ok(not has_function_privilege('anon', 'public.enter_report(uuid, date, jsonb, text, uuid, uuid)', 'execute'), 'signed-out people cannot enter results');
-select ok(not has_function_privilege('anon', 'public.release_report(uuid, text)', 'execute'), 'or release them');
+select ok(not has_function_privilege('anon', 'public.release_report(uuid, text, text, text)', 'execute'), 'or release them');
 select ok(not has_function_privilege('anon', 'public.register_import(uuid)', 'execute'), 'or register a file');
 
 select * from finish();

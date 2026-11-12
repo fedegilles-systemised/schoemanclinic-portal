@@ -10,7 +10,9 @@ import { CancelAppointmentButton } from "@/components/booking/book-slot";
 import { DraftForm, NewNoteForm } from "@/components/notes/note-forms";
 import { CheckRecordingButton, Recorder } from "@/components/recordings/recorder";
 import { RELATIONSHIP_LABELS } from "@/components/patients/care-team-forms";
+import { PatientContactForm } from "@/components/patients/contact-form";
 import { RemoveGuardianButton } from "@/components/patients/guardian-forms";
+import { FormList } from "@/components/forms/form-list";
 import { ClinicalSummarySection, ConsentsSection, DocumentsSection, QuestionsSection, SafeguardingSection } from "@/components/record/record-sections";
 import { ReadingsTable } from "@/components/wearables/readings-table";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -19,10 +21,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader, SectionHeader } from "@/components/ui/page-header";
 import { getCurrentUser } from "@/lib/auth/session";
+import { hasAnyOption, OPTION_CHECKS, type TreatmentOptions } from "@/lib/notes/options";
 import { getUpcomingAppointments } from "@/lib/data/appointments";
 import { getPatientAssignments, getReadings, listCourses } from "@/lib/data/education";
 import { getConsents } from "@/lib/data/consents";
 import { listDocuments } from "@/lib/data/documents";
+import { getPatientContact } from "@/lib/data/patient-contact";
+import { getCatalogue } from "@/lib/data/prescriptions";
+import { listForms, submitterLabels } from "@/lib/data/forms";
 import { getClinicalSummary, getGuardians, getMyStaffId, getPatientRecord, getRecordings, getSafeguardingAlerts } from "@/lib/data/patient-record";
 import { listQuestions } from "@/lib/data/questions";
 import { todayInLondon } from "@/lib/calendar/time";
@@ -42,6 +48,24 @@ function dateTime(value: string): string {
     minute: "2-digit",
     timeZone: "Europe/London",
   }).format(new Date(value));
+}
+
+/** The treatment-option confirmations on a signed note: each one said in words, ticked or not. */
+function NoteOptions({ options }: { options: TreatmentOptions }) {
+  if (!hasAnyOption(options)) return <p className="type-small mt-4 text-content-muted">No treatment options were recorded on this note.</p>;
+  return (
+    <div className="mt-4 border-t border-surface-border pt-4">
+      <h4 className="type-eyebrow mb-2 text-content-muted">Treatment options</h4>
+      <ul className="type-small flex flex-col gap-1">
+        {OPTION_CHECKS.map(([key, , label]) => (
+          <li key={key}>
+            {options[key] ? "Yes" : "No"}: {label}
+          </li>
+        ))}
+      </ul>
+      {options.optionsOffered ? <p className="type-small mt-2 whitespace-pre-wrap">Options offered: {options.optionsOffered}</p> : null}
+    </div>
+  );
 }
 
 /** A patient's record for the clinic: who looks after them, and their clinical notes. */
@@ -73,7 +97,7 @@ export default async function PatientRecordPage({
   const canManageDocuments = user.roles.some((role) => role === "doctor" || role === "nurse" || role === "pa");
   const today = todayInLondon();
   const myStaffId = canWrite ? await getMyStaffId(user.id) : null;
-  const [assignments, library, readings, appointments, summary, documents, questions, safeguarding, consents] = await Promise.all([
+  const [assignments, library, readings, appointments, summary, documents, questions, safeguarding, consents, medicineList, forms] = await Promise.all([
     getPatientAssignments(record.id),
     listCourses(),
     getReadings(record.id, 30),
@@ -83,12 +107,17 @@ export default async function PatientRecordPage({
     listQuestions({ patientId: record.id, open: true }),
     isDoctor ? getSafeguardingAlerts(record.id) : Promise.resolve([]),
     getConsents(record.id),
+    isDoctor ? getCatalogue() : Promise.resolve([]),
+    listForms(id),
   ]);
+  const formSubmitters = await submitterLabels(record.id, forms);
   const assignable = library.filter((course) => course.published && !assignments.some((a) => a.courseId === course.id));
   const recordings = await getRecordings(record.id);
   const canRecord = canWrite && Boolean(myStaffId) && isTranscriptionConfigured();
   const RECORDING_STATUS = { uploading: "Upload did not finish; record again", transcribing: "Being transcribed", transcribed: "Transcript in notes", failed: "Transcription failed" } as const;
   const managesGuardians = user.roles.some((role) => role === "pa" || role === "admin");
+  const editsContact = user.roles.includes("pa");
+  const contact = editsContact ? await getPatientContact(record.id) : null;
   const guardians = managesGuardians ? await getGuardians(record.id) : [];
   const drafts = record.notes.filter((note) => note.status === "draft");
   const signed = record.notes.filter((note) => note.status === "signed");
@@ -107,6 +136,17 @@ export default async function PatientRecordPage({
           record.careTeam.length ? record.careTeam.map((m) => `${m.name} (${RELATIONSHIP_LABELS[m.relationship]})`).join(", ") : "nobody yet"
         }.`}
       />
+
+      {editsContact && contact ? (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Contact and address</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <PatientContactForm patientId={record.id} contact={contact} />
+          </CardContent>
+        </Card>
+      ) : null}
 
       {booked ? (
         <div className="mb-6">
@@ -127,10 +167,21 @@ export default async function PatientRecordPage({
         medications={summary.medications}
         canAddAllergy={canManageDocuments}
         canDiagnose={isDoctor}
+        canPrescribe={isDoctor}
+        listNames={medicineList.map((m) => m.name)}
         today={today}
       />
 
       <QuestionsSection questions={questions} />
+
+      <section aria-labelledby="forms" className="mb-12 flex flex-col gap-4">
+        <SectionHeader id="forms" title="Submitted " accent="forms" />
+        {forms.length === 0 ? (
+          <EmptyState>No forms yet. Repeat requests, questions and feedback appear here as they are sent.</EmptyState>
+        ) : (
+          <FormList forms={forms} submitterName={(form) => formSubmitters.get(form.submittedBy) ?? null} />
+        )}
+      </section>
 
       <ConsentsSection consents={consents} />
 
@@ -166,6 +217,12 @@ export default async function PatientRecordPage({
                   <span>
                     {a.title}
                     {a.published ? null : <span className="type-small text-content-muted"> · draft, not visible yet</span>}
+                    {a.published && a.total > 0 ? (
+                      <span className="type-small text-content-muted tabular-nums">
+                        {" "}
+                        · {a.completed} of {a.total} {a.total === 1 ? "lesson" : "lessons"} complete
+                      </span>
+                    ) : null}
                   </span>
                   <UnassignButton patientId={record.id} assignmentId={a.id} title={a.title} />
                 </li>
@@ -265,7 +322,7 @@ export default async function PatientRecordPage({
             </CardHeader>
             <CardContent>
               {note.authorId === myStaffId ? (
-                <DraftForm patientId={record.id} noteId={note.id} title={note.title} body={note.body} />
+                <DraftForm patientId={record.id} noteId={note.id} title={note.title} body={note.body} options={note.options} />
               ) : (
                 <p className="type-body whitespace-pre-wrap">{note.body}</p>
               )}
@@ -291,6 +348,7 @@ export default async function PatientRecordPage({
             </CardHeader>
             <CardContent>
               <p className="type-body whitespace-pre-wrap">{note.body}</p>
+              <NoteOptions options={note.options} />
             </CardContent>
           </Card>
         ))}

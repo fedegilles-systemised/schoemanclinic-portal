@@ -120,6 +120,9 @@ insert into public.patient_profiles (id, user_id, clinic_ref, first_name, last_n
   ('d0000000-0000-4000-8000-00000000000a', null, 'SC-005301', 'Isla', 'Hart', '2011-06-21', 'F', null, null, 'United Kingdom', 'b0000000-0000-4000-8000-000000000001', null, null, null),
   ('d0000000-0000-4000-8000-00000000000b', 'a0000000-0000-4000-8000-000000000002', 'SC-006001', 'Laura', 'Bennett', '1979-10-05', 'F', 'laura.bennett@example.test', null, 'United Kingdom', 'b0000000-0000-4000-8000-000000000001', null, null, null);
 
+-- A fictional postal address for every patient, which SignatureRx needs for a prescription.
+update public.patient_profiles set address_line1 = '1 Example Mews', city = 'London', postcode = 'W1G 0AA' where address_line1 is null;
+
 insert into public.patient_guardians (patient_id, guardian_user_id, relationship, can_view, can_act, verified_by) values
   ('d0000000-0000-4000-8000-00000000000a', 'a0000000-0000-4000-8000-000000000021', 'parent', true, true, 'b0000000-0000-4000-8000-000000000003'),
   ('d0000000-0000-4000-8000-000000000006', 'a0000000-0000-4000-8000-000000000022', 'carer', true, false, 'b0000000-0000-4000-8000-000000000003');
@@ -156,8 +159,10 @@ insert into public.medications (id, patient_id, name, dose, instructions, kind, 
   ('e0000000-0000-4000-8000-000000000002', 'd0000000-0000-4000-8000-000000000001', 'Utrogestan 100 mg', '100 mg', '1 capsule at night', 'prescription', 'b0000000-0000-4000-8000-000000000001', 'Harley Street Pharmacy, London W1G', current_date - 4, 28, 'semble_rx_demo_2'),
   ('e0000000-0000-4000-8000-000000000003', 'd0000000-0000-4000-8000-000000000001', 'Vitamin D3 4,000 IU', '4,000 IU', '1 capsule daily with food', 'supplement', 'b0000000-0000-4000-8000-000000000001', 'Clinic dispensary', current_date - 19, 60, null);
 
-insert into public.repeat_requests (medication_id, patient_id, requested_by, fee_pence, stripe_payment_intent_id, status, requested_at, resolved_at) values
-  ('e0000000-0000-4000-8000-000000000002', 'd0000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000011', 3000, 'pi_demo_1', 'sent_to_pharmacy', now() - interval '32 days', now() - interval '31 days');
+insert into public.repeat_requests (id, medication_id, patient_id, requested_by, fee_pence, stripe_payment_intent_id, status, requested_at, resolved_at, paid_at, has_future_appointment) values
+  ('e1000000-0000-4000-8000-000000000001', 'e0000000-0000-4000-8000-000000000002', 'd0000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000011', 3000, 'pi_demo_1', 'sent_to_pharmacy', now() - interval '32 days', now() - interval '31 days', now() - interval '32 days', true);
+insert into public.repeat_request_items (request_id, patient_id, medication_id, supply_months) values
+  ('e1000000-0000-4000-8000-000000000001', 'd0000000-0000-4000-8000-000000000001', 'e0000000-0000-4000-8000-000000000002', 1);
 
 insert into public.questions (patient_id, asked_by, subject, body, urgency, status, answered_at) values
   ('d0000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000011', 'Taking Vitamin D with HRT', 'Can I take my Vitamin D at the same time as my HRT?', 'routine', 'answered', now() - interval '26 days');
@@ -431,3 +436,15 @@ insert into public.webhook_events (source, external_event_id, event_type, payloa
 
 insert into public.integration_sync_log (system, direction, entity, status, finished_at) values
   ('ghl', 'in', 'appointments', 'ok', now());
+
+-- Feedback ---------------------------------------------------------------------------
+-- Eleanor answered a survey last week (positive, may be quoted) and has a new one waiting.
+insert into public.patient_feedback (id, patient_id, sent_at, answered_at, answered_by, score, went_well, could_improve, wants_contact, may_quote) values
+  ('f2000000-0000-4000-8000-000000000001', 'd0000000-0000-4000-8000-000000000001', now() - interval '9 days', now() - interval '8 days',
+   'a0000000-0000-4000-8000-000000000011', 9, 'Dr Schoeman explained my results clearly and took her time.', null, false, true);
+insert into public.form_submissions (patient_id, kind, title, answers, source_id, submitted_by, submitted_at) values
+  ('d0000000-0000-4000-8000-000000000001', 'feedback', 'Feedback after your appointment',
+   '[{"question": "How likely are you to recommend The Schoeman Clinic to a friend or family member? (0 to 10)", "answer": "9"}, {"question": "What went well?", "answer": "Dr Schoeman explained my results clearly and took her time."}, {"question": "Would you like someone from the clinic to contact you?", "answer": "No"}, {"question": "May we use your comments, without your name, as evidence of patient feedback?", "answer": "Yes"}]',
+   'f2000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000011', now() - interval '8 days');
+insert into public.patient_feedback (id, patient_id, sent_at) values
+  ('f2000000-0000-4000-8000-000000000002', 'd0000000-0000-4000-8000-000000000001', now() - interval '1 day');
