@@ -18,6 +18,7 @@ const ACTIONS: Record<string, string> = {
   updated: "Changed",
   deleted: "Removed",
   released: "Released",
+  exported: "Downloaded",
 };
 
 const ENTITIES: Record<string, string> = {
@@ -26,6 +27,10 @@ const ENTITIES: Record<string, string> = {
   results: "Result",
   documents: "Document",
   lab_orders: "Lab order",
+  lab_report_signoffs: "Results sign-off",
+  patient_feedback: "Patient feedback",
+  feedback_follow_ups: "Feedback follow-up",
+  form_submissions: "Submitted form",
 };
 
 function words(value: string): string {

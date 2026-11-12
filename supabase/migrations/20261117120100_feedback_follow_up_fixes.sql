@@ -5,6 +5,8 @@
 --    agreed to be quoted without their name, but what they wrote may still name someone or say
 --    something about their health. Only checked quotes go into the evidence download.
 -- 3. Each feedback download is written to the audit log: who, when, which download and how many rows.
+-- 4. The Activity screen shows feedback, follow-ups, quote checks, downloads, submitted forms and
+--    results sign-offs, with the patient each is about.
 
 -- 1. Bank holidays ---------------------------------------------------------------------------------
 
@@ -174,3 +176,65 @@ grant execute on function
   public.check_feedback_quote(uuid, boolean),
   public.log_feedback_export(text, integer)
 to authenticated;
+
+-- 4. The Activity screen -------------------------------------------------------------------------------
+
+-- Admins see feedback, follow-ups, quote checks, downloads, submitted forms and results sign-offs
+-- on the Activity screen, with the patient each is about. Admins can already read all of these, so
+-- the list still reveals nothing an admin could not open.
+create or replace function private.activity_log(_limit integer default 50, _before bigint default null)
+returns table (
+  id bigint,
+  created_at timestamptz,
+  actor_name text,
+  actor_role public.app_role,
+  action text,
+  entity text,
+  patient_name text,
+  patient_ref text
+)
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+begin
+  if not (select private.has_role('admin')) then
+    raise exception 'Only an admin can read the activity log.' using errcode = '42501';
+  end if;
+
+  return query
+  select
+    a.id,
+    a.created_at,
+    p.full_name,
+    a.actor_role,
+    a.action,
+    a.entity,
+    pp.first_name || ' ' || pp.last_name,
+    pp.clinic_ref
+  from public.audit_log a
+  left join public.profiles p on p.id = a.actor_id
+  left join public.patient_profiles pp on pp.id = coalesce(
+    private.try_uuid(a.metadata ->> 'patient_id'),
+    case a.entity
+      when 'patient_profiles' then a.entity_id
+      when 'lab_reports' then (select l.patient_id from public.lab_reports l where l.id = a.entity_id)
+      when 'results' then (select r.patient_id from public.results r where r.id = a.entity_id)
+      when 'lab_report_signoffs' then (select s.patient_id from public.lab_report_signoffs s where s.report_id = a.entity_id)
+      when 'patient_feedback' then (select f.patient_id from public.patient_feedback f where f.id = a.entity_id)
+      when 'feedback_follow_ups' then (select f.patient_id from public.feedback_follow_ups f where f.feedback_id = a.entity_id)
+      when 'form_submissions' then (select f.patient_id from public.form_submissions f where f.id = a.entity_id)
+    end
+  )
+  where (_before is null or a.id < _before)
+    -- A fixed list: an admin must not learn that a safeguarding alert, a diagnosis or a medicine exists.
+    and a.entity in (
+      'patient_profiles', 'lab_reports', 'results', 'lab_orders', 'documents',
+      'result_imports', 'invitations', 'staff_profiles', 'user_roles', 'profiles',
+      'lab_report_signoffs', 'patient_feedback', 'feedback_follow_ups', 'form_submissions'
+    )
+  order by a.id desc
+  limit least(greatest(coalesce(_limit, 50), 1), 100);
+end;
+$$;

@@ -62,5 +62,11 @@ select throws_ok($$ select public.log_feedback_export('everything', 1) $$, '2202
 reset role;
 select ok(not has_function_privilege('anon', 'public.log_feedback_export(text, integer)', 'execute'), 'nobody signed out can log one');
 
+-- The Activity screen shows them, with the patient.
+select pg_temp.become('a0000000-0000-4000-8000-000000000006');
+select ok(exists (select 1 from public.activity_log(100) where entity = 'patient_feedback' and action = 'exported'), 'a download is on the Activity screen');
+select ok(exists (select 1 from public.activity_log(100) where entity = 'patient_feedback' and patient_ref is not null), 'a quote check shows its patient');
+reset role;
+
 select * from finish();
 rollback;
