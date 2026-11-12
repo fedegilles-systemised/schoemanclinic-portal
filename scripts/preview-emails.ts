@@ -13,6 +13,8 @@ import {
   repeatReceivedEmail,
   repeatUpdateEmail,
   resultReadyEmail,
+  feedbackAlertEmail,
+  feedbackRequestEmail,
   runOutReminderEmail,
 } from "@/lib/email/templates/app";
 
@@ -48,6 +50,9 @@ samples["app-repeat-received"] = repeatReceivedEmail({ siteUrl: SITE, firstName:
 samples["app-repeat-approved"] = repeatUpdateEmail({ siteUrl: SITE, firstName: "Eleanor", portalUrl: `${SITE}/portal/prescriptions/example`, status: "approved" });
 samples["app-repeat-sent"] = repeatUpdateEmail({ siteUrl: SITE, firstName: "Eleanor", portalUrl: `${SITE}/portal/prescriptions/example`, status: "sent_to_pharmacy" });
 samples["app-repeat-declined"] = repeatUpdateEmail({ siteUrl: SITE, firstName: "Eleanor", portalUrl: `${SITE}/portal/prescriptions/example`, status: "declined" });
+samples["app-feedback-request"] = feedbackRequestEmail({ siteUrl: SITE, firstName: "Eleanor", surveyUrl: `${SITE}/portal/feedback/example`, reminder: false });
+samples["app-feedback-reminder"] = feedbackRequestEmail({ siteUrl: SITE, firstName: "Eleanor", surveyUrl: `${SITE}/portal/feedback/example`, reminder: true });
+samples["app-feedback-alert"] = feedbackAlertEmail({ siteUrl: SITE, feedbackUrl: `${SITE}/clinic/feedback/example`, urgent: true });
 samples["app-run-out-reminder"] = runOutReminderEmail({ siteUrl: SITE, firstName: "Eleanor", portalUrl: `${SITE}/portal/prescriptions` });
 
 for (const [name, sample] of Object.entries(samples)) writeFileSync(path.join(folder, `${name}.html`), sample.html);

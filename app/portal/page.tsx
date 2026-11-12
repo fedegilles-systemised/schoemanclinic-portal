@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, CalendarDays, MapPin } from "lucide-react";
+import { ArrowRight, CalendarDays, MapPin, MessageSquareText } from "lucide-react";
 
 import { ComingSoon } from "@/components/shell/coming-soon";
 import { AlertBar } from "@/components/ui/alert-bar";
@@ -19,6 +19,7 @@ import { PageHeader, SectionHeader } from "@/components/ui/page-header";
 import { Sparkline } from "@/components/ui/sparkline";
 import { ResultStatusPill } from "@/components/ui/status-pill";
 import { getCurrentUser } from "@/lib/auth/session";
+import { getOpenSurvey } from "@/lib/data/feedback";
 import { getPortalHome, type MarkerGlance } from "@/lib/data/portal";
 import {
   formatDate,
@@ -77,6 +78,7 @@ export default async function PortalHomePage() {
   const greetName = patient.is_self ? patient.first_name : user?.fullName.split(" ")[0];
   // A guardian reads about the person they look after, not about themselves.
   const whose = patient.is_self ? "your" : `${patient.first_name}'s`;
+  const survey = patient.can_act ? await getOpenSurvey(patient.id) : null;
 
   return (
     <>
@@ -89,6 +91,15 @@ export default async function PortalHomePage() {
       {bloods?.dueBy ? (
         <AlertBar tone="warning" icon={CalendarDays} lead={`Bloods due by ${formatDate(bloods.dueBy)}.`} className="mb-6">
           Results need to reach us two weeks before {whose} appointment.
+        </AlertBar>
+      ) : null}
+
+      {survey ? (
+        <AlertBar tone="info" icon={MessageSquareText} lead="How was the appointment?" className="mb-6">
+          <Link href={`/portal/feedback/${survey}`} className="text-content">
+            Tell us in less than a minute
+          </Link>
+          .
         </AlertBar>
       ) : null}
 

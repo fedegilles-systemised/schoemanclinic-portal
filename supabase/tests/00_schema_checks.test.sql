@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 select no_plan();
 
-select is((select count(*)::int from pg_tables where schemaname = 'public'), 48, '48 tables in public');
+select is((select count(*)::int from pg_tables where schemaname = 'public'), 51, '51 tables in public');
 select is(
   (select count(*)::int from pg_class c join pg_namespace n on n.oid = c.relnamespace
    where n.nspname = 'public' and c.relkind = 'r' and not (c.relrowsecurity and c.relforcerowsecurity)),

@@ -85,6 +85,8 @@ This table is what the database enforces since the clinic's decisions of 11 Nove
 | Letters and documents | What the clinic shared, upload own | Same, upload if can act | Read, add, change | Read, add, change | Read, add, change | Read | Read |
 | Questions to the clinic | Read, ask | Read, ask if can act | Read, change status | Read | Read, change status | Read | Read, change status |
 | Repeat prescription requests | Read, request, withdraw before paying | Read, request and withdraw if can act | Read, change status | Read | Read, request for a patient, change status | Read | Read |
+| Submitted forms (repeat requests, questions and feedback, as asked and answered) | Read their own; never changed | Read those of the patient | Read | Read, except feedback | Read | Read, except feedback | Read |
+| Patient feedback | Answer their own survey, read it | Answer if can act | Read for their care team, record the follow-up | - | Read, record the follow-up | - | Read, record the follow-up |
 | Education courses | Courses added to their portal | Same | Read the library, add to a patient's portal | Same as doctor | Same as doctor | Same as doctor | Read, build and publish courses, add to any patient's portal |
 | Wearable readings | Read, add, remove their own | Read, add if can act | Read | Read | Read | Read | Read |
 | Own notifications and preferences | Read, change | Read, change | Read, change | Read, change | Read, change | Read, change | Read, change |
@@ -243,6 +245,7 @@ Each flow names who acts, the steps, whether it needs data from another system (
 | 12 | Safeguarding alert | Planned | None | No |
 | 13 | A team member leaves | Planned | None | No |
 | 14 | Update your profile and sign-in details | Built | None | Yes |
+| 15 | Patient feedback after an appointment | Built | GoHighLevel for sending | Yes |
 
 ### 1. Create an account
 
@@ -449,6 +452,24 @@ Doctors add a patient's medicines on the record, with the day each supply starts
 
 **Questions:** may patients change their own phone and contact email, or only the clinic? Who signs letters besides doctors?
 
+### 15. Patient feedback after an appointment
+
+**Who:** the patient, or a guardian who can act; admins, PAs and the patient's doctors follow up. **Status:** built (Dr Schoeman's CQC email of 8 November 2026, point 1).
+
+1. The day after an appointment is marked completed, a daily job asks the patient for feedback by email, and by WhatsApp if they chose it. A patient is asked at most once every 90 days, and only if they or a guardian can sign in. One reminder goes three days later. A survey closes after 30 days.
+2. In the portal they answer: how likely they are to recommend the clinic (0 to 10), what went well, what could be better, whether they would like to be contacted, and whether their comments may be used without their name as evidence.
+3. The answer is rated. 9 or 10 is green (positive). 7 or 8 is amber (mixed). 0 to 6, or asking to be contacted, is red (needs attention).
+4. Everyone who answers is offered the clinic's Google review link, whatever they said. Asking only happy patients for reviews breaks Google's rules and the CMA's guidance on reviews.
+5. Amber alerts admins and PAs, with a follow-up due within two working days. Red also alerts the patient's doctors, with a follow-up due the same working day. The clinic inbox is emailed with a link, never a name or a comment.
+6. On the Feedback screen the team sees what is waiting, contacts the patient and records what was done and the outcome. A follow-up cannot be changed once recorded.
+7. For the CQC, the Feedback screen downloads positive feedback the patient agreed may be used, without names, and a full log with follow-ups.
+
+Every form a patient sends (feedback, repeat requests and questions to the clinic) is also kept on their record as asked and answered, in **Forms** in the portal and **Submitted forms** on the clinic record. Nobody can change or remove one. Nurses and health coaches see the record's other forms but not feedback, which may be about them.
+
+**Data in/out:** messages go through GoHighLevel, or Resend without it, naming nothing about the visit. **Email:** the survey, the reminder, and the follow-up alert to the clinic inbox.
+
+**Questions:** are 9 to 10, 7 to 8 and 0 to 6 the right bands? Who should own follow-ups day to day? What is the clinic's Google review link? Should video calls be included as well as visits?
+
 ## Integrations
 
 Clinic Hub connects to nine systems. Supabase and Resend are in place (Resend on a test domain); the others are agreed in the data model and wait to be built. Every exchange with an outside system will be logged: what moved, in which direction, when, and whether it worked.
@@ -497,6 +518,8 @@ Every message has a template in the clinic's look. The sign-in emails (reset, ch
 | Repeat request update | The request is approved, declined or sent | The patient | GoHighLevel, or Resend without it | Built. The reason for a decline is read in the portal |
 | Repeat request paid | Stripe confirms the repeat fee | Admins, PAs and the patient's doctors in Clinic Hub; the clinic inbox by email | Resend | Built |
 | Prescription running out | Three weeks before a supply ends, daily | The patient | GoHighLevel, or Resend without it | Built |
+| Feedback survey, and one reminder | The day after an appointment is completed; three days later if unanswered | The patient | GoHighLevel, or Resend without it | Built |
+| Feedback to follow up | A patient gives amber or red feedback | Admins and PAs (red: also the patient's doctors) in Clinic Hub; the clinic inbox by email | Resend | Built |
 | Question answered | The team replies | The patient | GoHighLevel | Planned |
 | Guardian link created | A PA verifies a guardian | The guardian | Resend (proposed) | Template built; the flow is planned |
 | Results PDF received | A PDF is emailed to the clinic's inbox | The import queue, not a person | The clinic's mailbox | Planned (inbound) |
@@ -661,4 +684,5 @@ The clinic answered the rest on 11 November. Those answers are under Decisions a
 - Repeat prescriptions move from the Typeform into the portal: up to ten medicines at a time, each for one or two months' supply, with the Typeform's appointment and weight-loss questions and the £30 fee through Stripe. Built. (10 and 12 November 2026)
 - For CQC, each lab report is signed off by a doctor when released: action (described) or no action, with who ordered and who signed off. A different doctor may sign off and it is shown. Built. (12 November 2026)
 - For CQC, a clinical note records that all available treatment options, customised options and NICE guideline options, and side effects, were discussed, with the options offered. Fixed once the note is signed. Built. (12 November 2026)
-- Patient feedback with green, amber and red routing, Google review invitations and stored positive feedback are handled in GoHighLevel, not Clinic Hub. (12 November 2026)
+- Patient feedback is built in Clinic Hub after all, not GoHighLevel, so the answers stay with the patient's record: a survey after each appointment, green, amber and red routing with a recorded follow-up, the Google review link offered to everyone who answers, and positive feedback kept for the CQC. Built. (12 November 2026)
+- Every form a patient submits is kept on their record, with the questions as asked and the answers, and cannot be changed. Built for repeat requests, questions and feedback; new forms will be added the same way. (12 November 2026)
