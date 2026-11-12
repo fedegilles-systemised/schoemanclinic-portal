@@ -40,6 +40,8 @@ export async function createRepeatCheckout({
     "payment_intent_data[metadata][repeat_request_id]": requestId,
     success_url: successUrl,
     cancel_url: cancelUrl,
+    // Stripe's shortest life for a payment page, so an old tab cannot be paid hours later.
+    expires_at: String(Math.floor(Date.now() / 1000) + 31 * 60),
   });
   const response = await fetch(`${API}/checkout/sessions`, {
     method: "POST",

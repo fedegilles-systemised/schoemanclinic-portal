@@ -18,16 +18,26 @@ export async function sendRunOutReminders(): Promise<{ patients: number; medicin
   const today = londonDate();
   const horizon = addDays(today, RUN_OUT_WARNING_DAYS);
 
-  const meds = await admin
-    .from("medications")
-    .select("id, patient_id, start_date, supply_days, run_out_reminded_for")
-    .eq("kind", "prescription")
-    .eq("status", "active")
-    .is("archived_at", null)
-    .limit(5000);
-  if (meds.error) throw new Error("Could not read medicines.");
+  // Active prescriptions of patients still with the clinic, read a page at a time.
+  type Med = { id: string; patient_id: string; start_date: string; supply_days: number; run_out_reminded_for: string | null };
+  const all: Med[] = [];
+  const PAGE = 1000;
+  for (let from = 0; ; from += PAGE) {
+    const page = await admin
+      .from("medications")
+      .select("id, patient_id, start_date, supply_days, run_out_reminded_for, patient:patient_profiles!medications_patient_id_fkey!inner(archived_at)")
+      .eq("kind", "prescription")
+      .eq("status", "active")
+      .is("archived_at", null)
+      .is("patient.archived_at", null)
+      .order("id")
+      .range(from, from + PAGE - 1);
+    if (page.error) throw new Error("Could not read medicines.");
+    all.push(...page.data);
+    if (page.data.length < PAGE) break;
+  }
 
-  const due = meds.data
+  const due = all
     .map((m) => ({ ...m, runOut: addDays(m.start_date, m.supply_days) }))
     .filter((m) => m.runOut >= today && m.runOut <= horizon && m.run_out_reminded_for !== m.runOut);
   if (due.length === 0) return { patients: 0, medicines: 0 };

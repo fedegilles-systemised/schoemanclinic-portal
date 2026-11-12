@@ -9,12 +9,13 @@ import { PRESCRIPTIONS_ALERT_TO_DEFAULT } from "@/lib/prescriptions/constants";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
- * A repeat request has just been paid for (knowledge base question 13): admins, PAs and the
- * patient's doctors are told in Clinic Hub, the clinic inbox gets an email, and the patient gets a
- * receipt. Only names and links: never a medicine. Never throws, so a failed message cannot undo
- * the payment it reports.
+ * A repeat request needs the team (knowledge base question 13): when Stripe confirms the fee, or
+ * when it is made and online payment is not switched on. Admins, PAs and the patient's doctors are
+ * told in Clinic Hub and the clinic inbox gets an email; after a payment the patient also gets a
+ * receipt. Only links: never a name in an email, never a medicine. Never throws, so a failed
+ * message cannot undo what it reports.
  */
-export async function announcePaidRequest(requestId: string): Promise<void> {
+export async function announceRequest(requestId: string, { paid }: { paid: boolean }): Promise<void> {
   try {
     const admin = createAdminClient();
     const siteUrl = getSiteUrl();
@@ -28,14 +29,14 @@ export async function announcePaidRequest(requestId: string): Promise<void> {
       admin.from("user_roles").select("user_id, profile:profiles!user_roles_user_id_fkey!inner(status)").in("role", ["admin", "pa"]),
       admin
         .from("care_team")
-        .select("since, until, staff:staff_profiles!inner(user_id, clinical_role)")
+        .select("since, until, staff:staff_profiles!inner(user_id, clinical_role, active, archived_at)")
         .eq("patient_id", patientId)
         .lte("since", today),
     ]);
     const recipients = new Set<string>();
     for (const row of roles.data ?? []) if (row.profile?.status !== "suspended") recipients.add(row.user_id);
     for (const row of team.data ?? []) {
-      if ((row.until === null || row.until > today) && row.staff?.clinical_role === "doctor" && row.staff.user_id) recipients.add(row.staff.user_id);
+      if ((row.until === null || row.until > today) && row.staff?.clinical_role === "doctor" && row.staff.active && !row.staff.archived_at) recipients.add(row.staff.user_id);
     }
     const link = `/clinic/prescriptions/${requestId}`;
     if (recipients.size > 0) {
@@ -43,8 +44,8 @@ export async function announcePaidRequest(requestId: string): Promise<void> {
         [...recipients].map((userId) => ({
           user_id: userId,
           topic: "payments" as const,
-          title: "Repeat prescription paid",
-          body: "A patient has paid for a repeat prescription request.",
+          title: paid ? "Repeat prescription paid" : "New repeat prescription request",
+          body: paid ? "A patient has paid for a repeat prescription request." : "A patient has requested a repeat. Online payment is not switched on, so check the fee.",
           link,
         })),
       );
@@ -53,12 +54,13 @@ export async function announcePaidRequest(requestId: string): Promise<void> {
     try {
       await sendEmail({
         to: process.env.PRESCRIPTIONS_ALERT_TO || PRESCRIPTIONS_ALERT_TO_DEFAULT,
-        ...repeatPaidAlertEmail({ siteUrl, requestUrl: `${siteUrl}${link}` }),
+        ...repeatPaidAlertEmail({ siteUrl, requestUrl: `${siteUrl}${link}`, paid }),
       });
     } catch {
       console.error("Repeat prescription alert not emailed.");
     }
 
+    if (!paid) return;
     const patient = await admin.from("patient_profiles").select("first_name").eq("id", patientId).maybeSingle();
     const portalLink = `/portal/prescriptions/${requestId}`;
     await notifyPatient(patientId, {

@@ -2,8 +2,9 @@
 -- question 13). A patient, a guardian who can act, or a PA asks for up to ten medicines at once: the
 -- patient's current medicines, medicines on the clinic's list, or one typed in. Each comes as one or
 -- two months' supply (Dr Schoeman, 10 November 2026). Weight-loss medicines need four extra answers.
--- The £30 fee is paid through Stripe; the webhook marks the request paid. A doctor, PA or admin then
--- approves, declines or marks it sent to the pharmacy. Prescribing itself stays in SignatureRx.
+-- The £30 fee is paid through Stripe; the webhook marks the request paid. A doctor or PA then
+-- approves, declines or marks it sent to the pharmacy, as flow 8 says; admins write no clinical data.
+-- Prescribing itself stays in SignatureRx.
 
 -- The clinic's list of medicines patients can ask for -------------------------------------------
 
@@ -280,7 +281,7 @@ begin
   select * into r from public.repeat_requests where id = _request for update;
   if not found or not (
     private.can_act_for(r.patient_id)
-    or ((private.has_role('pa') or private.has_role('admin') or private.has_role('doctor')) and private.in_scope(r.patient_id))
+    or ((private.has_role('pa') or private.has_role('doctor')) and private.in_scope(r.patient_id))
   ) then
     raise exception 'You cannot withdraw this request.' using errcode = '42501';
   end if;
@@ -291,7 +292,7 @@ begin
 end;
 $$;
 
--- The team moves a request on: approved, declined, or sent to the pharmacy.
+-- A doctor or PA moves a request on: approved, declined, or sent to the pharmacy.
 create function private.decide_repeat_request(_request uuid, _status public.request_status, _note text)
 returns void
 language plpgsql
@@ -303,7 +304,7 @@ declare
 begin
   select * into r from public.repeat_requests where id = _request for update;
   if not found or not (
-    (private.has_role('pa') or private.has_role('admin') or private.has_role('doctor')) and private.in_scope(r.patient_id)
+    (private.has_role('pa') or private.has_role('doctor')) and private.in_scope(r.patient_id)
   ) then
     raise exception 'You cannot change this request.' using errcode = '42501';
   end if;
@@ -350,6 +351,9 @@ begin
   end if;
   if _amount is distinct from r.fee_pence then
     raise exception 'The amount paid does not match the fee.' using errcode = '22023';
+  end if;
+  if r.status = 'declined' then
+    raise exception 'The request was declined before it was paid for.' using errcode = '22023';
   end if;
   update public.repeat_requests
   set paid_at = now(), stripe_checkout_session_id = _session, stripe_payment_intent_id = _payment_intent, cancelled_at = null

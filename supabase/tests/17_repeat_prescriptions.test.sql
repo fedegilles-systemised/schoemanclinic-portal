@@ -104,7 +104,11 @@ select pg_temp.become('a0000000-0000-4000-8000-000000000011');
 select throws_ok($$ select public.cancel_repeat_request((select id from rr)) $$, '22023', null, 'a paid request cannot be withdrawn');
 reset role;
 
--- Deciding: a doctor not on her care team cannot; her doctor approves; a decline needs a reason.
+-- Deciding: an admin cannot (no clinical data); a doctor not on her care team cannot; her doctor
+-- approves; a decline needs a reason.
+select pg_temp.become('a0000000-0000-4000-8000-000000000006');
+select throws_ok($$ select public.decide_repeat_request((select id from rr), 'approved', null) $$, '42501', null, 'an admin cannot decide a request');
+reset role;
 select pg_temp.become('a0000000-0000-4000-8000-000000000002');
 select throws_ok($$ select public.decide_repeat_request((select id from rr), 'approved', null) $$, '42501', null, 'a doctor not on the care team cannot decide');
 reset role;
@@ -130,6 +134,20 @@ select lives_ok($$ select public.cancel_repeat_request((select id from public.re
 reset role;
 select pg_temp.become('a0000000-0000-4000-8000-000000000001');
 select throws_ok($$ select public.decide_repeat_request((select id from public.repeat_requests where note = 'Withdraw me'), 'approved', null) $$, '22023', null, 'a withdrawn request cannot be approved');
+reset role;
+
+-- A request declined before payment is not marked paid if a stale payment page is used later.
+select pg_temp.become('a0000000-0000-4000-8000-000000000011');
+select lives_ok(
+  $$ select public.request_repeat('d0000000-0000-4000-8000-000000000001', ('[{"other_name":"Late","supply_months":1}]')::jsonb, true, null, null, null, null, null, 'Decline me') $$,
+  'a third request');
+reset role;
+select pg_temp.become('a0000000-0000-4000-8000-000000000001');
+select lives_ok($$ select public.decide_repeat_request((select id from public.repeat_requests where note = 'Decline me'), 'declined', 'Please book a review first.') $$, 'which her doctor declines before payment');
+reset role;
+select set_config('request.jwt.claims', '{}', true);
+set local role service_role;
+select throws_ok($$ select public.mark_repeat_request_paid((select id from public.repeat_requests where note = 'Decline me'), 'cs_late', 'pi_late', 3000) $$, '22023', null, 'a late payment on a declined request is refused, for a refund');
 reset role;
 
 -- A PA asks for a patient.

@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 
 import { isStripeConfigured } from "@/lib/env";
-import { announcePaidRequest } from "@/lib/prescriptions/notify";
+import { announceRequest } from "@/lib/prescriptions/notify";
 import { verifyStripeSignature } from "@/lib/stripe/client";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -13,9 +13,8 @@ const sessionSchema = z.object({
   payment_status: z.string(),
   amount_total: z.number().int().nullable(),
   currency: z.string().nullable(),
-  client_reference_id: z.uuid().nullable(),
   payment_intent: z.string().max(255).nullable(),
-  metadata: z.object({ repeat_request_id: z.uuid().optional() }).nullable(),
+  metadata: z.record(z.string(), z.string()).nullable(),
 });
 
 const eventSchema = z.object({
@@ -23,6 +22,10 @@ const eventSchema = z.object({
   type: z.string().max(100),
   data: z.object({ object: z.unknown() }),
 });
+
+async function markFailed(admin: ReturnType<typeof createAdminClient>, id: string, error: string): Promise<void> {
+  await admin.from("webhook_events").update({ status: "failed", error, processed_at: new Date().toISOString() }).eq("id", id);
+}
 
 /**
  * Stripe tells us a repeat prescription fee was paid. The signature proves the call is from Stripe;
@@ -47,12 +50,16 @@ export async function POST(request: NextRequest) {
   // Other events are acknowledged and left alone.
   if (!PAID_EVENTS.has(event.data.type)) return new NextResponse(null, { status: 200 });
 
+  // Only our own repeat request payments are handled. Anything else on the clinic's Stripe account
+  // (GoHighLevel invoices, for example) is acknowledged and left alone, so Stripe never retries it.
   const session = sessionSchema.safeParse(event.data.data.object);
-  if (!session.success) return new NextResponse(null, { status: 400 });
+  if (!session.success) return new NextResponse(null, { status: 200 });
   const s = session.data;
-  const requestId = s.metadata?.repeat_request_id ?? s.client_reference_id;
+  const parsedId = z.uuid().safeParse(s.metadata?.repeat_request_id);
+  if (!parsedId.success) return new NextResponse(null, { status: 200 });
+  const requestId = parsedId.data;
   // Paid by bank transfer or similar: Stripe sends async_payment_succeeded later.
-  if (s.payment_status !== "paid" || !requestId || s.currency !== "gbp" || s.amount_total === null) {
+  if (s.payment_status !== "paid" || s.currency !== "gbp" || s.amount_total === null) {
     return new NextResponse(null, { status: 200 });
   }
 
@@ -92,15 +99,26 @@ export async function POST(request: NextRequest) {
     _amount: s.amount_total,
   });
   if (paid.error) {
-    await admin
-      .from("webhook_events")
-      .update({ status: "failed", error: "The payment could not be matched to a request.", processed_at: new Date().toISOString() })
-      .eq("id", eventRowId);
-    console.error("Stripe payment not recorded: it did not match a repeat request.");
-    // Answer 200: retrying cannot fix a mismatch, and the failure is stored for the team.
+    // A wrong amount, or a request declined before payment, cannot be fixed by retrying: store it
+    // for the team and stop Stripe retrying.
+    // Anything else (a dropped connection) answers 500, so Stripe tries again and nothing is lost.
+    if (paid.error.code !== "22023") return new NextResponse(null, { status: 500 });
+    await markFailed(admin, eventRowId, "The payment could not be applied: a wrong amount, or a request already declined. Check and refund it in Stripe.");
+    console.error("Stripe payment not recorded: wrong amount or a declined request.");
     return new NextResponse(null, { status: 200 });
   }
+  if (!paid.data) {
+    // Not newly paid: Stripe repeating this very payment is fine; anything else is a second payment
+    // (two payment pages) or a request that is gone, which the team must refund by hand.
+    const existing = await admin.from("repeat_requests").select("stripe_checkout_session_id").eq("id", requestId).maybeSingle();
+    if (existing.error) return new NextResponse(null, { status: 500 });
+    if (existing.data?.stripe_checkout_session_id !== s.id) {
+      await markFailed(admin, eventRowId, "A second payment, or a payment for a request that was not found. Refund it in Stripe.");
+      console.error("Stripe payment not recorded: the request was already paid or not found.");
+      return new NextResponse(null, { status: 200 });
+    }
+  }
   await admin.from("webhook_events").update({ status: "processed", processed_at: new Date().toISOString() }).eq("id", eventRowId);
-  if (paid.data) await announcePaidRequest(requestId);
+  if (paid.data) await announceRequest(requestId, { paid: true });
   return new NextResponse(null, { status: 200 });
 }

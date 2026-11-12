@@ -7,11 +7,13 @@ import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth/session";
 import { allowAuthAttempt } from "@/lib/auth/throttle";
 import { isDay } from "@/lib/calendar/time";
+import { getPortalPatientId } from "@/lib/data/education";
 import { getMyStaffId } from "@/lib/data/patient-record";
 import { repeatUpdateEmail } from "@/lib/email/templates/app";
 import { getSiteUrl, isStripeConfigured } from "@/lib/env";
 import { notifyPatient } from "@/lib/notify/patient";
 import { MAX_REQUEST_ITEMS, REPEAT_FEE_PENCE } from "@/lib/prescriptions/constants";
+import { announceRequest } from "@/lib/prescriptions/notify";
 import { createRepeatCheckout } from "@/lib/stripe/client";
 import { createClient } from "@/lib/supabase/server";
 
@@ -56,13 +58,13 @@ function field(formData: FormData, name: string): string | undefined {
 }
 
 /** Opens Stripe's payment page for a request, or returns null when online payment is not set up. */
-async function paymentPage(requestId: string): Promise<string | null> {
+async function paymentPage(requestId: string, feePence: number = REPEAT_FEE_PENCE): Promise<string | null> {
   if (!isStripeConfigured()) return null;
   const siteUrl = getSiteUrl();
   const back = `${siteUrl}/portal/prescriptions/${requestId}`;
   const session = await createRepeatCheckout({
     requestId,
-    amountPence: REPEAT_FEE_PENCE,
+    amountPence: feePence,
     successUrl: `${back}?paid=1`,
     cancelUrl: `${back}?cancelled=1`,
   });
@@ -124,6 +126,11 @@ export async function requestRepeat(_state: PrescriptionFormState, formData: For
 
   revalidatePath("/portal/prescriptions");
   revalidatePath("/clinic/prescriptions");
+  // Without online payment the request is already work for the team, so they are told now.
+  if (!isStripeConfigured()) {
+    await announceRequest(requestId, { paid: false });
+    redirect(`/portal/prescriptions/${requestId}?sent=1`);
+  }
   let url: string | null = null;
   try {
     url = await paymentPage(requestId);
@@ -141,17 +148,20 @@ export async function payRepeat(formData: FormData): Promise<void> {
   const id = z.uuid().safeParse(formData.get("requestId"));
   if (!id.success) redirect("/portal/prescriptions");
   if (!(await allowAuthAttempt("repeat-request", user.email))) redirect(`/portal/prescriptions/${id.data}?payment=busy`);
-  // Row-level security shows the request only to its patient side; it must still be open and unpaid.
+  // Only for the patient chosen in the portal, by someone who can act for them; and the request must
+  // still be open and unpaid.
+  const patient = await getPortalPatientId();
   const supabase = await createClient();
   const { data } = await supabase
     .from("repeat_requests")
-    .select("id, status, paid_at, cancelled_at")
+    .select("id, patient_id, status, paid_at, cancelled_at, fee_pence")
     .eq("id", id.data)
     .maybeSingle();
-  if (!data || data.paid_at || data.cancelled_at || data.status !== "requested") redirect(`/portal/prescriptions/${id.data}`);
+  if (!patient?.canAct || !data || data.patient_id !== patient.id) redirect("/portal/prescriptions");
+  if (data.paid_at || data.cancelled_at || data.status !== "requested") redirect(`/portal/prescriptions/${id.data}`);
   let url: string | null = null;
   try {
-    url = await paymentPage(id.data);
+    url = await paymentPage(id.data, data.fee_pence);
   } catch {
     console.error("Stripe payment page not opened.");
   }
@@ -172,10 +182,10 @@ export async function cancelRepeat(_state: PrescriptionFormState, formData: Form
   return { saved: "Request withdrawn." };
 }
 
-/** A doctor, PA or admin moves a request on; the patient is told, without the note. */
+/** A doctor or PA moves a request on; the patient is told, without the note. */
 export async function decideRepeat(_state: PrescriptionFormState, formData: FormData): Promise<PrescriptionFormState> {
   const user = await getCurrentUser();
-  if (!user || user.isSuspended || !user.roles.some((r) => r === "doctor" || r === "pa" || r === "admin")) redirect("/clinic");
+  if (!user || user.isSuspended || !user.roles.some((r) => r === "doctor" || r === "pa")) redirect("/clinic");
   const parsed = z
     .object({
       requestId: z.uuid(),
