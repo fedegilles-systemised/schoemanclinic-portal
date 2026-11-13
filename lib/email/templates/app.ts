@@ -23,7 +23,7 @@ const SIGN_OFF_HTML = "Regards,<br />The Schoeman Clinic team";
 const SIGN_OFF_TEXT = "Regards,\nThe Schoeman Clinic team";
 
 function textFooter(reason: string): string {
-  return `${SIGN_OFF_TEXT}\n\n${contactLineText}\n\n${reason}\n\nThe Schoeman Clinic · A private Harley Street and Wimbledon clinic, London.\n`;
+  return `${SIGN_OFF_TEXT}\n\n${contactLineText}\n\n${reason}\n\nThe Schoeman Clinic · A private Harley Street, Wimbledon and virtual clinic, London.\n`;
 }
 
 /** A person is invited to create an account. */
