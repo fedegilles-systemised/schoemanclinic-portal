@@ -20,7 +20,8 @@ type ThrottledAction =
   | "repeat-request"
   | "signaturerx"
   | "feedback"
-  | "online-booking";
+  | "online-booking"
+  | "lab-webhook";
 
 // A clinic shares one address, so the address limit is well above the account limits.
 const LIMITS: Record<ThrottledAction, { windowSeconds: number; address: number; addressAndAccount: number; account: number }> = {
@@ -48,6 +49,8 @@ const LIMITS: Record<ThrottledAction, { windowSeconds: number; address: number; 
   feedback: { windowSeconds: 60 * 60, address: 200, addressAndAccount: 30, account: 30 },
   // The public booking page needs no account, so the limits per address and per email are low.
   "online-booking": { windowSeconds: 60 * 60, address: 15, addressAndAccount: 5, account: 5 },
+  // A lab posts one file for each report from a few addresses, so the limits are high; they only stop a runaway sender.
+  "lab-webhook": { windowSeconds: 60 * 60, address: 600, addressAndAccount: 600, account: 600 },
 };
 
 /** Stored as a hash, so the table holds no plain email or IP address. */
