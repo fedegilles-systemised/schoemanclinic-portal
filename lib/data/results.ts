@@ -40,6 +40,8 @@ export type ImportRow = {
   matched: boolean;
   receivedAt: string;
   status: ImportStatus;
+  /** What a lab said about the patient, to help a PA match a waiting file. Empty for other files. */
+  source: { provider: string; name: string | null; email: string | null; dateOfBirth: string | null } | null;
 };
 
 export type ResultsQueue = { awaiting: ReportRow[]; released: ReportRow[]; imports: ImportRow[] };
@@ -83,7 +85,7 @@ export async function getResultsQueue(): Promise<ResultsQueue> {
     supabase.from("lab_reports").select(REPORT_COLUMNS).eq("status", "released").order("released_at", { ascending: false }).limit(20),
     supabase
       .from("result_imports")
-      .select("id, status, received_at, patient:patient_profiles(first_name, last_name), document:documents(title)")
+      .select("id, status, received_at, source_provider, source_name, source_email, source_date_of_birth, patient:patient_profiles(first_name, last_name), document:documents(title)")
       .in("status", ["needs_match", "matched"])
       .order("received_at"),
   ]);
@@ -98,6 +100,9 @@ export async function getResultsQueue(): Promise<ResultsQueue> {
       matched: row.patient !== null,
       receivedAt: row.received_at,
       status: row.status,
+      source: row.source_provider
+        ? { provider: row.source_provider, name: row.source_name, email: row.source_email, dateOfBirth: row.source_date_of_birth }
+        : null,
     })),
   };
 }
@@ -126,6 +131,14 @@ export async function getEntryOptions(): Promise<EntryOptions> {
       otherUnits: conversions.data.filter((c) => c.marker_id === m.id).map((c) => c.from_unit),
     })),
   };
+}
+
+/** The patients a waiting lab file can be matched to. */
+export async function getMatchOptions(): Promise<EntryOptions["patients"]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("patient_profiles").select("id, first_name, last_name, clinic_ref").is("archived_at", null).order("last_name").order("first_name");
+  if (error) throw new Error("Could not load patients.");
+  return data.map((p) => ({ id: p.id, name: fullName(p), clinicRef: p.clinic_ref }));
 }
 
 export type ImportForEntry = { id: string; patientId: string | null; documentId: string; title: string };

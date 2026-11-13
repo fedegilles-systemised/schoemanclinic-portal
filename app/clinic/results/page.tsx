@@ -8,7 +8,8 @@ import { PageHeader, SectionHeader } from "@/components/ui/page-header";
 import { StatusPill } from "@/components/ui/status-pill";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getCurrentUser } from "@/lib/auth/session";
-import { getResultsQueue, type ReportRow } from "@/lib/data/results";
+import { MatchFileForm } from "@/components/results/match-file-form";
+import { getMatchOptions, getResultsQueue, type ReportRow } from "@/lib/data/results";
 import { formatDate } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Results · The Schoeman Clinic" };
@@ -58,7 +59,9 @@ function ReportsTable({ rows, released }: { rows: ReportRow[]; released?: boolea
 export default async function ResultsPage() {
   const user = await getCurrentUser();
   const canEnter = Boolean(user?.roles.some((role) => role === "pa" || role === "doctor" || role === "nurse"));
+  const canMatch = Boolean(user?.roles.some((role) => role === "pa" || role === "admin"));
   const queue = await getResultsQueue();
+  const patients = canMatch && queue.imports.some((i) => !i.matched) ? await getMatchOptions() : [];
 
   return (
     <>
@@ -93,7 +96,17 @@ export default async function ResultsPage() {
               <TableBody>
                 {queue.imports.map((item) => (
                   <TableRow key={item.id}>
-                    <TableCell>{item.title}</TableCell>
+                    <TableCell>
+                      {item.title}
+                      {item.source ? (
+                        <div className="type-small text-content-muted">
+                          From {item.source.provider}
+                          {item.source.name ? ` · ${item.source.name}` : ""}
+                          {item.source.email ? ` · ${item.source.email}` : ""}
+                          {item.source.dateOfBirth ? ` · born ${formatDate(item.source.dateOfBirth)}` : ""}
+                        </div>
+                      ) : null}
+                    </TableCell>
                     <TableCell className="text-content-muted">{item.patientName}</TableCell>
                     <TableCell>{formatDate(item.receivedAt)}</TableCell>
                     <TableCell>
@@ -101,8 +114,10 @@ export default async function ResultsPage() {
                         <Link href={`/clinic/results/new?import=${item.id}`} className="type-button-label text-content no-underline">
                           Enter values
                         </Link>
+                      ) : canMatch ? (
+                        <MatchFileForm importId={item.id} patients={patients} />
                       ) : (
-                        <span className="type-small text-content-muted">Needs matching to a patient</span>
+                        <span className="type-small text-content-muted">Needs matching to a patient. A PA can do this.</span>
                       )}
                     </TableCell>
                   </TableRow>

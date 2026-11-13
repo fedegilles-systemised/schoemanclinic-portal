@@ -318,6 +318,20 @@ For a new patient the clinic reference (SC- and six digits) is made automaticall
 
 **Questions:** which labs will send a feed, and in what format? What happens to a result with an unknown barcode or marker? Who is alerted when a feed fails?
 
+### 4a. A lab posts a report to Clinic Hub
+
+**Who:** a blood or stool lab (automatic), then a PA, then a doctor. **Status:** built. It is switched on for a lab only when the clinic sets that lab's secret.
+
+1. Each lab has its own address, ending in its short name, and its own secret. The lab posts the PDF with the patient's name, email and date of birth, once for each report.
+2. Clinic Hub checks the secret. A wrong secret is refused, and an address with no secret set does not exist.
+3. If exactly one patient has that email and date of birth, and the name the lab wrote agrees with theirs, the PDF is filed under them. If none or more than one does, or the name differs, the PDF waits in the import queue as "needs matching", with what the lab wrote beside it. The name is only a check, never used to find a patient.
+4. The PA and the clinic inbox are told that a report has arrived, by a link only and never a name. A PA matches a waiting file by choosing the patient, then enters the values (flow 5, step 4).
+5. Nothing is released and no value is read from the PDF. A report sent twice is kept once.
+
+**Data in/out:** inbound from the lab; the PDF holds health information, so each lab needs a data-processing agreement. A file over about 4.5 MB cannot be posted to Vercel, so a lab with larger files must send a link instead (not built). **Email:** an alert to the clinic inbox, with no patient details.
+
+**Questions:** which lab sends first, and in what format? Does the lab sign what it sends, and does it retry? Who signs the data-processing agreement with each lab?
+
 ### 5. Results by PDF import
 
 **Who:** the patient uploads, or a PDF arrives by email; a PA checks. **Status:** built without the AI step. A PA enters each value by hand from the lab's report. The AI reading is planned for later. A patient's own upload from the portal is planned too: PDF only, up to 5 files each time (a patient can upload again later), and the name on the report must match the name the patient registered with. A PA checks it is complete. Staff can add PDF, JPEG or PNG files up to 10 MB.
@@ -480,6 +494,7 @@ Clinic Hub connects to nine systems. Supabase and Resend are in place (Resend on
 | Vercel | Hosting, page-speed measures, visit counts | Out | Page address (without query), device and performance data. No cookies | Set-up in progress |
 | Stripe | Payments for bloods and repeat-request fees | Both | Payment amounts and a reference. The clinic never holds card details | Repeat fees built; needs the clinic's keys. Bloods planned |
 | Lab partners (TDL is named) | Results by electronic feed; barcodes | In (and out, proposed) | Results per marker, with the barcode that links them to an order | Planned |
+| Lab report webhook | A lab posts a PDF with the patient's name, email and date of birth | In | The PDF and those three details. A PA enters the values | Built; needs a secret per lab and a data agreement |
 | GoHighLevel | Patient email and WhatsApp (as texts its plug-in diverts), tasks, invoices, marketing | Out | Contact details and message text; never a result value | Built; needs the clinic's key |
 | Semble | Being retired in stages: notes and bookings now live in Clinic Hub | In | Records to move across | Migration planned |
 | SignatureRx | Prescribing, signed by the doctor with a PIN | Out | An approved repeat request as a prescription, and its state back when a doctor or PA asks | Built, off by default, staging only |
