@@ -12,6 +12,7 @@ import { resultReadyEmail } from "@/lib/email/templates/app";
 import { getSiteUrl } from "@/lib/env";
 import { extensionFor, fileKind, MAX_FILE_BYTES } from "@/lib/files";
 import { notifyPatient } from "@/lib/notify/patient";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 export type ResultsFormState = { error?: string; saved?: string };
@@ -241,4 +242,38 @@ async function tellPatientByEmail(
     console.error("Result message not sent: something went wrong before it could be sent.");
     return failure;
   }
+}
+
+// Matching a lab file to a patient ------------------------------------------------------------------------
+
+/**
+ * A PA or an admin says which patient a waiting lab file belongs to. The file is moved under the
+ * patient in storage first, then the database records the match; if that is refused the file goes back.
+ */
+export async function matchLabFile(_state: ResultsFormState, formData: FormData): Promise<ResultsFormState> {
+  const user = await getCurrentUser();
+  if (!user || user.isSuspended || !user.roles.some((role) => role === "pa" || role === "admin")) return { error: "Only a PA or an admin can match a file." };
+  const parsed = z.object({ importId: z.uuid(), patientId: z.uuid("Choose a patient.") }).safeParse({
+    importId: formData.get("importId"),
+    patientId: formData.get("patientId"),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? GENERIC_FAILURE };
+  if (!(await allowAuthAttempt("results-entry", user.id))) return { error: TRY_LATER };
+
+  const supabase = await createClient();
+  const found = await supabase.from("result_imports").select("document:documents(storage_path)").eq("id", parsed.data.importId).eq("status", "needs_match").maybeSingle();
+  const from = found.data?.document?.storage_path;
+  if (found.error || !from) return { error: "That file is not waiting for a match." };
+
+  const to = `${parsed.data.patientId}/${randomUUID()}.pdf`;
+  const admin = createAdminClient();
+  const moved = await admin.storage.from("documents").move(from, to);
+  if (moved.error) return { error: GENERIC_FAILURE };
+  const done = await supabase.rpc("match_import_to_patient", { _import: parsed.data.importId, _patient: parsed.data.patientId, _new_path: to });
+  if (done.error) {
+    await admin.storage.from("documents").move(to, from);
+    return { error: friendly(done.error) };
+  }
+  revalidatePath("/clinic/results");
+  return { saved: "The file is matched. Its values can now be entered." };
 }

@@ -304,6 +304,24 @@ export function repeatPaidAlertEmail({ siteUrl, requestUrl, paid }: Base & { req
   };
 }
 
+/** The clinic inbox is told that a lab file has arrived in the import queue. Links only: never a name. */
+export function labFileAlertEmail({ siteUrl, queueUrl }: Base & { queueUrl: string }): EmailContent {
+  const reason = "You are receiving this email because this address receives the clinic's lab file alerts.";
+  const line = "A lab report has arrived and is waiting in the import queue. Sign in to Clinic Hub to enter its values or to match it to a patient.";
+  return {
+    subject: "A lab report is waiting in the import queue",
+    html: renderEmail({
+      siteUrl,
+      preheader: line,
+      eyebrow: "Results",
+      title: { before: "A lab report has ", accent: "arrived" },
+      body: paragraph("Hello,") + paragraph(escapeHtml(line)) + button("Open the import queue", queueUrl) + paragraph(SIGN_OFF_HTML),
+      reason,
+    }),
+    text: `Hello,\n\n${line}\n\nOpen the import queue: ${queueUrl}\n\n${textFooter(reason)}`,
+  };
+}
+
 /** A patient is told their repeat request and payment have reached the clinic. */
 export function repeatReceivedEmail({
   siteUrl,

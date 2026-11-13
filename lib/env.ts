@@ -269,6 +269,25 @@ export function isSignatureRxSigningEnabled(): boolean {
 }
 
 /**
+ * The secrets that lab providers send with each file, one per provider: `acme-labs:<secret>` pairs
+ * separated by commas or new lines. The provider's short name is the last part of its webhook address.
+ * A secret under 32 characters, or a name that is not a short plain word, is ignored, so a mistake turns
+ * a provider off instead of leaving it open. Empty when nothing is set.
+ */
+export function getLabWebhookSecrets(): Map<string, string> {
+  assertServer();
+  const secrets = new Map<string, string>();
+  for (const entry of (process.env.LAB_WEBHOOK_SECRETS ?? "").split(/[,\n]/)) {
+    const at = entry.indexOf(":");
+    if (at < 1) continue;
+    const name = entry.slice(0, at).trim().toLowerCase();
+    const secret = entry.slice(at + 1).trim();
+    if (/^[a-z0-9][a-z0-9-]{0,40}$/.test(name) && secret.length >= 32) secrets.set(name, secret);
+  }
+  return secrets;
+}
+
+/**
  * The site's public address, for links in messages. Read on its own, so a message through
  * GoHighLevel does not depend on Resend being set up.
  */
