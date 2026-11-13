@@ -113,7 +113,7 @@ export function renderEmail({ siteUrl, preheader, eyebrow, title, body, reason }
             <tr>
               <td style="padding:24px 8px 0;font-family:${font.sans};font-size:12px;line-height:18px;color:${colour.muted}">
                 <p style="margin:0 0 8px">${reason}</p>
-                <p style="margin:0">The Schoeman Clinic · A private Harley Street and Wimbledon clinic, London.</p>
+                <p style="margin:0">The Schoeman Clinic · A private Harley Street, Wimbledon and virtual clinic, London.</p>
               </td>
             </tr>
           </table>

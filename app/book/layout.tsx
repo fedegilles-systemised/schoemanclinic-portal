@@ -15,7 +15,7 @@ export default function BookLayout({ children }: { children: React.ReactNode }) 
       </header>
       <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-10 shell:px-8">{children}</main>
       <footer className="type-small border-t border-surface-border px-5 py-6 text-content-muted shell:px-12">
-        The Schoeman Clinic · A private Harley Street and Wimbledon clinic, London. Booking for an existing patient? Use your patient portal.
+        The Schoeman Clinic · A private Harley Street, Wimbledon and virtual clinic, London. Booking for an existing patient? Use your patient portal.
       </footer>
     </div>
   );
