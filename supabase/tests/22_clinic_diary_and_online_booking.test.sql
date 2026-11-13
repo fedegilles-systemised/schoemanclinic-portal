@@ -63,15 +63,21 @@ select lives_ok($$ select * from public.book_online('a7000000-0000-4000-8000-000
 select throws_ok($$ select * from public.book_online('a7000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000001', pg_temp.slot('14:00'), null, 'Ann', 'Lee', '1980-01-01', 'ann@example.test', '07700 900123') $$, '22023', null, 'but not a third');
 reset role;
 
--- The diary: the whole team reads it, with names; opening follows the care team.
-select pg_temp.become('a0000000-0000-4000-8000-000000000002');
-select is((select patient_name from public.clinic_diary(now(), now() + interval '7 days') where id = (select appointment_id from booked)), 'Ann Lee', 'another doctor sees the booking with the name');
-select is((select can_open from public.clinic_diary(now(), now() + interval '7 days') where id = (select appointment_id from booked)), false, 'but cannot open a record outside her care team');
+-- The diary: admins and PAs read every clinician's bookings with names; a clinician reads only their own.
+select pg_temp.become('a0000000-0000-4000-8000-000000000003');
+select is((select patient_name from public.clinic_diary(now(), now() + interval '7 days') where id = (select appointment_id from booked)), 'Ann Lee', 'a PA sees the booking with the name');
 select is((select new_patient from public.clinic_diary(now(), now() + interval '7 days') where id = (select appointment_id from booked)), true, 'it shows as a new patient');
 select throws_ok($$ select * from public.clinic_diary(now(), now() + interval '60 days') $$, '22023', null, 'six weeks at most');
 reset role;
+select pg_temp.become('a0000000-0000-4000-8000-000000000001');
+select is((select count(*)::int from public.clinic_diary(now(), now() + interval '7 days') where id = (select appointment_id from booked)), 1, 'the doctor booked sees her own booking');
+reset role;
+select pg_temp.become('a0000000-0000-4000-8000-000000000002');
+select is((select count(*)::int from public.clinic_diary(now(), now() + interval '7 days') where id = (select appointment_id from booked)), 0, 'another doctor does not');
+select is((select count(*)::int from public.clinic_diary(now(), now() + interval '7 days') where clinician_id is distinct from 'b0000000-0000-4000-8000-000000000002'), 0, 'a doctor sees only her own bookings');
+reset role;
 select pg_temp.become('a0000000-0000-4000-8000-000000000007');
-select ok((select count(*) from public.clinic_diary(now(), now() + interval '7 days')) >= 1, 'a nurse reads the diary');
+select is((select count(*)::int from public.clinic_diary(now(), now() + interval '7 days')), 0, 'a nurse with no bookings sees none');
 reset role;
 select pg_temp.become('a0000000-0000-4000-8000-000000000011');
 select throws_ok($$ select * from public.clinic_diary(now(), now() + interval '7 days') $$, '42501', null, 'a patient does not');

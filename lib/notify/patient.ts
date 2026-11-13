@@ -21,6 +21,11 @@ export type PatientMessage = {
    * that the team has not checked, so typed details cannot change a GoHighLevel contact.
    */
   resendOnly?: boolean;
+  /**
+   * Send the email even if the patient turned appointment emails off: for a service message they
+   * must see, such as an online booking made in their name (S-192).
+   */
+  alwaysEmail?: boolean;
 };
 
 export type Delivery = {
@@ -59,7 +64,7 @@ export async function notifyPatient(patientId: string, message: PatientMessage):
       : { data: [] as { channel: string; enabled: boolean }[], error: null };
     if (choices.error) return delivery;
     const choice = (channel: string) => choices.data?.find((row) => row.channel === channel)?.enabled;
-    const wantsEmail = choice("email") ?? true;
+    const wantsEmail = message.alwaysEmail || (choice("email") ?? true);
     const wantsWhatsApp = choice("whatsapp") ?? false;
 
     // The portal notice, unless the person turned portal notices off for this topic.
@@ -104,7 +109,12 @@ export async function notifyPatient(patientId: string, message: PatientMessage):
         }
         if (!ghl) {
           const sent = await sendResendEmail({ to: email, ...message.email });
-          if (!sent.ok) throw new Error("Resend refused the email");
+          if (!sent.ok) {
+            // Resend sends are not in integration_sync_log (its systems are the integrations), so a
+            // failure is logged here, without the address or anything about the patient.
+            console.error("Patient email not sent: Resend refused it.");
+            throw new Error("Resend refused the email");
+          }
         }
         delivery.email = "sent";
       } catch {

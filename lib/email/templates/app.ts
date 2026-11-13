@@ -23,7 +23,7 @@ const SIGN_OFF_HTML = "Regards,<br />The Schoeman Clinic team";
 const SIGN_OFF_TEXT = "Regards,\nThe Schoeman Clinic team";
 
 function textFooter(reason: string): string {
-  return `${SIGN_OFF_TEXT}\n\n${contactLineText}\n\n${reason}\n\nThe Schoeman Clinic · A private Harley Street and Wimbledon clinic, London.\n`;
+  return `${SIGN_OFF_TEXT}\n\n${contactLineText}\n\n${reason}\n\nThe Schoeman Clinic · A private Harley Street, Wimbledon and virtual clinic, London.\n`;
 }
 
 /** A person is invited to create an account. */
@@ -155,7 +155,8 @@ export function appointmentEmail({
   cancelled,
   moved = false,
   portalUrl,
-}: Base & { firstName?: string; when: string; clinicianName: string; cancelled: boolean; moved?: boolean; portalUrl: string | null }): EmailContent {
+  bookedOnline = false,
+}: Base & { firstName?: string; when: string; clinicianName: string; cancelled: boolean; moved?: boolean; portalUrl: string | null; bookedOnline?: boolean }): EmailContent {
   const hello = firstName ? `Dear ${firstName},` : "Hello,";
   const line = cancelled
     ? `Your appointment with ${clinicianName} on ${when} has been cancelled.`
@@ -166,6 +167,7 @@ export function appointmentEmail({
     ? "If you did not expect this, or would like a new time, please contact the clinic."
     : "If you need to change or cancel it, please contact the clinic at least 48 hours before.";
   const reason = "You are receiving this email because you have an appointment at The Schoeman Clinic.";
+  const check = bookedOnline ? NOT_YOU : null;
   return {
     subject: cancelled ? "Your appointment has been cancelled" : moved ? "Your appointment has moved" : "Your appointment is booked",
     html: renderEmail({
@@ -181,11 +183,12 @@ export function appointmentEmail({
         paragraph(escapeHtml(hello)) +
         paragraph(escapeHtml(line)) +
         paragraph(escapeHtml(policy)) +
+        (check ? paragraph(escapeHtml(check)) : "") +
         (portalUrl ? button("View your appointments", portalUrl) : "") +
         paragraph(SIGN_OFF_HTML),
       reason,
     }),
-    text: `${hello}\n\n${line}\n\n${policy}\n\n${portalUrl ? `View your appointments: ${portalUrl}\n\n` : ""}${textFooter(reason)}`,
+    text: `${hello}\n\n${line}\n\n${policy}\n\n${check ? `${check}\n\n` : ""}${portalUrl ? `View your appointments: ${portalUrl}\n\n` : ""}${textFooter(reason)}`,
   };
 }
 
@@ -424,6 +427,9 @@ export function feedbackAlertEmail({ siteUrl, feedbackUrl, urgent }: Base & { fe
   };
 }
 
+/** Online bookings need no account, so every confirmation asks the patient to report one they did not make (S-192). */
+const NOT_YOU = "This appointment was booked on our website. If you did not book it, please contact the clinic so we can cancel it.";
+
 /** A new patient who booked online is told it is booked and what happens next. No portal link yet. */
 export function onlineBookingEmail({
   siteUrl,
@@ -432,11 +438,11 @@ export function onlineBookingEmail({
   clinicianName,
 }: Base & { firstName?: string; when: string; clinicianName: string }): EmailContent {
   const hello = firstName ? `Dear ${firstName},` : "Hello,";
-  const line = `Thank you for booking with The Schoeman Clinic. Your appointment with ${clinicianName} is booked for ${when}.`;
+  const line = `Your appointment with ${clinicianName} is booked for ${when}.`;
   const next =
     "Before your appointment the clinic will be in touch to confirm your details and invite you to your patient portal, where you will find forms to complete and, later, your results.";
   const policy = "If you need to change or cancel it, please contact the clinic at least 48 hours before.";
-  const reason = "You are receiving this email because you booked an appointment on The Schoeman Clinic's website.";
+  const reason = "You are receiving this email because an appointment was booked with this email address on The Schoeman Clinic's website.";
   return {
     subject: "Your appointment is booked",
     html: renderEmail({
@@ -444,9 +450,15 @@ export function onlineBookingEmail({
       preheader: line,
       eyebrow: "Appointments",
       title: { before: "Your appointment is ", accent: "booked" },
-      body: paragraph(escapeHtml(hello)) + paragraph(escapeHtml(line)) + paragraph(escapeHtml(next)) + paragraph(escapeHtml(policy)) + paragraph(SIGN_OFF_HTML),
+      body:
+        paragraph(escapeHtml(hello)) +
+        paragraph(escapeHtml(line)) +
+        paragraph(escapeHtml(next)) +
+        paragraph(escapeHtml(policy)) +
+        paragraph(escapeHtml(NOT_YOU)) +
+        paragraph(SIGN_OFF_HTML),
       reason,
     }),
-    text: `${hello}\n\n${line}\n\n${next}\n\n${policy}\n\n${textFooter(reason)}`,
+    text: `${hello}\n\n${line}\n\n${next}\n\n${policy}\n\n${NOT_YOU}\n\n${textFooter(reason)}`,
   };
 }

@@ -30,8 +30,8 @@ function shiftMonth(month: string, by: number): string {
 }
 
 /**
- * The clinic diary: every clinician's bookings by day, week or month, as in Semble. The whole team
- * sees who is booked; opening a patient's record still follows the care team.
+ * The clinic diary: bookings by day, week or month, as in Semble. Admins and PAs see every
+ * clinician's; a doctor, nurse or health coach sees their own. Opening a record follows the care team.
  */
 export default async function DiaryPage({ searchParams }: { searchParams: Promise<{ view?: string; date?: string; staff?: string; location?: string }> }) {
   const user = await getCurrentUser();
@@ -44,8 +44,16 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
 
   const [{ clinicians, locations }, myStaffId] = await Promise.all([getDiaryPeople(), getMyStaffId(user.id)]);
   const mine = clinicians.find((c) => c.staffId === myStaffId);
-  // A clinician's week opens on their own diary; everyone else, and every day view, sees the whole team.
-  const staff = query.staff === "all" ? "all" : clinicians.some((c) => c.staffId === query.staff) ? query.staff! : view === "week" && mine ? mine.staffId : "all";
+  // Admins and PAs see every clinician's diary; a doctor, nurse or health coach sees only their own
+  // (the clinic's decision of 12 November 2026; the database applies it too).
+  const seesAll = user.roles.some((r) => r === "admin" || r === "pa");
+  const staff = !seesAll
+    ? (mine?.staffId ?? "none")
+    : query.staff === "all"
+      ? "all"
+      : clinicians.some((c) => c.staffId === query.staff)
+        ? query.staff!
+        : "all";
   const location = locations.some((l) => l.id === query.location) ? query.location! : "all";
 
   const month = date.slice(0, 7);
@@ -54,6 +62,7 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
   const all = await getDiary(londonInstant(fromDay, "00:00"), londonInstant(toDay, "00:00"));
   const entries = all.filter((e) => (staff === "all" || e.clinicianId === staff) && (location === "all" || e.locationId === location || e.locationId === null));
   const shown = staff === "all" ? clinicians : clinicians.filter((c) => c.staffId === staff);
+  const legend = seesAll ? clinicians : shown;
 
   const step = (by: number) => (view === "day" ? addDays(date, by) : view === "week" ? addDays(date, 7 * by) : `${shiftMonth(month, by)}-01`);
   const params = (changes: Record<string, string>) => {
@@ -101,17 +110,19 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
         <form method="get" action="/clinic/diary" className="flex flex-wrap items-end gap-3">
           <input type="hidden" name="view" value={view} />
           <input type="hidden" name="date" value={date} />
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="diary-staff">Clinician</Label>
-            <Select id="diary-staff" name="staff" defaultValue={staff}>
-              <option value="all">All clinicians</option>
-              {clinicians.map((c) => (
-                <option key={c.staffId} value={c.staffId}>
-                  {c.name}
-                </option>
-              ))}
-            </Select>
-          </div>
+          {seesAll ? (
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="diary-staff">Clinician</Label>
+              <Select id="diary-staff" name="staff" defaultValue={staff}>
+                <option value="all">All clinicians</option>
+                {clinicians.map((c) => (
+                  <option key={c.staffId} value={c.staffId}>
+                    {c.name}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          ) : null}
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="diary-location">Location</Label>
             <Select id="diary-location" name="location" defaultValue={location}>
@@ -129,7 +140,9 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
         </form>
       </div>
 
-      {clinicians.length === 0 ? (
+      {!seesAll && !mine ? (
+        <EmptyState>The diary shows your own bookings. You have none, as you are not a clinician who can be booked.</EmptyState>
+      ) : clinicians.length === 0 ? (
         <EmptyState>No clinicians yet. Add their hours in Booking settings.</EmptyState>
       ) : (
         <div className="flex flex-col gap-4">
@@ -137,9 +150,9 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
           {view === "day" ? (
             <DayView entries={entries} clinicians={shown} />
           ) : view === "week" ? (
-            <WeekView monday={mondayOf(date)} entries={entries} clinicians={clinicians} showClinician={staff === "all"} />
+            <WeekView monday={mondayOf(date)} entries={entries} clinicians={legend} showClinician={staff === "all"} />
           ) : (
-            <MonthView month={month} entries={entries} clinicians={clinicians} today={today} query={extra} />
+            <MonthView month={month} entries={entries} clinicians={legend} today={today} query={extra} />
           )}
         </div>
       )}
