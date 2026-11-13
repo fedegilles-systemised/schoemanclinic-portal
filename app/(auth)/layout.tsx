@@ -28,7 +28,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <div aria-hidden className="absolute inset-0 -z-10 bg-surface-inverse/80" />
           <Wordmark inverse />
           <div className="hidden flex-col gap-4 shell:flex">
-            <p className="type-eyebrow">A private Harley Street &amp; Wimbledon clinic</p>
+            <p className="type-eyebrow">A private Harley Street, Wimbledon and virtual clinic</p>
             <p className="type-hero-title max-w-[12ch]">
               Your health, <em className="text-accent italic">in one place</em>.
             </p>
