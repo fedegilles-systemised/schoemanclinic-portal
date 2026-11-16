@@ -1401,16 +1401,42 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
-                },"wearable_readings": {
+                },"wearable_connections": {
                   Row: {
-                    "archived_at": string | null,"created_at": string,"device": string | null,"entered_by": string,"id": string,"measured_on": string,"metric": Database["public"]['Enums']["wearable_metric"],"patient_id": string,"value": number
+                    "access_token_encrypted": string,"connected_at": string,"connected_by": string,"created_at": string,"expires_at": string,"id": string,"last_error": string | null,"last_synced_at": string | null,"needs_reconnect": boolean,"patient_id": string,"provider": Database["public"]['Enums']["wearable_provider"],"refresh_token_encrypted": string,"scope": string,"synced_through": string | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "archived_at"?: string | null,"created_at"?: string,"device"?: string | null,"entered_by": string,"id"?: string,"measured_on": string,"metric": Database["public"]['Enums']["wearable_metric"],"patient_id": string,"value": number
+                    "access_token_encrypted": string,"connected_at"?: string,"connected_by": string,"created_at"?: string,"expires_at": string,"id"?: string,"last_error"?: string | null,"last_synced_at"?: string | null,"needs_reconnect"?: boolean,"patient_id": string,"provider": Database["public"]['Enums']["wearable_provider"],"refresh_token_encrypted": string,"scope"?: string,"synced_through"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "archived_at"?: string | null,"created_at"?: string,"device"?: string | null,"entered_by"?: string,"id"?: string,"measured_on"?: string,"metric"?: Database["public"]['Enums']["wearable_metric"],"patient_id"?: string,"value"?: number
+                    "access_token_encrypted"?: string,"connected_at"?: string,"connected_by"?: string,"created_at"?: string,"expires_at"?: string,"id"?: string,"last_error"?: string | null,"last_synced_at"?: string | null,"needs_reconnect"?: boolean,"patient_id"?: string,"provider"?: Database["public"]['Enums']["wearable_provider"],"refresh_token_encrypted"?: string,"scope"?: string,"synced_through"?: string | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "wearable_connections_connected_by_fkey"
+      columns: ["connected_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "wearable_connections_patient_id_fkey"
+      columns: ["patient_id"]
+isOneToOne: false
+      referencedRelation: "patient_profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"wearable_readings": {
+                  Row: {
+                    "archived_at": string | null,"created_at": string,"device": string | null,"entered_by": string | null,"id": string,"measured_on": string,"metric": Database["public"]['Enums']["wearable_metric"],"patient_id": string,"source": string,"value": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "archived_at"?: string | null,"created_at"?: string,"device"?: string | null,"entered_by"?: string | null,"id"?: string,"measured_on": string,"metric": Database["public"]['Enums']["wearable_metric"],"patient_id": string,"source"?: string,"value": number
+                  }
+                  Update: {
+                    "archived_at"?: string | null,"created_at"?: string,"device"?: string | null,"entered_by"?: string | null,"id"?: string,"measured_on"?: string,"metric"?: Database["public"]['Enums']["wearable_metric"],"patient_id"?: string,"source"?: string,"value"?: number
                   }
                   Relationships: [
                     {
@@ -1506,6 +1532,14 @@ isOneToOne: false
 "decide_repeat_request":
 { Args: { "_note": string,"_request": string,"_status": Database["public"]['Enums']["request_status"] }; Returns: undefined
                            },
+"disconnect_wearable":
+{ Args: { "_patient": string,"_provider": Database["public"]['Enums']["wearable_provider"] }; Returns: undefined
+                           },
+"drop_unconsented_wearable_connections":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "access_token_encrypted": string,"patient_id": string,"provider": Database["public"]['Enums']["wearable_provider"],"refresh_token_encrypted": string
+            }[]
+                           },
 "due_feedback_reminders":
 { Args: Record<PropertyKey, never>; Returns: {
               "feedback_id": string,"patient_id": string
@@ -1598,6 +1632,9 @@ isOneToOne: false
 "record_feedback_follow_up":
 { Args: { "_feedback": string,"_note": string }; Returns: undefined
                            },
+"record_wearable_sync":
+{ Args: { "_connection": string,"_error": string,"_needs_reconnect": boolean,"_through": string }; Returns: undefined
+                           },
 "recording_failed":
 { Args: { "_error": string,"_recording": string }; Returns: undefined
                            },
@@ -1640,6 +1677,9 @@ isOneToOne: false
 "save_google_calendar_connection":
 { Args: { "_google_email": string,"_refresh_token_encrypted": string,"_scope": string,"_user": string }; Returns: undefined
                            },
+"save_wearable_connection":
+{ Args: { "_access_encrypted": string,"_by": string,"_expires_at": string,"_patient": string,"_provider": Database["public"]['Enums']["wearable_provider"],"_refresh_encrypted": string,"_scope": string }; Returns: string
+                           },
 "set_appointment_calendar_event":
 { Args: { "_appointment": string,"_event": string }; Returns: undefined
                            },
@@ -1666,12 +1706,23 @@ isOneToOne: false
 "unmatch_lab_file":
 { Args: { "_import": string,"_new_path": string }; Returns: undefined
                            },
+"update_wearable_tokens":
+{ Args: { "_access_encrypted": string,"_connection": string,"_expires_at": string,"_refresh_encrypted": string }; Returns: undefined
+                           },
+"upsert_wearable_readings":
+{ Args: { "_patient": string,"_provider": Database["public"]['Enums']["wearable_provider"],"_rows": Json }; Returns: number
+                           },
 "verify_invitation_identity":
 { Args: { "_date_of_birth"?: string,"_token_hash": string }; Returns: string
+                           },
+"wearable_connections_due":
+{ Args: { "_limit": number }; Returns: {
+              "access_token_encrypted": string,"expires_at": string,"id": string,"patient_id": string,"provider": Database["public"]['Enums']["wearable_provider"],"refresh_token_encrypted": string,"synced_through": string
+            }[]
                            }
           }
           Enums: {
-            "account_status": "invited"|"active"|"suspended","app_role": "patient"|"doctor"|"pa"|"health_coach"|"admin"|"nurse","appt_source": "ghl"|"semble"|"clinic_hub","appt_status": "booked"|"confirmed"|"cancelled"|"completed"|"no_show","care_relationship": "primary_doctor"|"doctor"|"pa"|"health_coach"|"nurse","consent_type": "care"|"partner_labs"|"research","diagnosis_status": "active"|"monitoring"|"treating"|"under_investigation"|"resolved","doc_kind": "letter"|"lab_report"|"patient_upload"|"referral"|"other","document_source": "patient_upload"|"email"|"tdl"|"semble"|"staff_upload"|"lab_feed","form_kind": "feedback"|"repeat_request"|"question","guardian_relationship": "parent"|"carer"|"power_of_attorney","import_confidence": "high"|"medium"|"low","import_decision": "pending"|"confirmed"|"rejected","import_status": "needs_match"|"matched"|"confirmed"|"rejected","invitation_kind": "patient"|"guardian"|"team","location_kind": "clinic"|"video","med_kind": "prescription"|"supplement","med_status": "active"|"paused"|"stopped","note_source": "typed"|"recording","note_status": "draft"|"signed","notification_channel": "email"|"whatsapp"|"sms"|"portal","notification_topic": "results"|"payments"|"appointments"|"messages","order_status": "sent_to_patient"|"paid"|"sample_taken"|"results_in"|"reviewed"|"cancelled","question_status": "awaiting_reply"|"answered"|"closed","question_urgency": "routine"|"important","recording_status": "uploading"|"transcribing"|"transcribed"|"failed","report_status": "awaiting_review"|"reviewed"|"released","request_status": "requested"|"approved"|"sent_to_pharmacy"|"declined","result_flag": "normal"|"borderline"|"low"|"high"|"critical","results_channel": "api"|"email"|"upload","safeguarding_severity": "low"|"moderate"|"high","staff_role": "doctor"|"pa"|"health_coach"|"admin"|"nurse","sync_direction": "in"|"out","sync_status": "ok"|"failed"|"retrying","sync_system": "ghl"|"semble"|"stripe"|"tdl"|"fathom","wearable_metric": "sleep_minutes"|"sleep_score"|"readiness_score"|"resting_heart_rate"|"hrv_ms"|"steps"|"active_minutes"|"weight_kg"|"body_fat_percent"|"vo2_max"|"spo2_percent"|"temperature_deviation_c","webhook_source": "stripe"|"tdl"|"ghl"|"semble"|"fathom"|"lab_feed","webhook_status": "received"|"processed"|"failed"|"ignored"
+            "account_status": "invited"|"active"|"suspended","app_role": "patient"|"doctor"|"pa"|"health_coach"|"admin"|"nurse","appt_source": "ghl"|"semble"|"clinic_hub","appt_status": "booked"|"confirmed"|"cancelled"|"completed"|"no_show","care_relationship": "primary_doctor"|"doctor"|"pa"|"health_coach"|"nurse","consent_type": "care"|"partner_labs"|"research"|"wearables","diagnosis_status": "active"|"monitoring"|"treating"|"under_investigation"|"resolved","doc_kind": "letter"|"lab_report"|"patient_upload"|"referral"|"other","document_source": "patient_upload"|"email"|"tdl"|"semble"|"staff_upload"|"lab_feed","form_kind": "feedback"|"repeat_request"|"question","guardian_relationship": "parent"|"carer"|"power_of_attorney","import_confidence": "high"|"medium"|"low","import_decision": "pending"|"confirmed"|"rejected","import_status": "needs_match"|"matched"|"confirmed"|"rejected","invitation_kind": "patient"|"guardian"|"team","location_kind": "clinic"|"video","med_kind": "prescription"|"supplement","med_status": "active"|"paused"|"stopped","note_source": "typed"|"recording","note_status": "draft"|"signed","notification_channel": "email"|"whatsapp"|"sms"|"portal","notification_topic": "results"|"payments"|"appointments"|"messages","order_status": "sent_to_patient"|"paid"|"sample_taken"|"results_in"|"reviewed"|"cancelled","question_status": "awaiting_reply"|"answered"|"closed","question_urgency": "routine"|"important","recording_status": "uploading"|"transcribing"|"transcribed"|"failed","report_status": "awaiting_review"|"reviewed"|"released","request_status": "requested"|"approved"|"sent_to_pharmacy"|"declined","result_flag": "normal"|"borderline"|"low"|"high"|"critical","results_channel": "api"|"email"|"upload","safeguarding_severity": "low"|"moderate"|"high","staff_role": "doctor"|"pa"|"health_coach"|"admin"|"nurse","sync_direction": "in"|"out","sync_status": "ok"|"failed"|"retrying","sync_system": "ghl"|"semble"|"stripe"|"tdl"|"fathom","wearable_metric": "sleep_minutes"|"sleep_score"|"readiness_score"|"resting_heart_rate"|"hrv_ms"|"steps"|"active_minutes"|"weight_kg"|"body_fat_percent"|"vo2_max"|"spo2_percent"|"temperature_deviation_c","wearable_provider": "oura"|"whoop","webhook_source": "stripe"|"tdl"|"ghl"|"semble"|"fathom"|"lab_feed","webhook_status": "received"|"processed"|"failed"|"ignored"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -1787,7 +1838,7 @@ export type CompositeTypes<
 export const Constants = {
   "public": {
           Enums: {
-            "account_status": ["invited", "active", "suspended"],"app_role": ["patient", "doctor", "pa", "health_coach", "admin", "nurse"],"appt_source": ["ghl", "semble", "clinic_hub"],"appt_status": ["booked", "confirmed", "cancelled", "completed", "no_show"],"care_relationship": ["primary_doctor", "doctor", "pa", "health_coach", "nurse"],"consent_type": ["care", "partner_labs", "research"],"diagnosis_status": ["active", "monitoring", "treating", "under_investigation", "resolved"],"doc_kind": ["letter", "lab_report", "patient_upload", "referral", "other"],"document_source": ["patient_upload", "email", "tdl", "semble", "staff_upload", "lab_feed"],"form_kind": ["feedback", "repeat_request", "question"],"guardian_relationship": ["parent", "carer", "power_of_attorney"],"import_confidence": ["high", "medium", "low"],"import_decision": ["pending", "confirmed", "rejected"],"import_status": ["needs_match", "matched", "confirmed", "rejected"],"invitation_kind": ["patient", "guardian", "team"],"location_kind": ["clinic", "video"],"med_kind": ["prescription", "supplement"],"med_status": ["active", "paused", "stopped"],"note_source": ["typed", "recording"],"note_status": ["draft", "signed"],"notification_channel": ["email", "whatsapp", "sms", "portal"],"notification_topic": ["results", "payments", "appointments", "messages"],"order_status": ["sent_to_patient", "paid", "sample_taken", "results_in", "reviewed", "cancelled"],"question_status": ["awaiting_reply", "answered", "closed"],"question_urgency": ["routine", "important"],"recording_status": ["uploading", "transcribing", "transcribed", "failed"],"report_status": ["awaiting_review", "reviewed", "released"],"request_status": ["requested", "approved", "sent_to_pharmacy", "declined"],"result_flag": ["normal", "borderline", "low", "high", "critical"],"results_channel": ["api", "email", "upload"],"safeguarding_severity": ["low", "moderate", "high"],"staff_role": ["doctor", "pa", "health_coach", "admin", "nurse"],"sync_direction": ["in", "out"],"sync_status": ["ok", "failed", "retrying"],"sync_system": ["ghl", "semble", "stripe", "tdl", "fathom"],"wearable_metric": ["sleep_minutes", "sleep_score", "readiness_score", "resting_heart_rate", "hrv_ms", "steps", "active_minutes", "weight_kg", "body_fat_percent", "vo2_max", "spo2_percent", "temperature_deviation_c"],"webhook_source": ["stripe", "tdl", "ghl", "semble", "fathom", "lab_feed"],"webhook_status": ["received", "processed", "failed", "ignored"]
+            "account_status": ["invited", "active", "suspended"],"app_role": ["patient", "doctor", "pa", "health_coach", "admin", "nurse"],"appt_source": ["ghl", "semble", "clinic_hub"],"appt_status": ["booked", "confirmed", "cancelled", "completed", "no_show"],"care_relationship": ["primary_doctor", "doctor", "pa", "health_coach", "nurse"],"consent_type": ["care", "partner_labs", "research", "wearables"],"diagnosis_status": ["active", "monitoring", "treating", "under_investigation", "resolved"],"doc_kind": ["letter", "lab_report", "patient_upload", "referral", "other"],"document_source": ["patient_upload", "email", "tdl", "semble", "staff_upload", "lab_feed"],"form_kind": ["feedback", "repeat_request", "question"],"guardian_relationship": ["parent", "carer", "power_of_attorney"],"import_confidence": ["high", "medium", "low"],"import_decision": ["pending", "confirmed", "rejected"],"import_status": ["needs_match", "matched", "confirmed", "rejected"],"invitation_kind": ["patient", "guardian", "team"],"location_kind": ["clinic", "video"],"med_kind": ["prescription", "supplement"],"med_status": ["active", "paused", "stopped"],"note_source": ["typed", "recording"],"note_status": ["draft", "signed"],"notification_channel": ["email", "whatsapp", "sms", "portal"],"notification_topic": ["results", "payments", "appointments", "messages"],"order_status": ["sent_to_patient", "paid", "sample_taken", "results_in", "reviewed", "cancelled"],"question_status": ["awaiting_reply", "answered", "closed"],"question_urgency": ["routine", "important"],"recording_status": ["uploading", "transcribing", "transcribed", "failed"],"report_status": ["awaiting_review", "reviewed", "released"],"request_status": ["requested", "approved", "sent_to_pharmacy", "declined"],"result_flag": ["normal", "borderline", "low", "high", "critical"],"results_channel": ["api", "email", "upload"],"safeguarding_severity": ["low", "moderate", "high"],"staff_role": ["doctor", "pa", "health_coach", "admin", "nurse"],"sync_direction": ["in", "out"],"sync_status": ["ok", "failed", "retrying"],"sync_system": ["ghl", "semble", "stripe", "tdl", "fathom"],"wearable_metric": ["sleep_minutes", "sleep_score", "readiness_score", "resting_heart_rate", "hrv_ms", "steps", "active_minutes", "weight_kg", "body_fat_percent", "vo2_max", "spo2_percent", "temperature_deviation_c"],"wearable_provider": ["oura", "whoop"],"webhook_source": ["stripe", "tdl", "ghl", "semble", "fathom", "lab_feed"],"webhook_status": ["received", "processed", "failed", "ignored"]
           }
         }
 } as const

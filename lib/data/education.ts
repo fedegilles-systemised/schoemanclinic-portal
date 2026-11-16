@@ -195,7 +195,7 @@ export async function getPatientAssignments(patientId: string): Promise<Assignme
   });
 }
 
-export type Reading = { id: string; metric: WearableMetric; value: number; measuredOn: string; device: string | null; enteredBy: string };
+export type Reading = { id: string; metric: WearableMetric; value: number; measuredOn: string; device: string | null; enteredBy: string | null };
 
 /** Wearable readings for one patient, newest first. */
 export async function getReadings(patientId: string, limit = 60): Promise<Reading[]> {
@@ -234,4 +234,24 @@ export async function getPortalCourseIds(): Promise<Set<string>> {
     .is("archived_at", null);
   if (error) throw new Error("Could not load your courses.");
   return new Set(data.map((row) => row.course_id));
+}
+
+export type WearableConnection = {
+  id: string;
+  provider: "oura" | "whoop";
+  connectedAt: string;
+  lastSyncedAt: string | null;
+  needsReconnect: boolean;
+};
+
+/** The wearables linked to a patient. The database never gives out the tokens. */
+export async function getWearableConnections(patientId: string): Promise<WearableConnection[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("wearable_connections")
+    .select("id, provider, connected_at, last_synced_at, needs_reconnect")
+    .eq("patient_id", patientId)
+    .order("provider");
+  if (error) throw new Error("Could not load your wearables.");
+  return data.map((c) => ({ id: c.id, provider: c.provider, connectedAt: c.connected_at, lastSyncedAt: c.last_synced_at, needsReconnect: c.needs_reconnect }));
 }
