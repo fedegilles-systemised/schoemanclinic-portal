@@ -165,6 +165,35 @@ export function isGoogleConfigured(): boolean {
   }).success;
 }
 
+/** The wearable accounts Clinic Hub can link. */
+export type WearableProviderId = "oura" | "whoop";
+
+const wearableKeySchema = z
+  .string()
+  .refine((value) => Buffer.from(value, "base64").length === 32, "must be 32 bytes, base64");
+
+/**
+ * The key that encrypts each patient's wearable tokens before they are stored: 32 random bytes, base64
+ * (`openssl rand -base64 32`). Changing it disconnects every wearable.
+ */
+export function getWearableTokenKey(): string {
+  assertServer();
+  const parsed = wearableKeySchema.safeParse(process.env.WEARABLE_TOKEN_ENCRYPTION_KEY);
+  if (!parsed.success) throw new Error(`Invalid wearable environment: ${formatIssues(parsed.error)}`);
+  return parsed.data;
+}
+
+/** The OAuth app of one provider, or null when it is not fully set up. The callback address is built from SITE_URL, never from a request. */
+export function getWearableProviderEnv(provider: WearableProviderId): { clientId: string; clientSecret: string; redirectUri: string } | null {
+  assertServer();
+  const prefix = provider === "oura" ? "OURA" : "WHOOP";
+  const clientId = process.env[`${prefix}_CLIENT_ID`];
+  const clientSecret = process.env[`${prefix}_CLIENT_SECRET`];
+  const site = z.url().safeParse(process.env.SITE_URL);
+  if (!clientId || !clientSecret || !site.success || !wearableKeySchema.safeParse(process.env.WEARABLE_TOKEN_ENCRYPTION_KEY).success) return null;
+  return { clientId, clientSecret, redirectUri: `${site.data.replace(/\/$/, "")}/api/wearables/${provider}/callback` };
+}
+
 /** Server-only GoHighLevel variables, for lib/ghl/. */
 export function getGhlEnv(): z.infer<typeof ghlSchema> {
   assertServer();

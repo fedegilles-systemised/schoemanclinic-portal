@@ -486,6 +486,21 @@ Every form a patient sends (feedback, repeat requests and questions to the clini
 
 **Questions:** are 9 to 10, 7 to 8 and 0 to 6 the right bands? Who should own follow-ups day to day? What is the clinic's Google review link? Should video calls be included as well as visits?
 
+### 16. Connect a wearable
+
+**Who:** the patient, or a guardian who can act for them; the clinic team reads the figures. **Status:** built for Oura and WHOOP; it needs each provider's keys, which the clinic's builder holds. Garmin and Withings are not built.
+
+1. On **Wearables**, the patient reads what is shared and agrees to "Connecting my wearables". This is a consent like the others on Privacy and consent, recorded with the wording's version. The wording is a first draft for the clinic to review and expand.
+2. They press **Connect Oura** or **Connect WHOOP**, sign in at the provider and allow access to their daily figures only. Clinic Hub never sees their provider password.
+3. Once a day Clinic Hub reads each linked account and saves one figure per day for sleep, sleep score, readiness or recovery, resting heart rate, heart rate variability, steps, active minutes, blood oxygen, temperature change and VO2 max, as far as the provider offers them. The first read happens at once and goes back 30 days.
+4. Figures read this way show the device's name and sit next to readings typed in by hand. A patient cannot remove one: they disconnect instead.
+5. **Disconnect** stops the reading and removes the stored access. Withdrawing the consent does the same for every wearable, at the next daily run. Figures already saved stay on the record.
+6. If a provider stops accepting the link, the screen asks the patient to connect again.
+
+**Data in/out:** inbound from Oura and WHOOP. The stored access codes are encrypted and never shown to anyone. The figures are health information. **Email:** none.
+
+**Questions:** may the care team see wearable figures for patients who have not agreed? (no: it needs the consent.) Which devices do patients use, and which should come next? Should the team be alerted to a worrying trend, or only see the figures? Who reviews the consent wording and the privacy notice?
+
 ## Integrations
 
 Clinic Hub connects to nine systems. Supabase and Resend are in place (Resend on a test domain); the others are agreed in the data model and wait to be built. Every exchange with an outside system will be logged: what moved, in which direction, when, and whether it worked.
@@ -503,6 +518,7 @@ Clinic Hub connects to nine systems. Supabase and Resend are in place (Resend on
 | Resend | Email from Clinic Hub and the sign-in emails (invitations, password reset, security notices) | Out | Only links and neutral wording. No clinical values | In place on a test domain. It moves to the clinic's own domain later |
 | AI document reader | Reads values from imported PDFs | Both | The PDF's content out; proposed values back | Planned. Provider not chosen |
 | AssemblyAI (EU) | Transcribes call recordings; replaces Fathom | Out and back | A short-lived link to the audio out; the transcript back, then deleted there | Built; needs the clinic's key and data agreement |
+| Oura and WHOOP | A patient's daily figures: sleep, heart rate, steps and similar | In | The figures only, read once a day after the patient agrees. Access codes are encrypted | Built; needs each provider's app keys, and WHOOP's approval above 10 patients |
 | Google Calendar | Each staff member's own calendar, and bookings added to it | Both | Event times and titles with the clinic reference, never a name | Built; needs the Google keys |
 
 **How incoming messages are handled.** Stripe, the labs and GoHighLevel push messages to Clinic Hub. Each message is stored first, then processed, and its unique number stops it being applied twice. A failed message can be retried.
@@ -692,7 +708,7 @@ The clinic answered the rest on 11 November. Those answers are under Decisions a
 - Everything heard on the call matters. The Christmas prescription email is separate and is sent from GoHighLevel. Education content and wearables are part of the build. (Question 21)
 - Education: admins build courses of sections and modules, with text and video links, and staff add them to a patient's portal. Built, starting empty for the clinic's content. (Questions 21 and 30)
 - Education works like a course platform such as Kajabi (12 November 2026). Admins build each course from an outline of sections and lessons, reorder them, and write each lesson in an editor with headings, bold, lists and links, a YouTube, Vimeo or Loom video that plays on the page, and PDF or image downloads. Lessons stay drafts until published, and the team can preview a course as a patient sees it. Patients see course cards with a cover image and their progress, take one lesson at a time with the outline beside it, and mark lessons complete; the team sees each patient's progress on their record. There are no comments, quizzes or drip release. Built.
-- Wearables: patients type in their readings until the device connections are built, which come next. Manual entry is built. (Question 21)
+- Wearables: patients type in readings by hand, or link an Oura or WHOOP account so the figures arrive daily, after agreeing to the wearables consent. Both are built. Garmin and Withings come later. (Question 21)
 - The clinic keeps a patient's contact details. A patient who wants one changed messages the clinic. Built, including Ask the clinic. (Question 22)
 - Staff see the team's photos and the photos of patients they can open. Patients see only their own photo. Built. (Question 23)
 - Only doctors sign letters, and prescribing will go through SignatureRx. Signatures are built. The SignatureRx connection is built too, but switched off by default until its security review and the data agreement are done (flow 8). (Question 24)

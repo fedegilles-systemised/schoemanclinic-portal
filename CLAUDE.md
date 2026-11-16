@@ -67,6 +67,8 @@ pnpm email:test    # send one sample email through Resend (needs .env.local); se
 
 **No cascade deletes.** Every foreign key is `ON DELETE RESTRICT` or the default. Never `CASCADE`, never `SET NULL` on clinical data. Clinical records are archived with `archived_at`, not deleted. Accounts are suspended through `profiles.status`, not deleted.
 
+**One exception:** a lab file nobody matched to a patient within 30 days (or that was turned away) has its PDF removed from storage and the lab's personal details cleared. The row is archived and kept, and the file belongs to no patient's record (`lib/labs/retention.ts`, daily inside the patient-messages cron).
+
 **Tokens only.** No raw colour values in JSX or component classes, no stray radii, no shadows, no gradients. Restyle in the component file with CVA variants, not at the call site. After every shadcn CLI run, check the `cn` import still points to `@/lib/utils` and that no new dependency called `cn` appeared (the CLI has written `from "cn"`). shadcn's generated `bg-secondary` means surface-selected in its docs, but here means the bronze token: fix it in the component file.
 
 **British English**, and the copy rules in `docs/reference/design-system/README.md`: no exclamation marks, no emoji, no medical promises, UPPERCASE only for eyebrow, button and pill labels.
