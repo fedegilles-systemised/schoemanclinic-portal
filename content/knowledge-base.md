@@ -327,6 +327,7 @@ For a new patient the clinic reference (SC- and six digits) is made automaticall
 3. If exactly one patient has that email and date of birth, and the name the lab wrote agrees with theirs, the PDF is filed under them. If none or more than one does, or the name differs, the PDF waits in the import queue as "needs matching", with what the lab wrote beside it. The name is only a check, never used to find a patient.
 4. The PA and the clinic inbox are told that a report has arrived, by a link only and never a name. A PA matches a waiting file by choosing the patient, then enters the values (flow 5, step 4).
 5. Nothing is released and no value is read from the PDF. A report sent twice is kept once.
+6. A PA or admin can turn a waiting file away, with a short reason (for example, the person is not a patient). It is archived with that reason and nothing is deleted. If a file was matched to the wrong patient and no values have been entered from it yet, "Wrong patient" sends it back to the queue.
 
 **Data in/out:** inbound from the lab; the PDF holds health information, so each lab needs a data-processing agreement. A file over about 4.5 MB cannot be posted to Vercel, so a lab with larger files must send a link instead (not built). **Email:** an alert to the clinic inbox, with no patient details.
 
