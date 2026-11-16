@@ -1183,14 +1183,14 @@ isOneToOne: false
                   ]
                 },"result_imports": {
                   Row: {
-                    "created_at": string,"document_id": string,"handled_by": string | null,"id": string,"lab_report_id": string | null,"patient_id": string | null,"received_at": string,"source_date_of_birth": string | null,"source_email": string | null,"source_name": string | null,"source_provider": string | null,"source_report_id": string | null,"source_sample_date": string | null,"source_test_name": string | null,"status": Database["public"]['Enums']["import_status"]
+                    "created_at": string,"document_id": string,"handled_by": string | null,"id": string,"lab_report_id": string | null,"patient_id": string | null,"received_at": string,"rejection_reason": string | null,"source_date_of_birth": string | null,"source_email": string | null,"source_name": string | null,"source_provider": string | null,"source_report_id": string | null,"source_sample_date": string | null,"source_test_name": string | null,"status": Database["public"]['Enums']["import_status"]
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"document_id": string,"handled_by"?: string | null,"id"?: string,"lab_report_id"?: string | null,"patient_id"?: string | null,"received_at"?: string,"source_date_of_birth"?: string | null,"source_email"?: string | null,"source_name"?: string | null,"source_provider"?: string | null,"source_report_id"?: string | null,"source_sample_date"?: string | null,"source_test_name"?: string | null,"status"?: Database["public"]['Enums']["import_status"]
+                    "created_at"?: string,"document_id": string,"handled_by"?: string | null,"id"?: string,"lab_report_id"?: string | null,"patient_id"?: string | null,"received_at"?: string,"rejection_reason"?: string | null,"source_date_of_birth"?: string | null,"source_email"?: string | null,"source_name"?: string | null,"source_provider"?: string | null,"source_report_id"?: string | null,"source_sample_date"?: string | null,"source_test_name"?: string | null,"status"?: Database["public"]['Enums']["import_status"]
                   }
                   Update: {
-                    "created_at"?: string,"document_id"?: string,"handled_by"?: string | null,"id"?: string,"lab_report_id"?: string | null,"patient_id"?: string | null,"received_at"?: string,"source_date_of_birth"?: string | null,"source_email"?: string | null,"source_name"?: string | null,"source_provider"?: string | null,"source_report_id"?: string | null,"source_sample_date"?: string | null,"source_test_name"?: string | null,"status"?: Database["public"]['Enums']["import_status"]
+                    "created_at"?: string,"document_id"?: string,"handled_by"?: string | null,"id"?: string,"lab_report_id"?: string | null,"patient_id"?: string | null,"received_at"?: string,"rejection_reason"?: string | null,"source_date_of_birth"?: string | null,"source_email"?: string | null,"source_name"?: string | null,"source_provider"?: string | null,"source_report_id"?: string | null,"source_sample_date"?: string | null,"source_test_name"?: string | null,"status"?: Database["public"]['Enums']["import_status"]
                   }
                   Relationships: [
                     {
@@ -1607,6 +1607,9 @@ isOneToOne: false
 "register_import":
 { Args: { "_document_id": string }; Returns: string
                            },
+"reject_lab_file":
+{ Args: { "_import": string,"_reason": string }; Returns: undefined
+                           },
 "release_report":
 { Args: { "_action_note"?: string,"_comment"?: string,"_outcome"?: string,"_report": string }; Returns: undefined
                            },
@@ -1648,6 +1651,9 @@ isOneToOne: false
                            },
 "submit_feedback":
 { Args: { "_could_improve": string,"_feedback": string,"_may_quote": boolean,"_score": number,"_wants_contact": boolean,"_went_well": string }; Returns: string
+                           },
+"unmatch_lab_file":
+{ Args: { "_import": string,"_new_path": string }; Returns: undefined
                            },
 "verify_invitation_identity":
 { Args: { "_date_of_birth"?: string,"_token_hash": string }; Returns: string

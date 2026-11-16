@@ -271,9 +271,60 @@ export async function matchLabFile(_state: ResultsFormState, formData: FormData)
   if (moved.error) return { error: GENERIC_FAILURE };
   const done = await supabase.rpc("match_import_to_patient", { _import: parsed.data.importId, _patient: parsed.data.patientId, _new_path: to });
   if (done.error) {
-    await admin.storage.from("documents").move(to, from);
+    const back = await admin.storage.from("documents").move(to, from);
+    if (back.error) console.error("A lab file could not be moved back after a refused change.");
     return { error: friendly(done.error) };
   }
   revalidatePath("/clinic/results");
   return { saved: "The file is matched. Its values can now be entered." };
+}
+
+/** A PA or an admin turns away a file that should not be in the queue. It is archived, not deleted. */
+export async function rejectLabFile(_state: ResultsFormState, formData: FormData): Promise<ResultsFormState> {
+  const user = await getCurrentUser();
+  if (!user || user.isSuspended || !user.roles.some((role) => role === "pa" || role === "admin")) return { error: "Only a PA or an admin can turn a file away." };
+  const parsed = z
+    .object({ importId: z.uuid(), reason: z.string().trim().min(3, "Say why, in a few words.").max(200, "Use 200 characters or fewer.") })
+    .safeParse({ importId: formData.get("importId"), reason: formData.get("reason") });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? GENERIC_FAILURE };
+  if (!(await allowAuthAttempt("results-entry", user.id))) return { error: TRY_LATER };
+
+  const supabase = await createClient();
+  const done = await supabase.rpc("reject_lab_file", { _import: parsed.data.importId, _reason: parsed.data.reason });
+  if (done.error) return { error: friendly(done.error) };
+  revalidatePath("/clinic/results");
+  return { saved: "The file is turned away." };
+}
+
+/** A lab file matched to the wrong patient goes back to the queue, as long as no values have been entered from it. */
+export async function unmatchLabFile(_state: ResultsFormState, formData: FormData): Promise<ResultsFormState> {
+  const user = await getCurrentUser();
+  if (!user || user.isSuspended || !user.roles.some((role) => role === "pa" || role === "admin")) return { error: "Only a PA or an admin can take a file back." };
+  const parsed = z.object({ importId: z.uuid() }).safeParse({ importId: formData.get("importId") });
+  if (!parsed.success) return { error: GENERIC_FAILURE };
+  if (!(await allowAuthAttempt("results-entry", user.id))) return { error: TRY_LATER };
+
+  const supabase = await createClient();
+  const found = await supabase
+    .from("result_imports")
+    .select("document:documents(storage_path)")
+    .eq("id", parsed.data.importId)
+    .eq("status", "matched")
+    .not("source_provider", "is", null)
+    .maybeSingle();
+  const from = found.data?.document?.storage_path;
+  if (found.error || !from) return { error: "That file cannot be taken back." };
+
+  const to = `unmatched/${randomUUID()}.pdf`;
+  const admin = createAdminClient();
+  const moved = await admin.storage.from("documents").move(from, to);
+  if (moved.error) return { error: GENERIC_FAILURE };
+  const done = await supabase.rpc("unmatch_lab_file", { _import: parsed.data.importId, _new_path: to });
+  if (done.error) {
+    const back = await admin.storage.from("documents").move(to, from);
+    if (back.error) console.error("A lab file could not be moved back after a refused change.");
+    return { error: friendly(done.error) };
+  }
+  revalidatePath("/clinic/results");
+  return { saved: "The file is back in the queue, waiting for a match." };
 }
