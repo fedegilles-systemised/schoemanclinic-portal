@@ -17,6 +17,11 @@ export const CONSENTS: Record<ConsentType, { title: string; description: string 
     title: "Sharing with partner laboratories",
     description: "Your name, date of birth and the tests ordered are sent to the laboratory that processes your samples, and your results come back to the clinic.",
   },
+  wearables: {
+    title: "Connecting my wearables",
+    description:
+      "Clinic Hub reads your daily figures, such as sleep, heart rate and steps, from the Oura or WHOOP account you link, and shows them to your clinic team on your record. You can disconnect at any time. Withdrawing this consent disconnects your wearables. Readings already saved stay on your record.",
+  },
   research: {
     title: "Anonymised research",
     description: "Results with your name and details removed may be used to improve care at the clinic. Saying no does not change your care.",
