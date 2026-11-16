@@ -3,3 +3,6 @@ export const LAB_ALERT_TO_DEFAULT = "info@theschoemanclinic.com";
 
 /** The largest PDF taken. Vercel itself refuses a request body over about 4.5 MB, so a lab with larger reports sends a link instead. */
 export const MAX_LAB_FILE_BYTES = 10 * 1024 * 1024;
+
+/** A lab file left unmatched or turned away this many days has its PDF removed and the lab's details cleared. */
+export const LAB_RETENTION_DAYS = 30;

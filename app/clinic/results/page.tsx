@@ -8,6 +8,7 @@ import { PageHeader, SectionHeader } from "@/components/ui/page-header";
 import { StatusPill } from "@/components/ui/status-pill";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getCurrentUser } from "@/lib/auth/session";
+import { RejectFileForm, UnmatchFileForm } from "@/components/results/file-actions";
 import { MatchFileForm } from "@/components/results/match-file-form";
 import { getMatchOptions, getResultsQueue, type ReportRow } from "@/lib/data/results";
 import { formatDate } from "@/lib/format";
@@ -76,7 +77,7 @@ export default async function ResultsPage() {
         ) : null}
       </PageHeader>
 
-      {canEnter ? (
+      {canEnter || canMatch ? (
         <section className="mb-12" aria-labelledby="imports">
           <SectionHeader id="imports" title="Files waiting " accent="for entry" className="mb-3" />
           {queue.imports.length === 0 ? (
@@ -111,11 +112,21 @@ export default async function ResultsPage() {
                     <TableCell>{formatDate(item.receivedAt)}</TableCell>
                     <TableCell>
                       {item.matched ? (
-                        <Link href={`/clinic/results/new?import=${item.id}`} className="type-button-label text-content no-underline">
-                          Enter values
-                        </Link>
+                        <div className="flex flex-col gap-3">
+                          {canEnter ? (
+                            <Link href={`/clinic/results/new?import=${item.id}`} className="type-button-label text-content no-underline">
+                              Enter values
+                            </Link>
+                          ) : (
+                            <span className="type-small text-content-muted">Waiting for a PA or doctor to enter the values.</span>
+                          )}
+                          {canMatch && item.source ? <UnmatchFileForm importId={item.id} /> : null}
+                        </div>
                       ) : canMatch ? (
-                        <MatchFileForm importId={item.id} patients={patients} />
+                        <div className="flex flex-col gap-4">
+                          <MatchFileForm importId={item.id} patients={patients} />
+                          <RejectFileForm importId={item.id} />
+                        </div>
                       ) : (
                         <span className="type-small text-content-muted">Needs matching to a patient. A PA can do this.</span>
                       )}
