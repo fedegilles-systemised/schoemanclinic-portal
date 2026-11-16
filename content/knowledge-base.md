@@ -328,10 +328,11 @@ For a new patient the clinic reference (SC- and six digits) is made automaticall
 4. The PA and the clinic inbox are told that a report has arrived, by a link only and never a name. A PA matches a waiting file by choosing the patient, then enters the values (flow 5, step 4).
 5. Nothing is released and no value is read from the PDF. A report sent twice is kept once.
 6. A PA or admin can turn a waiting file away, with a short reason (for example, the person is not a patient). It is archived with that reason and nothing is deleted. If a file was matched to the wrong patient and no values have been entered from it yet, "Wrong patient" sends it back to the queue.
+7. Lab files are kept for 30 days. A file left unmatched, or turned away, for 30 days has its PDF removed and the lab's name, email and date of birth cleared. The record that it arrived stays. Once a PA has entered the values from a lab file, the lab's name, email and date of birth are cleared too, and the PDF stays as part of the patient's record. A lab that sends the same report again is told it is a duplicate. This runs once a day.
 
 **Data in/out:** inbound from the lab; the PDF holds health information, so each lab needs a data-processing agreement. A file over about 4.5 MB cannot be posted to Vercel, so a lab with larger files must send a link instead (not built). **Email:** an alert to the clinic inbox, with no patient details.
 
-**Questions:** which lab sends first, and in what format? Does the lab sign what it sends, and does it retry? Who signs the data-processing agreement with each lab?
+**Questions:** is 30 days the right time to keep a lab file nobody matched? Which lab sends first, and in what format? Does the lab sign what it sends, and does it retry? Who signs the data-processing agreement with each lab?
 
 ### 5. Results by PDF import
 
@@ -596,7 +597,7 @@ The clinic answered the rest on 11 November. Those answers are under Decisions a
 >
 > **Seen in the clinic's current plan (patient flow V8 and the emails since).** Own results are uploaded as PDF only, up to 5 files, in the name the patient registered with, and a PA checks they are complete.
 >
-> **What we assume.** A patient's own upload takes PDF only, up to 5 files each time. For now a PA enters every value by hand, and a doctor reviews before release. The AI reading comes later, and it will only suggest values that a PA confirms. Provider, inbox and retention are still to be decided (see question 19).
+> **What we assume.** A patient's own upload takes PDF only, up to 5 files each time. For now a PA enters every value by hand, and a doctor reviews before release. The AI reading comes later, and it will only suggest values that a PA confirms. Provider and inbox are still to be decided. Lab files from a webhook are kept 30 days if nobody matches them (flow 4a).
 
 **11. Bloods.** Who may release results, is a second doctor needed for critical values, and do some markers need a hold-back?
 
@@ -686,7 +687,7 @@ The clinic answered the rest on 11 November. Those answers are under Decisions a
 - Fathom is replaced. From a patient's record, a doctor, nurse or health coach records the call (their microphone and the call's sound, or the microphone only), and the transcript arrives as a draft note in their name to check and sign. Transcription is by AssemblyAI in the EU. The clinic already has patients' consent to record. Built; needs the AssemblyAI key. Every account is in the clinic's name. (Question 16)
 - Messages go by email and WhatsApp through GoHighLevel, which the clinic connects with a private integration key; until it is connected, email goes through the portal's own email service. Built; needs the GoHighLevel key. (Question 17)
 - Session lengths stay as built. Staff have no second sign-in step yet. Staff reset their own password. Built. (Question 18)
-- Nothing is deleted. Records are archived and accounts suspended. Built. (Question 19)
+- Nothing is deleted. Records are archived and accounts suspended. The one exception is a lab file that nobody matched within 30 days: its PDF is removed and the lab's personal details cleared, and a record that it arrived stays. Built. (Question 19)
 - Privacy follows the clinic's policy at https://theschoemanclinic.com/privacy/, and questions go to info@theschoemanclinic.com. (Question 20)
 - Everything heard on the call matters. The Christmas prescription email is separate and is sent from GoHighLevel. Education content and wearables are part of the build. (Question 21)
 - Education: admins build courses of sections and modules, with text and video links, and staff add them to a patient's portal. Built, starting empty for the clinic's content. (Questions 21 and 30)

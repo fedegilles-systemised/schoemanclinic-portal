@@ -259,14 +259,14 @@ isOneToOne: false
                   ]
                 },"documents": {
                   Row: {
-                    "archived_at": string | null,"created_at": string,"id": string,"kind": Database["public"]['Enums']["doc_kind"],"patient_id": string | null,"shared_at": string | null,"shared_with_patient": boolean,"source": Database["public"]['Enums']["document_source"] | null,"storage_path": string,"title": string,"uploaded_by": string | null
+                    "archived_at": string | null,"created_at": string,"file_removed_at": string | null,"id": string,"kind": Database["public"]['Enums']["doc_kind"],"patient_id": string | null,"shared_at": string | null,"shared_with_patient": boolean,"source": Database["public"]['Enums']["document_source"] | null,"storage_path": string,"title": string,"uploaded_by": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "archived_at"?: string | null,"created_at"?: string,"id"?: string,"kind": Database["public"]['Enums']["doc_kind"],"patient_id"?: string | null,"shared_at"?: string | null,"shared_with_patient"?: boolean,"source"?: Database["public"]['Enums']["document_source"] | null,"storage_path": string,"title": string,"uploaded_by"?: string | null
+                    "archived_at"?: string | null,"created_at"?: string,"file_removed_at"?: string | null,"id"?: string,"kind": Database["public"]['Enums']["doc_kind"],"patient_id"?: string | null,"shared_at"?: string | null,"shared_with_patient"?: boolean,"source"?: Database["public"]['Enums']["document_source"] | null,"storage_path": string,"title": string,"uploaded_by"?: string | null
                   }
                   Update: {
-                    "archived_at"?: string | null,"created_at"?: string,"id"?: string,"kind"?: Database["public"]['Enums']["doc_kind"],"patient_id"?: string | null,"shared_at"?: string | null,"shared_with_patient"?: boolean,"source"?: Database["public"]['Enums']["document_source"] | null,"storage_path"?: string,"title"?: string,"uploaded_by"?: string | null
+                    "archived_at"?: string | null,"created_at"?: string,"file_removed_at"?: string | null,"id"?: string,"kind"?: Database["public"]['Enums']["doc_kind"],"patient_id"?: string | null,"shared_at"?: string | null,"shared_with_patient"?: boolean,"source"?: Database["public"]['Enums']["document_source"] | null,"storage_path"?: string,"title"?: string,"uploaded_by"?: string | null
                   }
                   Relationships: [
                     {
@@ -1183,14 +1183,14 @@ isOneToOne: false
                   ]
                 },"result_imports": {
                   Row: {
-                    "created_at": string,"document_id": string,"handled_by": string | null,"id": string,"lab_report_id": string | null,"patient_id": string | null,"received_at": string,"rejection_reason": string | null,"source_date_of_birth": string | null,"source_email": string | null,"source_name": string | null,"source_provider": string | null,"source_report_id": string | null,"source_sample_date": string | null,"source_test_name": string | null,"status": Database["public"]['Enums']["import_status"]
+                    "created_at": string,"document_id": string,"handled_by": string | null,"id": string,"lab_report_id": string | null,"patient_id": string | null,"received_at": string,"rejected_at": string | null,"rejection_reason": string | null,"source_date_of_birth": string | null,"source_email": string | null,"source_name": string | null,"source_provider": string | null,"source_report_id": string | null,"source_sample_date": string | null,"source_test_name": string | null,"status": Database["public"]['Enums']["import_status"]
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"document_id": string,"handled_by"?: string | null,"id"?: string,"lab_report_id"?: string | null,"patient_id"?: string | null,"received_at"?: string,"rejection_reason"?: string | null,"source_date_of_birth"?: string | null,"source_email"?: string | null,"source_name"?: string | null,"source_provider"?: string | null,"source_report_id"?: string | null,"source_sample_date"?: string | null,"source_test_name"?: string | null,"status"?: Database["public"]['Enums']["import_status"]
+                    "created_at"?: string,"document_id": string,"handled_by"?: string | null,"id"?: string,"lab_report_id"?: string | null,"patient_id"?: string | null,"received_at"?: string,"rejected_at"?: string | null,"rejection_reason"?: string | null,"source_date_of_birth"?: string | null,"source_email"?: string | null,"source_name"?: string | null,"source_provider"?: string | null,"source_report_id"?: string | null,"source_sample_date"?: string | null,"source_test_name"?: string | null,"status"?: Database["public"]['Enums']["import_status"]
                   }
                   Update: {
-                    "created_at"?: string,"document_id"?: string,"handled_by"?: string | null,"id"?: string,"lab_report_id"?: string | null,"patient_id"?: string | null,"received_at"?: string,"rejection_reason"?: string | null,"source_date_of_birth"?: string | null,"source_email"?: string | null,"source_name"?: string | null,"source_provider"?: string | null,"source_report_id"?: string | null,"source_sample_date"?: string | null,"source_test_name"?: string | null,"status"?: Database["public"]['Enums']["import_status"]
+                    "created_at"?: string,"document_id"?: string,"handled_by"?: string | null,"id"?: string,"lab_report_id"?: string | null,"patient_id"?: string | null,"received_at"?: string,"rejected_at"?: string | null,"rejection_reason"?: string | null,"source_date_of_birth"?: string | null,"source_email"?: string | null,"source_name"?: string | null,"source_provider"?: string | null,"source_report_id"?: string | null,"source_sample_date"?: string | null,"source_test_name"?: string | null,"status"?: Database["public"]['Enums']["import_status"]
                   }
                   Relationships: [
                     {
@@ -1478,6 +1478,9 @@ isOneToOne: false
 "check_feedback_quote":
 { Args: { "_checked": boolean,"_feedback": string }; Returns: undefined
                            },
+"clear_entered_lab_details":
+{ Args: Record<PropertyKey, never>; Returns: number
+                           },
 "clinic_diary":
 { Args: { "_from": string,"_to": string }; Returns: {
               "booked_online": boolean,"can_open": boolean,"clinic_ref": string,"clinician_id": string,"duration_min": number,"id": string,"location_id": string,"new_patient": boolean,"patient_id": string,"patient_name": string,"source": Database["public"]['Enums']["appt_source"],"starts_at": string,"status": Database["public"]['Enums']["appt_status"],"type": string
@@ -1516,6 +1519,9 @@ isOneToOne: false
                            },
 "find_patient_for_lab":
 { Args: { "_dob": string,"_email": string }; Returns: string
+                           },
+"finish_lab_purge":
+{ Args: { "_days": number,"_import_ids": (string)[] }; Returns: number
                            },
 "finish_signaturerx_send":
 { Args: { "_detailed": string,"_id": string,"_srx_id": string,"_status": string }; Returns: undefined
@@ -1645,6 +1651,11 @@ isOneToOne: false
                            },
 "sign_clinical_note":
 { Args: { "_note": string }; Returns: undefined
+                           },
+"stale_lab_files":
+{ Args: { "_days": number }; Returns: {
+              "import_id": string,"storage_path": string
+            }[]
                            },
 "start_signaturerx_send":
 { Args: { "_action": string,"_by": string,"_request": string }; Returns: string

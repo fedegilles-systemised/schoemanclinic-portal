@@ -144,5 +144,61 @@ reset role;
 select ok(not has_function_privilege('anon', 'public.reject_lab_file(uuid, text)', 'execute'), 'anon cannot turn a file away');
 select ok(not has_function_privilege('anon', 'public.unmatch_lab_file(uuid, text)', 'execute'), 'nor take one back');
 
+-- 5. Keeping lab files for 30 days ------------------------------------------------------------------
+-- The state here: 'waiting' was matched earlier, 'to-reject' and 'to-unmatch' are in section 4,
+-- 'matched' is a staff-registered file now. Make fresh ones for retention.
+
+select pg_temp.service();
+select lives_ok($$ insert into made select 'old-waiting', import_id from public.receive_lab_file('acme-labs', 'R-20', null, 'unmatched/lab-20.pdf', 'Old', 'Old Waiting', 'old@example.test', '1970-01-01', null, null) $$, 'an old waiting file');
+select lives_ok($$ insert into made select 'new-waiting', import_id from public.receive_lab_file('acme-labs', 'R-21', null, 'unmatched/lab-21.pdf', 'New', 'New Waiting', 'new@example.test', '1971-01-01', null, null) $$, 'a recent waiting file');
+select lives_ok($$ insert into made select 'old-entered', import_id from public.receive_lab_file('acme-labs', 'R-22', 'd0000000-0000-4000-8000-000000000001', 'd0000000-0000-4000-8000-000000000001/lab-22.pdf', 'Entered', 'Eleanor Hart', 'eleanor.hart@example.test', '1974-03-14', null, null) $$, 'a matched file');
+reset role;
+
+update public.result_imports set received_at = now() - interval '31 days' where id in (select id from made where name = 'old-waiting');
+update public.result_imports set received_at = now() - interval '5 days' where id in (select id from made where name = 'new-waiting');
+update public.result_imports set status = 'confirmed' where id in (select id from made where name = 'old-entered');
+-- A file turned away 31 days ago, and one turned away a day ago.
+update public.result_imports set rejected_at = now() - interval '31 days' where id in (select id from made where name = 'to-reject');
+
+select pg_temp.become('a0000000-0000-4000-8000-000000000003');
+select throws_ok($$ select * from public.stale_lab_files(30) $$, '42501', null, 'a PA cannot ask which files are due');
+select throws_ok($$ select public.finish_lab_purge(array[gen_random_uuid()], 30) $$, '42501', null, 'nor finish a purge');
+select throws_ok($$ select public.clear_entered_lab_details() $$, '42501', null, 'nor clear details');
+reset role;
+
+select pg_temp.service();
+select is((select count(*)::int from public.stale_lab_files(30) where import_id = (select id from made where name = 'old-waiting')), 1, 'an old waiting file is due');
+select is((select count(*)::int from public.stale_lab_files(30) where import_id = (select id from made where name = 'to-reject')), 1, 'so is one turned away long ago');
+select is((select count(*)::int from public.stale_lab_files(30) where import_id = (select id from made where name = 'new-waiting')), 0, 'a recent one is not');
+select is((select count(*)::int from public.stale_lab_files(30) where import_id = (select id from made where name = 'old-entered')), 0, 'nor is a file that has become a report');
+select is((select count(*)::int from public.stale_lab_files(30) where import_id = (select id from made where name = 'to-unmatch')), 0, 'nor one that waits but arrived today');
+
+select is(public.finish_lab_purge(array[(select id from made where name = 'new-waiting')], 30), 0, 'a file that is not due is left alone, even when named');
+select is(public.finish_lab_purge(array[(select id from made where name = 'old-waiting'), (select id from made where name = 'to-reject')], 30), 2, 'two due files are finished');
+select is(public.finish_lab_purge(array[(select id from made where name = 'old-waiting')], 30), 0, 'and only once');
+select is(public.clear_entered_lab_details(), 1, 'the details of a file with entered values are cleared');
+select is(public.clear_entered_lab_details(), 0, 'and only once');
+reset role;
+
+select is((select status::text from public.result_imports where id = (select id from made where name = 'old-waiting')), 'rejected', 'the file nobody matched is now rejected');
+select is((select rejection_reason from public.result_imports where id = (select id from made where name = 'old-waiting')), 'Not matched within the retention period', 'with the reason');
+select ok((select source_name is null and source_email is null and source_date_of_birth is null from public.result_imports where id = (select id from made where name = 'old-waiting')), 'and the lab''s details are gone');
+select ok((select d.file_removed_at is not null and d.archived_at is not null from public.documents d join public.result_imports i on i.document_id = d.id where i.id = (select id from made where name = 'old-waiting')), 'its document is marked removed and archived, not deleted');
+select is((select source_report_id from public.result_imports where id = (select id from made where name = 'old-waiting')), 'R-20', 'the report id stays, so a resend is still a duplicate');
+select ok((select source_name is not null from public.result_imports where id = (select id from made where name = 'new-waiting')), 'a recent file keeps what the lab said');
+select ok((select source_name is null and source_email is null from public.result_imports where id = (select id from made where name = 'old-entered')), 'a file with values entered loses what the lab said');
+select ok((select d.file_removed_at is null from public.documents d join public.result_imports i on i.document_id = d.id where i.id = (select id from made where name = 'old-entered')), 'but keeps its PDF');
+select is((select rejection_reason from public.result_imports where id = (select id from made where name = 'to-reject')), 'Not a patient of ours', 'a reason given by a person is not overwritten');
+
+-- A rejected file that sits under a patient is never purged.
+update public.result_imports set patient_id = 'd0000000-0000-4000-8000-000000000001', received_at = now() - interval '40 days', rejected_at = now() - interval '40 days', status = 'rejected' where id = (select id from made where name = 'new-waiting');
+select pg_temp.service();
+select is((select count(*)::int from public.stale_lab_files(30) where import_id = (select id from made where name = 'new-waiting')), 0, 'a turned-away file under a patient is not due');
+reset role;
+
+select ok(not has_function_privilege('authenticated', 'public.stale_lab_files(int)', 'execute'), 'a signed-in person cannot list due files');
+select ok(not has_function_privilege('anon', 'public.finish_lab_purge(uuid[], int)', 'execute'), 'anon cannot finish a purge');
+select ok(has_function_privilege('service_role', 'public.clear_entered_lab_details()', 'execute'), 'server code can clear details');
+
 select * from finish();
 rollback;
