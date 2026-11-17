@@ -480,3 +480,53 @@ export function onlineBookingEmail({
     text: `${hello}\n\n${line}\n\n${next}\n\n${policy}\n\n${NOT_YOU}\n\n${textFooter(reason)}`,
   };
 }
+
+/** A patient is told a blood test has been ordered and is waiting for payment. Never which panel. */
+export function bloodsOrderedEmail({
+  siteUrl,
+  firstName,
+  portalUrl,
+  dueBy,
+}: Base & { firstName?: string; portalUrl: string; dueBy?: string | null }): EmailContent {
+  const hello = firstName ? `Dear ${firstName},` : "Hello,";
+  const line = dueBy
+    ? `Your clinician has ordered a blood test for you. Please pay for it and have your sample taken by ${dueBy}, so the results are ready for your appointment.`
+    : "Your clinician has ordered a blood test for you. Please pay for it in your portal, and the sample details will follow.";
+  const reason = "You are receiving this email because a blood test was ordered for you at The Schoeman Clinic.";
+  return {
+    subject: "Your blood test is ready to book",
+    html: renderEmail({
+      siteUrl,
+      preheader: "Pay for your blood test in your portal.",
+      eyebrow: "Blood tests",
+      title: { before: "Your blood test is ", accent: "ready" },
+      body: paragraph(escapeHtml(hello)) + paragraph(escapeHtml(line)) + button("View your order", portalUrl) + paragraph(SIGN_OFF_HTML),
+      reason,
+    }),
+    text: `${hello}\n\n${line}\n\nView your order: ${portalUrl}\n\n${textFooter(reason)}`,
+  };
+}
+
+/** The receipt, and where to find the barcode and the preparation. Never which panel. */
+export function bloodsPaidEmail({
+  siteUrl,
+  firstName,
+  portalUrl,
+  amount,
+}: Base & { firstName?: string; portalUrl: string; amount: string }): EmailContent {
+  const hello = firstName ? `Dear ${firstName},` : "Hello,";
+  const line = `Thank you. We have received your payment of ${amount} for your blood test. Your request form and barcode, and how to prepare, are in your portal.`;
+  const reason = "You are receiving this email because you paid for a blood test at The Schoeman Clinic.";
+  return {
+    subject: "We have received your payment",
+    html: renderEmail({
+      siteUrl,
+      preheader: "Your barcode and preparation are in your portal.",
+      eyebrow: "Blood tests",
+      title: { before: "Payment ", accent: "received" },
+      body: paragraph(escapeHtml(hello)) + paragraph(escapeHtml(line)) + button("Open your order", portalUrl) + paragraph(SIGN_OFF_HTML),
+      reason,
+    }),
+    text: `${hello}\n\n${line}\n\nOpen your order: ${portalUrl}\n\n${textFooter(reason)}`,
+  };
+}

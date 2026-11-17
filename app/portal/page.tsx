@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, CalendarDays, MapPin, MessageSquareText } from "lucide-react";
 
-import { ComingSoon } from "@/components/shell/coming-soon";
 import { AlertBar } from "@/components/ui/alert-bar";
 import { Button } from "@/components/ui/button";
 import {
@@ -147,17 +146,11 @@ export default async function PortalHomePage() {
             <CardTitle>{bloods.panelName}</CardTitle>
             <OrderSteps steps={ORDER_STEPS} doneThrough={STEP_DONE[bloods.status]} />
             <CardActions>
-              <ComingSoon>
-                {bloods.status === "sent_to_patient" ? (
-                  <Button size="sm" disabled>
-                    Pay and get barcode
-                  </Button>
-                ) : (
-                  <Button variant="outline" size="sm" disabled>
-                    Download barcode form
-                  </Button>
-                )}
-              </ComingSoon>
+              <Button variant={bloods.status === "sent_to_patient" ? "primary" : "outline"} size="sm" asChild>
+                <Link href={`/portal/bloods/${bloods.id}`}>
+                  {bloods.status === "sent_to_patient" ? "Pay and get barcode" : bloods.status === "paid" || bloods.status === "sample_taken" ? "Show barcode" : "View order"}
+                </Link>
+              </Button>
             </CardActions>
           </Card>
         ) : (

@@ -16,14 +16,17 @@ const SIGNATURE_TOLERANCE_SECONDS = 300;
 
 export type CheckoutSession = { id: string; url: string };
 
-/** A hosted payment page for one repeat prescription request. */
-export async function createRepeatCheckout({
-  requestId,
+async function createCheckout({
+  productName,
+  metadataKey,
+  id,
   amountPence,
   successUrl,
   cancelUrl,
 }: {
-  requestId: string;
+  productName: string;
+  metadataKey: "repeat_request_id" | "lab_order_id";
+  id: string;
   amountPence: number;
   successUrl: string;
   cancelUrl: string;
@@ -34,10 +37,10 @@ export async function createRepeatCheckout({
     "line_items[0][quantity]": "1",
     "line_items[0][price_data][currency]": "gbp",
     "line_items[0][price_data][unit_amount]": String(amountPence),
-    "line_items[0][price_data][product_data][name]": "Repeat prescription request",
-    client_reference_id: requestId,
-    "metadata[repeat_request_id]": requestId,
-    "payment_intent_data[metadata][repeat_request_id]": requestId,
+    "line_items[0][price_data][product_data][name]": productName,
+    client_reference_id: id,
+    [`metadata[${metadataKey}]`]: id,
+    [`payment_intent_data[metadata][${metadataKey}]`]: id,
     success_url: successUrl,
     cancel_url: cancelUrl,
     // Stripe's shortest life for a payment page, so an old tab cannot be paid hours later.
@@ -59,6 +62,36 @@ export async function createRepeatCheckout({
     throw new Error("Stripe sent back an unexpected payment page.");
   }
   return { id: data.id, url: data.url };
+}
+
+/** A hosted payment page for one repeat prescription request. */
+export function createRepeatCheckout({
+  requestId,
+  amountPence,
+  successUrl,
+  cancelUrl,
+}: {
+  requestId: string;
+  amountPence: number;
+  successUrl: string;
+  cancelUrl: string;
+}): Promise<CheckoutSession> {
+  return createCheckout({ productName: "Repeat prescription request", metadataKey: "repeat_request_id", id: requestId, amountPence, successUrl, cancelUrl });
+}
+
+/** A hosted payment page for one blood test order. Stripe is told "Blood test", never the panel. */
+export function createOrderCheckout({
+  orderId,
+  amountPence,
+  successUrl,
+  cancelUrl,
+}: {
+  orderId: string;
+  amountPence: number;
+  successUrl: string;
+  cancelUrl: string;
+}): Promise<CheckoutSession> {
+  return createCheckout({ productName: "Blood test", metadataKey: "lab_order_id", id: orderId, amountPence, successUrl, cancelUrl });
 }
 
 /**
