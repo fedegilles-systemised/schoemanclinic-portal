@@ -14,6 +14,7 @@ import { PatientContactForm } from "@/components/patients/contact-form";
 import { RemoveGuardianButton } from "@/components/patients/guardian-forms";
 import { FormList } from "@/components/forms/form-list";
 import { ClinicalSummarySection, ConsentsSection, DocumentsSection, QuestionsSection, SafeguardingSection } from "@/components/record/record-sections";
+import { OrdersTable } from "@/components/orders/parts";
 import { ReadingsTable } from "@/components/wearables/readings-table";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +24,7 @@ import { PageHeader, SectionHeader } from "@/components/ui/page-header";
 import { getCurrentUser } from "@/lib/auth/session";
 import { hasAnyOption, OPTION_CHECKS, type TreatmentOptions } from "@/lib/notes/options";
 import { getUpcomingAppointments } from "@/lib/data/appointments";
+import { listPatientOrders } from "@/lib/data/orders";
 import { getPatientAssignments, getReadings, listCourses } from "@/lib/data/education";
 import { getConsents } from "@/lib/data/consents";
 import { listDocuments } from "@/lib/data/documents";
@@ -97,7 +99,9 @@ export default async function PatientRecordPage({
   const canManageDocuments = user.roles.some((role) => role === "doctor" || role === "nurse" || role === "pa");
   const today = todayInLondon();
   const myStaffId = canWrite ? await getMyStaffId(user.id) : null;
-  const [assignments, library, readings, appointments, summary, documents, questions, safeguarding, consents, medicineList, forms] = await Promise.all([
+  const canOrder = user.roles.some((role) => role === "doctor" || role === "pa");
+  const [orders, assignments, library, readings, appointments, summary, documents, questions, safeguarding, consents, medicineList, forms] = await Promise.all([
+    canOrder ? listPatientOrders(record.id) : Promise.resolve([]),
     getPatientAssignments(record.id),
     listCourses(),
     getReadings(record.id, 30),
@@ -184,6 +188,17 @@ export default async function PatientRecordPage({
       </section>
 
       <ConsentsSection consents={consents} />
+
+      {canOrder ? (
+        <section aria-labelledby="bloods" className="mb-12 flex flex-col gap-4">
+          <SectionHeader id="bloods" title="Blood " accent="tests">
+            <Link href={`/clinic/patients/${record.id}/order`} className="type-button-label text-content no-underline">
+              Order bloods
+            </Link>
+          </SectionHeader>
+          {orders.length === 0 ? <EmptyState>No blood tests ordered.</EmptyState> : <OrdersTable rows={orders} showPatient={false} />}
+        </section>
+      ) : null}
 
       <section aria-labelledby="appointments" className="mb-12 flex flex-col gap-4">
         <SectionHeader id="appointments" title="Appointments">

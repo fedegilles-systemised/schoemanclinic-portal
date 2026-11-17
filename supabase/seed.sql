@@ -197,6 +197,12 @@ insert into public.lab_panels (id, lab_partner_id, code, name, price_pence, fast
   ('11000000-0000-4000-8000-000000000006', '10000000-0000-4000-8000-000000000002', 'VIT', 'Vitamin and Iron Panel', 12000, false, null),
   ('11000000-0000-4000-8000-000000000007', '10000000-0000-4000-8000-000000000001', 'LIP', 'Lipid profile', 9500, true, 'Fast for 10 hours before your sample. Water is fine.');
 
+-- Tubes and the sex a panel is for (fictional catalogue; the clinic's real one is entered by an admin).
+update public.lab_panels set tubes = '1 purple, 2 gold, 1 grey', sex_restriction = 'F' where code = 'GS5';
+update public.lab_panels set tubes = '1 purple, 2 gold', sex_restriction = 'M' where code = 'MHP';
+update public.lab_panels set sex_restriction = 'F' where code = 'PERI';
+update public.lab_panels set tubes = '1 gold' where code in ('THY', 'LIP', 'VIT');
+
 insert into public.markers (code, name, category, unit, ref_low, ref_high, explainer) values
   ('HBA1C', 'HbA1c', 'Metabolic', 'mmol/mol', 20, 41, 'Your average blood sugar over the last two to three months.'),
   ('GLUCOSE', 'Fasting glucose', 'Metabolic', 'mmol/L', 3.9, 5.5, 'The sugar in your blood after an overnight fast.'),

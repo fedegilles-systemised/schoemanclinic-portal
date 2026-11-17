@@ -53,7 +53,7 @@ const NAV: Record<PortalKind, NavGroup[]> = {
     {
       items: [
         { label: "Home", icon: Home, href: "/portal" },
-        { label: "Lab orders", icon: FlaskConical },
+        { label: "Lab orders", icon: FlaskConical, href: "/portal/bloods" },
         { label: "My results", icon: Activity, href: "/portal/results" },
         { label: "Upload results", icon: Upload },
         { label: "Education", icon: GraduationCap, href: "/portal/education" },
@@ -86,7 +86,7 @@ const NAV: Record<PortalKind, NavGroup[]> = {
         { label: "Feedback", icon: MessageSquareHeart, href: "/clinic/feedback", roles: ["doctor", "pa", "admin"] },
         { label: "Results review", icon: ClipboardList, href: "/clinic/results", countKey: "review" },
         { label: "Import queue", icon: Inbox, href: "/clinic/results#imports", countKey: "imports", roles: ["pa", "doctor", "nurse", "admin"] },
-        { label: "Lab orders", icon: FlaskConical },
+        { label: "Lab orders", icon: FlaskConical, href: "/clinic/orders", roles: ["doctor", "pa", "admin"] },
       ],
     },
     { eyebrow: "Clinical", items: [{ label: "Safeguarding alerts", icon: Shield, href: "/clinic/safeguarding", roles: ["doctor"] }] },
