@@ -25,7 +25,7 @@ Clinic Hub is a patient portal and a clinic portal built around one journey, the
 
 Since 11 November, Clinic Hub also holds clinical notes, patient booking, call recordings with transcripts, education and wearables. GoHighLevel sends patient email and WhatsApp and keeps tasks, invoices and marketing; Semble is retired in stages; SignatureRx handles prescribing. The section on integrations lists every connection.
 
-**Status today:** the database for every step above exists and is protected, and both home screens are built. Steps 1 to 7 as screens, and every connection to Stripe, the labs, GoHighLevel and Semble, are planned.
+**Status today:** the database for every step above exists and is protected, and both home screens are built. Steps 1 to 7 as screens are built, except sending the order to the lab; the connections to the labs, GoHighLevel and Semble are planned.
 
 ## Roles
 
@@ -233,7 +233,7 @@ Each flow names who acts, the steps, whether it needs data from another system (
 | --- | --- | --- | --- | --- |
 | 1 | Create an account | Built | None | Yes |
 | 2 | Sign in and reset a password | Built | None | Yes |
-| 3 | Order bloods and pay | Planned | Stripe, lab partner | Proposed |
+| 3 | Order bloods and pay | Built; Stripe needs the clinic's keys; sending the order to TDL waits for TDL | Stripe, lab partner | Proposed |
 | 4 | Results by lab feed | Planned | Lab partner | Proposed |
 | 5 | Results by PDF import | Built without AI: values entered by hand | None | Yes (inbound) |
 | 6 | Doctor reviews and releases | Built | GoHighLevel | Proposed |
@@ -290,14 +290,17 @@ For a new patient the clinic reference (SC- and six digits) is made automaticall
 
 ### 3. Order bloods and pay
 
-**Who:** a doctor or PA creates the order; the patient (or a guardian who can act) pays. **Status:** planned.
+**Who:** a doctor or PA creates the order; the patient (or a guardian who can act) pays. **Status:** built, except sending the request to TDL. Online payment starts when the clinic's Stripe keys are added.
 
-1. The doctor or PA picks a test panel and a lab partner. The due date is the appointment date minus 14 days. The order starts as "sent to patient".
-2. The patient sees a "bloods due" banner and opens the order.
-3. The patient pays. The price comes from the panel's price list.
-4. Stripe confirms the payment. The order becomes "paid" and gets a barcode.
-5. The patient takes the barcode to the sample point. When the lab or clinic records the sample, the order becomes "sample taken".
-6. When results arrive (flows 4 and 5), the order becomes "results in", then "reviewed" after a doctor's review.
+1. From a patient's record, the doctor or PA picks a panel and how the sample is taken: at a TDL collection point, or with a TDL home kit. Only panels allowed for the patient's sex at birth are offered. The due date is the appointment date minus 14 days.
+2. The price is the panel price plus the fee for the way chosen, set by an admin under Lab orders, then Panels and fees (starting values £45 at a TDL site and £15 for a home kit, to be confirmed). The same screen holds the list of panels, and an admin can load the whole list from a spreadsheet: it is checked and shown first, and nothing is deleted. It is fixed on the order when it is made. The patient is told by email, and by WhatsApp if they have it on. The message does not name the panel.
+3. The patient sees a "bloods due" banner and opens the order. It shows the due date, how the sample is taken, whether to fast and how to prepare.
+4. The patient pays through Stripe. Until then there is no barcode.
+5. Stripe confirms the payment. The order becomes "paid", gets its own barcode, and the patient gets a receipt. The barcode is shown in the portal.
+6. When the sample has been taken, a PA or doctor records it and the order becomes "sample taken". An order nobody has paid for can be cancelled; a paid order is refunded in Stripe first.
+7. When results arrive (flows 4 and 5), the order becomes "results in", then "reviewed" after a doctor's review.
+
+**Not built yet.** Sending the electronic request, or the home-kit request, to TDL; the request form as a printable PDF; matching results by the order's barcode; reminders and chasing for unpaid orders; a check that the results cover everything ordered. These wait for TDL's answer on how it takes electronic orders from another system.
 
 **Cycle guidance.** For a patient whose sex at birth is female: with regular periods, the sample is taken on day 21 of the cycle; with irregular periods or none, any day. If sex at birth is missing, the order stops and a PA is told. It is never guessed.
 
@@ -716,7 +719,7 @@ The clinic answered the rest on 11 November. Those answers are under Decisions a
 - The email confirmation is enough for a staff member to change their sign-in email, and the old address is told. Built. (Question 26)
 - When a doctor, an admin or a guardian who can act is invited, other admins or PAs get a notice in the portal bell, and for doctors and admins an email to Dr Gina Schoeman. The date of birth, and for patients the ID at first sign-in, are the checks. Built. (Question 28)
 - Lab files and imports not yet matched to a patient are for PAs and admins only (decided 12 November). Built.
-- Clinic Hub follows the clinic's four choices for bloods: the clinic's own lab, TDL, a TDL home kit, or the patient's own results. Only TDL and the home kit are paid through Stripe and get a barcode. Not built yet. (Question 33)
+- Clinic Hub follows the clinic's four choices for bloods: the clinic's own lab, TDL, a TDL home kit, or the patient's own results. Only TDL and the home kit are paid through Stripe and get a barcode. Ordering, payment and the barcode are built for TDL and the home kit; sending the order to TDL is not. (Question 33)
 - Repeat prescriptions move from the Typeform into the portal: up to ten medicines at a time, each for one or two months' supply, with the Typeform's appointment and weight-loss questions and the £30 fee through Stripe. Built. (10 and 12 November 2026)
 - For CQC, each lab report is signed off by a doctor when released: action (described) or no action, with who ordered and who signed off. A different doctor may sign off and it is shown. Built. (12 November 2026)
 - For CQC, a clinical note records that all available treatment options, customised options and NICE guideline options, and side effects, were discussed, with the options offered. Fixed once the note is signed. Built. (12 November 2026)

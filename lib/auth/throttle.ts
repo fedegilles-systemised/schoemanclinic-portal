@@ -21,7 +21,8 @@ type ThrottledAction =
   | "signaturerx"
   | "feedback"
   | "online-booking"
-  | "lab-webhook";
+  | "lab-webhook"
+  | "bloods-order";
 
 // A clinic shares one address, so the address limit is well above the account limits.
 const LIMITS: Record<ThrottledAction, { windowSeconds: number; address: number; addressAndAccount: number; account: number }> = {
@@ -51,6 +52,8 @@ const LIMITS: Record<ThrottledAction, { windowSeconds: number; address: number; 
   "online-booking": { windowSeconds: 60 * 60, address: 15, addressAndAccount: 5, account: 5 },
   // A lab posts one file for each report from a few addresses, so the limits are high; they only stop a runaway sender.
   "lab-webhook": { windowSeconds: 60 * 60, address: 600, addressAndAccount: 600, account: 600 },
+  // Each order messages a patient and each payment opens a Stripe page, so a script must not be able to flood either.
+  "bloods-order": { windowSeconds: 60 * 60, address: 200, addressAndAccount: 40, account: 40 },
 };
 
 /** Stored as a hash, so the table holds no plain email or IP address. */

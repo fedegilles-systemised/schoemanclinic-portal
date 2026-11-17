@@ -31,6 +31,7 @@ export type PortalHome = {
     clinicianName: string | null;
   } | null;
   bloods: {
+    id: string;
     panelName: string;
     dueBy: string | null;
     status: OrderStatus;
@@ -70,7 +71,7 @@ export async function getPortalHome(): Promise<PortalHome | null> {
       .limit(1),
     supabase
       .from("lab_orders")
-      .select("status, due_by, panel:lab_panels(name)")
+      .select("id, status, due_by, panel:lab_panels(name)")
       .eq("patient_id", patient.id)
       .in("status", ["sent_to_patient", "paid", "sample_taken"])
       .order("due_by")
@@ -164,6 +165,7 @@ export async function getPortalHome(): Promise<PortalHome | null> {
       : null,
     bloods: order
       ? {
+          id: order.id,
           panelName: order.panel.name,
           dueBy: order.due_by,
           status: order.status,
