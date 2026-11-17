@@ -1,6 +1,6 @@
 # Bloods order flow: specification (draft)
 
-Status: draft, written 17 November 2026 from the clinic's call recording (George and Gina, 17 November), the clinic's current Semble process and the existing schema. Nothing here is built. Items marked **Open** wait for answers from the clinic or from TDL.
+Status: ordering, Stripe payment and the barcode (sections 4, 5B and 5C) have been built in Clinic Hub since 17 November 2026; see `docs/CONTEXT.md` and knowledge base flow 3. Still open and waiting on the clinic or TDL: sending the request to TDL, the request-form PDF, the home-kit email, reminders, and the results completeness check (5D to 5G). Written from the clinic's call recording (George and Gina, 17 November), the clinic's Semble process and the schema. Items marked **Open** wait for answers from the clinic or from TDL.
 
 This is not one of the four living documents and no subagent keeps it. When a slice is built, record it in `docs/CONTEXT.md` and `content/knowledge-base.md` (flow 3) and trim it here.
 

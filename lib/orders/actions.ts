@@ -10,6 +10,7 @@ import { getPortalPatientId } from "@/lib/data/education";
 import { getSiteUrl, isStripeConfigured } from "@/lib/env";
 import { ORDER_ROUTES } from "@/lib/orders/constants";
 import { announceOrderMade } from "@/lib/orders/notify";
+import { parsePanelImport } from "@/lib/orders/panel-import";
 import { createOrderCheckout } from "@/lib/stripe/client";
 import { createClient } from "@/lib/supabase/server";
 
@@ -203,6 +204,154 @@ export async function addPanel(_state: OrderFormState, formData: FormData): Prom
   if (error) return { error: error.code === "23505" ? "A panel with that code already exists." : GENERIC_FAILURE };
   revalidatePath("/clinic/panels");
   return { saved: "Panel added.", sentAt: Date.now() };
+}
+
+export type ImportPreviewRow = {
+  code: string;
+  name: string;
+  pricePence: number;
+  previousPricePence: number | null;
+  fasting: boolean;
+  sexRestriction: "F" | "M" | null;
+  tubes: string | null;
+  orderable: boolean;
+  change: "new" | "update";
+  /** Something worth a second look before importing, such as a price of nothing or a big change. */
+  warning: string | null;
+  labName: string | null;
+};
+export type PanelImportState = OrderFormState & { preview?: { rows: ImportPreviewRow[]; errors: string[] } };
+
+/**
+ * An admin loads a panel list from a spreadsheet. "preview" checks it and shows what would change;
+ * "import" writes it. The text is parsed again on the server each time, so a preview cannot be
+ * edited into something else. A code already in the catalogue is updated, a new one is added to the
+ * chosen lab, and nothing is deleted.
+ */
+export async function importPanels(_state: PanelImportState, formData: FormData): Promise<PanelImportState> {
+  const user = await requireAdmin();
+  const text = typeof formData.get("data") === "string" ? (formData.get("data") as string) : "";
+  const mode = formData.get("mode") === "import" ? "import" : "preview";
+  const parsed = parsePanelImport(text);
+  if (parsed.errors.length > 0) return { error: "Fix the rows below, then check again.", preview: { rows: [], errors: parsed.errors } };
+  if (!(await allowAuthAttempt("bloods-order", user.email))) return { error: TOO_MANY };
+
+  const supabase = await createClient();
+  const [existing, labs] = await Promise.all([
+    supabase.from("lab_panels").select("id, code, price_pence, active, archived_at"),
+    supabase.from("lab_partners").select("id, name"),
+  ]);
+  if (existing.error || labs.error) return { error: GENERIC_FAILURE };
+  const byCode = new Map(existing.data.map((p) => [p.code, p]));
+  const chosenLab = z.uuid().safeParse(field(formData, "labPartnerId"));
+  const defaultOrderable = field(formData, "orderable") === "on";
+
+  const errors: string[] = [];
+  const rows: (ImportPreviewRow & { labId: string | null; panelId: string | null; active: boolean | null })[] = [];
+  for (const r of parsed.rows) {
+    const current = byCode.get(r.code);
+    if (current?.archived_at) {
+      errors.push(`Row ${r.line}: the code ${r.code} belongs to an archived panel and cannot be imported.`);
+      continue;
+    }
+    let labId: string | null = null;
+    if (!current) {
+      if (r.lab) {
+        const named = labs.data.filter((l) => l.name.toLowerCase() === r.lab!.toLowerCase());
+        if (named.length !== 1) {
+          errors.push(`Row ${r.line}: the lab "${r.lab}" is not one of the clinic's labs. Use its full name.`);
+          continue;
+        }
+        labId = named[0]!.id;
+      } else if (chosenLab.success && labs.data.some((l) => l.id === chosenLab.data)) {
+        labId = chosenLab.data;
+      } else {
+        errors.push(`Row ${r.line}: choose the lab for the new panel ${r.code}.`);
+        continue;
+      }
+    }
+    rows.push({
+      code: r.code,
+      name: r.name,
+      pricePence: r.pricePence,
+      previousPricePence: current ? current.price_pence : null,
+      fasting: r.fasting,
+      sexRestriction: r.sexRestriction,
+      tubes: r.tubes,
+      orderable: r.active ?? (current ? current.active : defaultOrderable),
+      change: current ? "update" : "new",
+      warning:
+        r.pricePence === 0
+          ? "The price is £0."
+          : current && current.price_pence > 0 && Math.abs(r.pricePence - current.price_pence) / current.price_pence > 0.5
+            ? "The price changes by more than half."
+            : null,
+      labName: labId ? (labs.data.find((l) => l.id === labId)?.name ?? null) : null,
+      labId,
+      panelId: current?.id ?? null,
+      active: r.active,
+    });
+  }
+  const preview = {
+    rows: rows.map((r): ImportPreviewRow => ({
+      code: r.code,
+      name: r.name,
+      pricePence: r.pricePence,
+      previousPricePence: r.previousPricePence,
+      fasting: r.fasting,
+      sexRestriction: r.sexRestriction,
+      tubes: r.tubes,
+      orderable: r.orderable,
+      change: r.change,
+      warning: r.warning,
+      labName: r.labName,
+    })),
+    errors,
+  };
+  if (errors.length > 0) return { error: "Fix the rows below, then check again.", preview };
+  if (mode === "preview") return { preview, sentAt: Date.now() };
+
+  const fresh = rows.filter((r) => r.change === "new");
+  const changed = rows.filter((r) => r.change === "update");
+  const prepFor = new Map(parsed.rows.map((r) => [r.code, r.preparation]));
+  if (fresh.length > 0) {
+    const { error } = await supabase.from("lab_panels").insert(
+      fresh.map((r) => ({
+        lab_partner_id: r.labId as string,
+        code: r.code,
+        name: r.name,
+        price_pence: r.pricePence,
+        fasting_required: r.fasting,
+        tubes: r.tubes,
+        preparation: prepFor.get(r.code) ?? null,
+        sex_restriction: r.sexRestriction,
+        active: r.orderable,
+      })),
+    );
+    if (error) return { error: "The new panels could not be added. Nothing was added; try again.", preview };
+  }
+  const failedCodes: string[] = [];
+  for (const r of changed) {
+    const { error } = await supabase
+      .from("lab_panels")
+      .update({
+        name: r.name,
+        price_pence: r.pricePence,
+        // A column the sheet does not have leaves the panel's value alone; a blank cell clears it.
+        ...(parsed.columns.fasting ? { fasting_required: r.fasting } : {}),
+        ...(parsed.columns.tubes ? { tubes: r.tubes } : {}),
+        ...(parsed.columns.preparation ? { preparation: prepFor.get(r.code) ?? null } : {}),
+        ...(parsed.columns.sex ? { sex_restriction: r.sexRestriction } : {}),
+        ...(r.active === null ? {} : { active: r.active }),
+      })
+      .eq("id", r.panelId as string);
+    if (error) failedCodes.push(r.code);
+  }
+  revalidatePath("/clinic/panels");
+  if (failedCodes.length > 0) {
+    return { error: `${fresh.length} added, but these updates failed: ${failedCodes.join(", ")}. Import again: it is safe to repeat.`, sentAt: Date.now() };
+  }
+  return { saved: `Done: ${fresh.length} added, ${changed.length} updated.`, sentAt: Date.now() };
 }
 
 export async function saveRouteFee(_state: OrderFormState, formData: FormData): Promise<OrderFormState> {
