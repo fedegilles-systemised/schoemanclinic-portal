@@ -293,7 +293,7 @@ For a new patient the clinic reference (SC- and six digits) is made automaticall
 **Who:** a doctor or PA creates the order; the patient (or a guardian who can act) pays. **Status:** built, except sending the request to TDL. Online payment starts when the clinic's Stripe keys are added.
 
 1. From a patient's record, the doctor or PA picks a panel and how the sample is taken: at a TDL collection point, or with a TDL home kit. Only panels allowed for the patient's sex at birth are offered. The due date is the appointment date minus 14 days.
-2. The price is the panel price plus the fee for the way chosen, set by an admin under Lab orders, then Panels and fees (starting values £45 at a TDL site and £15 for a home kit, to be confirmed). It is fixed on the order when it is made. The patient is told by email, and by WhatsApp if they have it on. The message does not name the panel.
+2. The price is the panel price plus the fee for the way chosen, set by an admin under Lab orders, then Panels and fees (starting values £45 at a TDL site and £15 for a home kit, to be confirmed). The same screen holds the list of panels, and an admin can load the whole list from a spreadsheet: it is checked and shown first, and nothing is deleted. It is fixed on the order when it is made. The patient is told by email, and by WhatsApp if they have it on. The message does not name the panel.
 3. The patient sees a "bloods due" banner and opens the order. It shows the due date, how the sample is taken, whether to fast and how to prepare.
 4. The patient pays through Stripe. Until then there is no barcode.
 5. Stripe confirms the payment. The order becomes "paid", gets its own barcode, and the patient gets a receipt. The barcode is shown in the portal.
