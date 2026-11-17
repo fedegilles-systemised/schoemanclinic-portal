@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
 import { PanelForm, RouteFeeForm } from "@/components/orders/forms";
+import { PanelImportForm } from "@/components/orders/panel-import";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader, SectionHeader } from "@/components/ui/page-header";
 import { getCurrentUser } from "@/lib/auth/session";
@@ -57,6 +58,11 @@ export default async function PanelsPage() {
             </CardContent>
           </Card>
         ))}
+      </section>
+
+      <section aria-labelledby="import" className="mb-12 flex flex-col gap-4">
+        <SectionHeader id="import" title="Import from a " accent="spreadsheet" />
+        <PanelImportForm labs={labs} />
       </section>
 
       <section aria-labelledby="add" className="flex flex-col gap-4">
