@@ -13,8 +13,9 @@ import { repeatUpdateEmail } from "@/lib/email/templates/app";
 import { getSiteUrl, isStripeConfigured } from "@/lib/env";
 import { notifyPatient } from "@/lib/notify/patient";
 import { MAX_REQUEST_ITEMS, REPEAT_FEE_PENCE } from "@/lib/prescriptions/constants";
-import { announceRequest } from "@/lib/prescriptions/notify";
-import { createRepeatCheckout } from "@/lib/stripe/client";
+import { announceRepeatRefunded, announceRequest } from "@/lib/prescriptions/notify";
+import { createRepeatCheckout, refundRepeatPayment } from "@/lib/stripe/client";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 export type PrescriptionFormState = { error?: string; saved?: string; sentAt?: number };
@@ -40,6 +41,7 @@ function friendly(message: string | undefined, fallback = GENERIC_FAILURE): stri
     "That change is not allowed from the request's current status.",
     "Say why the request is declined.",
     "Use 2,000 characters or fewer for the note.",
+    "Only the fee of a declined request can be refunded.",
   ];
   return known.find((k) => message?.includes(k)) ?? fallback;
 }
@@ -227,6 +229,48 @@ export async function decideRepeat(_state: PrescriptionFormState, formData: Form
   revalidatePath("/clinic/prescriptions", "layout");
   revalidatePath("/portal/prescriptions", "layout");
   return { saved, sentAt: Date.now() };
+}
+
+/**
+ * An admin refunds the fee of a declined request, in full. Stripe is asked first, with a fixed key so a second
+ * press cannot refund twice, and only then is it recorded. A request that was not declined cannot be refunded
+ * from here: the fee is for the clinic's review, and the decision is the doctor's or PA's.
+ */
+export async function refundRepeat(_state: PrescriptionFormState, formData: FormData): Promise<PrescriptionFormState> {
+  const user = await getCurrentUser();
+  if (!user || user.isSuspended || !user.roles.includes("admin")) redirect("/clinic");
+  const id = z.uuid().safeParse(formData.get("requestId"));
+  if (!id.success) return { error: GENERIC_FAILURE };
+  if (!isStripeConfigured()) return { error: "Payments are not switched on, so there is nothing to refund here." };
+  if (!(await allowAuthAttempt("repeat-request", user.email))) return { error: TOO_MANY };
+
+  const supabase = await createClient();
+  const request = await supabase.from("repeat_requests").select("id, status, fee_pence, paid_at, stripe_payment_intent_id, refunded_at").eq("id", id.data).maybeSingle();
+  if (request.error || !request.data) return { error: GENERIC_FAILURE };
+  const r = request.data;
+  if (r.refunded_at) return { error: "This fee has already been refunded." };
+  if (r.status !== "declined" || !r.paid_at || !r.stripe_payment_intent_id) return { error: "Only the fee of a declined request can be refunded." };
+
+  let refund;
+  try {
+    refund = await refundRepeatPayment({ requestId: r.id, paymentIntent: r.stripe_payment_intent_id });
+  } catch {
+    console.error("Stripe refund of a repeat fee not made.");
+    return { error: "Stripe could not make the refund. Nothing has changed. Please try again, or refund it in Stripe." };
+  }
+  if (refund.status !== "succeeded" && refund.status !== "pending") return { error: "Stripe did not complete the refund. Nothing has changed. Check it in Stripe." };
+  if (refund.amountPence !== r.fee_pence) return { error: "Stripe refunded a different amount from the fee paid. Check this request in Stripe." };
+
+  const recorded = await createAdminClient().rpc("record_repeat_request_refund", { _request: r.id, _refund: refund.id, _amount: refund.amountPence, _by: user.id });
+  if (recorded.error) {
+    console.error("Repeat fee refunded in Stripe but not recorded.");
+    return { error: "Stripe has refunded this fee, but Clinic Hub could not record it. Press Refund again: it will not refund twice." };
+  }
+  const delivery = recorded.data ? await announceRepeatRefunded(r.id) : null;
+  revalidatePath("/clinic/prescriptions", "layout");
+  revalidatePath("/portal/prescriptions", "layout");
+  const told = delivery && (delivery.email === "sent" || delivery.whatsapp === "sent");
+  redirect(`/clinic/prescriptions/${r.id}?refunded=${!recorded.data ? "already" : told ? "told" : "untold"}`);
 }
 
 // Medicines on a patient's record ---------------------------------------------------------------

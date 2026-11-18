@@ -22,7 +22,7 @@ export function Barcode({ value }: { value: string }) {
           <rect key={bar.x} x={bar.x + quiet} y={0} width={bar.width} height={60} fill="currentColor" />
         ))}
       </svg>
-      <figcaption className="type-body font-mono tracking-widest">{value}</figcaption>
+      <figcaption className="type-body font-mono tracking-code">{value}</figcaption>
     </figure>
   );
 }

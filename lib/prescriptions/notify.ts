@@ -1,10 +1,10 @@
 import "server-only";
 
 import { sendEmail } from "@/lib/email/send";
-import { repeatPaidAlertEmail, repeatReceivedEmail } from "@/lib/email/templates/app";
+import { repeatPaidAlertEmail, repeatReceivedEmail, repeatRefundedEmail } from "@/lib/email/templates/app";
 import { getSiteUrl } from "@/lib/env";
-import { londonDate } from "@/lib/format";
-import { notifyPatient } from "@/lib/notify/patient";
+import { formatMoney, londonDate } from "@/lib/format";
+import { notifyPatient, type Delivery } from "@/lib/notify/patient";
 import { PRESCRIPTIONS_ALERT_TO_DEFAULT } from "@/lib/prescriptions/constants";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -71,5 +71,30 @@ export async function announceRequest(requestId: string, { paid }: { paid: boole
     });
   } catch {
     console.error("Repeat prescription payment recorded, but the team or patient could not be told.");
+  }
+}
+
+/** The patient is told the fee of their repeat prescription request was refunded. Never throws. */
+export async function announceRepeatRefunded(requestId: string): Promise<Delivery | null> {
+  try {
+    const admin = createAdminClient();
+    const request = await admin
+      .from("repeat_requests")
+      .select("id, patient_id, refund_pence, patient:patient_profiles!repeat_requests_patient_id_fkey(first_name)")
+      .eq("id", requestId)
+      .maybeSingle();
+    if (request.error || !request.data || request.data.refund_pence === null) return null;
+    const siteUrl = getSiteUrl();
+    const amount = formatMoney(request.data.refund_pence);
+    const firstName = request.data.patient?.first_name;
+    return await notifyPatient(request.data.patient_id, {
+      topic: "payments",
+      notice: { title: "Your repeat prescription fee has been refunded", body: `${amount} is on its way back to your card.`, link: `/portal/prescriptions/${requestId}` },
+      email: repeatRefundedEmail({ siteUrl, firstName, amount }),
+      whatsapp: `Hello ${firstName ?? ""}, we have refunded ${amount}, the fee for your repeat prescription request. Your bank decides when it shows on your statement, usually within 10 working days.`,
+    });
+  } catch {
+    console.error("Could not tell the patient about the refund of the repeat fee.");
+    return null;
   }
 }

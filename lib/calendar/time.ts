@@ -27,6 +27,11 @@ export function todayInLondon(now = new Date()): string {
   return `${p.year}-${p.month}-${p.day}`;
 }
 
+/** Has this moment passed? */
+export function hasPassed(instant: string, now = new Date()): boolean {
+  return Date.parse(instant) <= now.getTime();
+}
+
 export function isDay(value: string | undefined): value is string {
   if (!value || !DAY_PATTERN.test(value)) return false;
   const date = new Date(`${value}T12:00:00Z`);

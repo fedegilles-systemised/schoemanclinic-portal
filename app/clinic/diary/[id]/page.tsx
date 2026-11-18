@@ -4,22 +4,23 @@ import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, CalendarDays, Clock, MapPin, UserRound } from "lucide-react";
 import { z } from "zod";
 
-import { CancelAppointmentButton } from "@/components/booking/book-slot";
+import { CancelAppointmentButton, NoShowButton, UndoNoShowButton } from "@/components/booking/book-slot";
 import { MoveAppointmentForm } from "@/components/diary/forms";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { getCurrentUser } from "@/lib/auth/session";
-import { addDays, dayHeading, isDay, londonInstant, londonParts, todayInLondon } from "@/lib/calendar/time";
+import { getMyStaffId } from "@/lib/data/patient-record";
+import { addDays, dayHeading, hasPassed, isDay, londonInstant, londonParts, todayInLondon } from "@/lib/calendar/time";
 import { getDiary, getDiaryPeople, getPossibleDuplicates } from "@/lib/data/diary";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Booking · Clinic Hub" };
 
 /** One booking from the diary: who, when and with whom, and, for staff who can open the record, move or cancel. */
-export default async function DiaryEntryPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ date?: string }> }) {
+export default async function DiaryEntryPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ date?: string; noshow?: string }> }) {
   const { id } = await params;
-  const { date } = await searchParams;
+  const { date, noshow } = await searchParams;
   if (!z.uuid().safeParse(id).success) notFound();
   const user = await getCurrentUser();
   if (!user) redirect("/login");
@@ -53,6 +54,12 @@ export default async function DiaryEntryPage({ params, searchParams }: { params:
   const ends = londonParts(entry.endsAt).time ?? "";
   // Today or later; the database refuses a move into the past.
   const future = day >= todayInLondon();
+  // A visit that has ended and was never attended can be marked as a no-show by a PA, a doctor or an admin.
+  const myStaffId = await getMyStaffId(user.id);
+  const isPaOrAdmin = user.roles.some((r) => r === "pa" || r === "admin");
+  const mayMark = isPaOrAdmin || (user.roles.includes("doctor") && myStaffId !== null && entry.clinicianId === myStaffId);
+  const canMarkNoShow = entry.canOpen && (entry.status === "booked" || entry.status === "confirmed") && hasPassed(entry.endsAt) && mayMark;
+  const canUndoNoShow = entry.canOpen && entry.status === "no_show" && isPaOrAdmin;
   // For a new online record, an admin or a PA is shown any record that may be the same person.
   const duplicates = entry.newPatient && user.roles.some((r) => r === "admin" || r === "pa") ? await getPossibleDuplicates(entry.patientId) : [];
 
@@ -63,6 +70,14 @@ export default async function DiaryEntryPage({ params, searchParams }: { params:
         Diary
       </Link>
       <PageHeader eyebrow={entry.type} title={`${entry.patientName} `} description={`${entry.clinicRef}${entry.status === "no_show" ? ". Did not attend." : entry.status === "completed" ? ". Completed." : "."}`} />
+
+      {noshow === "1" ? (
+        <div className="mb-6">
+          <Alert variant="info">
+            <AlertDescription>Marked as did not attend.</AlertDescription>
+          </Alert>
+        </div>
+      ) : null}
 
       {entry.newPatient ? (
         <div className="mb-6">
@@ -124,6 +139,29 @@ export default async function DiaryEntryPage({ params, searchParams }: { params:
             )}
           </CardContent>
         </Card>
+
+        {canUndoNoShow ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>Marked as did not attend</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3">
+              <p className="type-body">If this was a mistake, a PA or admin can put it right.</p>
+              <UndoNoShowButton appointmentId={entry.id} patientId={entry.patientId} label={`${entry.type} on ${dayHeading(day)} at ${time}`} />
+            </CardContent>
+          </Card>
+        ) : null}
+
+        {canMarkNoShow ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>Did the patient attend?</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <NoShowButton appointmentId={entry.id} patientId={entry.patientId} label={`${entry.type} on ${dayHeading(day)} at ${time}`} />
+            </CardContent>
+          </Card>
+        ) : null}
 
         {entry.canOpen && entry.source === "clinic_hub" && future && (entry.status === "booked" || entry.status === "confirmed") ? (
           <Card>

@@ -128,6 +128,7 @@ Eleven screens are built and the rest are planned. Every built screen reads real
 | My results | Patient, guardian | Every released marker with its latest value, the range, a status and a small trend. A marker opens a chart of every value over time with the range as a band, a table of the values and the doctor's comments | None |
 | Results review | Doctor, PA, health coach | Files waiting for entry, reports to review, and recently released ones. A report shows each value, the value as the lab reported it, the range and a status. A doctor comments on markers and releases. A health coach sees released reports only | None |
 | Add results | PA, doctor | Pick the patient, the sample date and optionally the lab's file, then enter each value with its unit. Values in another unit are converted to UK units, and the original is kept | None |
+| Results sign-offs | Every results sign-off, newest first, with the date, the patient, whether it was action or no action, who signed it, who ordered the tests and whether another doctor signed. Filter by dates. Built | Admin | None |
 | Activity | Who opened or changed a patient's record, and when: date, person and role, what was done, and the patient's name. No clinical values. Newest first, fifty at a time. Built | Admin | None |
 | App frame | Everyone signed in | Menu, a bell for notifications, a location chooser (clinic only), and an account menu showing name and role, with sign out and, for people with both views, a switch between clinic and patient |
 
@@ -292,21 +293,21 @@ For a new patient the clinic reference (SC- and six digits) is made automaticall
 
 **Who:** a doctor or PA creates the order; the patient (or a guardian who can act) pays. **Status:** built, except sending the request to TDL. Online payment starts when the clinic's Stripe keys are added.
 
-1. From a patient's record, the doctor or PA picks a panel and how the sample is taken: at a TDL collection point, or with a TDL home kit. Only panels allowed for the patient's sex at birth are offered. The due date is the appointment date minus 14 days.
+1. From a patient's record, the doctor or PA picks a panel and how the sample is taken: at a TDL collection point, or with a TDL home kit. Only panels allowed for the patient's sex at birth are offered. The due date is the appointment date minus 14 days. Notes for the lab can be added; they are for the team only, and the patient cannot read them.
 2. The price is the panel price plus the fee for the way chosen, set by an admin under Lab orders, then Panels and fees (starting values £45 at a TDL site and £15 for a home kit, to be confirmed). The same screen holds the list of panels, and an admin can load the whole list from a spreadsheet: it is checked and shown first, and nothing is deleted. It is fixed on the order when it is made. The patient is told by email, and by WhatsApp if they have it on. The message does not name the panel.
 3. The patient sees a "bloods due" banner and opens the order. It shows the due date, how the sample is taken, whether to fast and how to prepare.
-4. The patient pays through Stripe. Until then there is no barcode.
+4. The patient pays through Stripe. Until then there is no barcode. An order not paid after 3 days gets a reminder, and another after 7 days. An order still unpaid after 30 days closes by itself: it is cancelled, stays on the record, and the patient is told (decided 18 November 2026).
 5. Stripe confirms the payment. The order becomes "paid", gets its own barcode, and the patient gets a receipt. The barcode is shown in the portal.
-6. When the sample has been taken, a PA or doctor records it and the order becomes "sample taken". An order nobody has paid for can be cancelled. An admin can refund a paid order in full from the orders screen: the whole payment goes back to the patient's card, the patient is told, and the order stays on the record as cancelled and refunded. A part refund, or a refund once results are in, is decided in Stripe.
+6. When the sample has been taken, a PA or doctor records it and the order becomes "sample taken". An order nobody has paid for can be cancelled. An admin can refund a paid order in full from the orders screen: the whole payment goes back to the patient's card, the patient is told, and the order stays on the record as cancelled and refunded. A refund made in Stripe's own dashboard is recorded in Clinic Hub too. A part refund, or a refund once results are in, is decided in Stripe, and admins are told when one is made there.
 7. When results arrive (flows 4 and 5), the order becomes "results in", then "reviewed" after a doctor's review.
 
-**Not built yet.** Sending the electronic request, or the home-kit request, to TDL; the request form as a printable PDF; matching results by the order's barcode; reminders and chasing for unpaid orders; a check that the results cover everything ordered. These wait for TDL's answer on how it takes electronic orders from another system.
+**Not built yet.** Sending the electronic request, or the home-kit request, to TDL; the request form as a printable PDF; matching results by the order's barcode; a check that the results cover everything ordered. These wait for TDL's answer on how it takes electronic orders from another system.
 
 **Cycle guidance.** For a patient whose sex at birth is female: with regular periods, the sample is taken on day 21 of the cycle; with irregular periods or none, any day. If sex at birth is missing, the order stops and a PA is told. It is never guessed.
 
 **Data in/out:** Stripe, for the payment. The clinic never stores card details. Stripe sends a confirmation message that Clinic Hub records once, so a payment is never counted twice. The lab partner receives the barcode and panel (proposed). **Email:** proposed, a payment receipt and a reminder before the due date, sent through GoHighLevel according to the patient's preferences.
 
-**Questions:** how are barcodes created, by Clinic Hub or by the lab? Where are samples taken (clinic, partner site, home visit)? Are panel prices fixed or set per order? What happens to an unpaid order after the due date? Should a refund after the sample is taken, or after results, be allowed at all? Who sends chasing reminders?
+**Questions:** how are barcodes created, by Clinic Hub or by the lab? Are the site and home-kit fees fixed, and who pays TDL?
 
 ### 4. Results by lab feed
 
@@ -386,14 +387,14 @@ For a new patient the clinic reference (SC- and six digits) is made automaticall
 3. For a weight-loss medicine (Mounjaro, Ozempic, Wegovy, semaglutide) they answer whether they are still losing weight, how much in the last month, and whether they have side effects.
 4. They review the request, then pay the £30 administration fee on Stripe's own page. Without Stripe keys the request is sent unpaid and the clinic arranges the fee.
 5. When Stripe confirms the payment, admins, PAs and the patient's doctors are told in Clinic Hub, the clinic inbox is emailed, and the patient gets a receipt.
-6. A doctor or PA approves, declines (with a reason the patient reads in the portal) or marks it sent to the pharmacy, after prescribing in SignatureRx, which a doctor can now do from the request page once that connection is switched on. The patient is told at each step, without the note or any medicine named.
+6. A doctor or PA approves, declines (with a reason the patient reads in the portal) or marks it sent to the pharmacy, after prescribing in SignatureRx, which a doctor can now do from the request page once that connection is switched on. The patient is told at each step, without the note or any medicine named. For a declined request whose fee was paid, an admin can refund the whole fee from the request page, and the patient is told. A refund made in Stripe's own dashboard is recorded too.
 7. An unpaid request can be withdrawn by the patient side, a doctor or a PA. Without online payment, the team is told of each new request as it arrives.
 
 Doctors add a patient's medicines on the record, with the day each supply starts and how long it lasts, and renew, pause or stop them there. Admins and doctors keep the clinic's medicine list, which starts with the Typeform's list. Patients are reminded three weeks before a prescription runs out: on the home screen, on the Prescriptions page, and by a daily email or WhatsApp, unless a repeat for it is already on its way.
 
 **Data in/out:** Stripe is told the amount and the request's reference only, never a name, email or medicine. Prescribing itself is done in SignatureRx. From an approved request, a doctor can create the prescription there, typing their signing PIN, which Clinic Hub passes straight on and never keeps. It needs the patient's address, date of birth, sex, phone, email and country on the record, and it is switched off until a security review is done and SignatureRx's live credentials are in place. **Email:** receipt, each status change, the clinic alert and the three-week reminder, none naming a medicine.
 
-**Questions:** is the fee refunded if a request is declined (refunds are made in Stripe for now)? Should "no future appointment" block a request rather than warn? Could PCCA's Nexa portal or SignatureRx take approved repeats automatically? For SignatureRx: can a draft be saved without the doctor's PIN? How does each doctor get their integration code? Which events can SignatureRx send us when a prescription changes? What does each prescription cost, and who tops up the balance? Is a data processing agreement needed?
+**Questions:** should "no future appointment" block a request rather than warn? Could PCCA's Nexa portal or SignatureRx take approved repeats automatically? For SignatureRx: can a draft be saved without the doctor's PIN? How does each doctor get their integration code? Which events can SignatureRx send us when a prescription changes? What does each prescription cost, and who tops up the balance? Is a data processing agreement needed?
 
 ### 9. Ask the clinic
 
@@ -582,11 +583,11 @@ Every message has a template in the clinic's look. The sign-in emails (reset, ch
 
 ## Open questions for the clinic
 
-Seven questions remain open, to be revisited with the clinic: 8, 9, 10, 11, 12, 29 and 31. They keep their original numbers. Under each one is what we heard on the call on 6 November, what we have learned since, and what we assume until the clinic answers.
+Five questions remain open, waiting on the clinic, TDL or Semble: 8, 9, 10, 12 and 31. Questions 11 and 29 were settled on 18 November 2026 and are under Decisions already taken. They keep their original numbers. Under each one is what we heard on the call on 6 November, what we have learned since, and what we assume until the clinic answers.
 
 The clinic answered the rest on 11 November. Those answers are under Decisions already taken, each marked as built or not built yet. The short question lists earlier in this document may still mention questions that are now answered.
 
-**8. Bloods.** How are barcodes made, where are samples taken, are prices fixed, and what happens to an unpaid order or a refund?
+**8. Bloods.** How are barcodes made, where are samples taken, and are prices fixed?
 
 *What it decides: The ordering flow.*
 
@@ -618,11 +619,7 @@ The clinic answered the rest on 11 November. Those answers are under Decisions a
 >
 > **What we assume.** A patient's own upload takes PDF only, up to 5 files each time. For now a PA enters every value by hand, and a doctor reviews before release. The AI reading comes later, and it will only suggest values that a PA confirms. Provider and inbox are still to be decided. Lab files from a webhook are kept 30 days if nobody matches them (flow 4a).
 
-**11. Bloods.** Who may release results, is a second doctor needed for critical values, and do some markers need a hold-back?
-
-*What it decides: The release rules.*
-
-> **What we assume.** Only a doctor releases. One doctor is enough. No hold-backs yet. To be revisited with the clinic.
+**11. Bloods.** Settled on 18 November 2026: only a doctor releases, one doctor is enough, and there are no hold-backs. See Decisions already taken.
 
 **12. Bloods.** Which markers do you test, and what are your base units and ranges in UK units? When a lab's range differs from the clinic's, which one does the patient see? Is it right to call a value borderline when it is inside the range but within 5% of an edge?
 
@@ -634,15 +631,7 @@ The clinic answered the rest on 11 November. Those answers are under Decisions a
 >
 > **What we assume.** All values are converted to UK units when entered, and the original value and unit are kept. The conversions in use are the standard factors, and they are replaced by the clinic's list when it arrives. The patient sees the range held for each marker, with a status: low or high against the range, borderline within 5% of an edge, and critical only when a doctor sets it.
 
-**29. Identity.** Please share the registration and consent forms. Must a PA check the ID before the patient gets in, or does uploading it open the portal? Where should the ID be kept? What happens if a patient cannot upload it? The clinic's registration form in Semble already asks for ID and consent too. Which of the two is the record that counts, and can one of them be dropped? New after the call.
-
-*What it decides: First sign-in.*
-
-> **Heard on the call, 6 November.** Photo ID and a signed consent are a legal requirement, because the clinic prescribes controlled drugs and does not always follow NICE guidelines. Today the patient receives a link in Semble. It was agreed to ask for both at the first sign-in only, so nobody enters the portal without them. The clinic will share the form.
->
-> **Seen in the clinic's current plan (patient flow V8 and the emails since).** The registration form in Semble already asks for photo ID, which is mandatory there, and for three consents.
->
-> **What we assume.** Uploading the ID and signing the consent open the portal. A PA sees a list of IDs to check. Until the clinic decides, the portal's first sign-in is the check Clinic Hub relies on.
+**29. Identity.** Settled on 18 November 2026: the consent at first sign-in is what counts, and no document check blocks the portal. See Decisions already taken.
 
 **31. Moving over.** What must move from Semble: historical PDFs, notes, contacts? Who in the clinic checks they are accurate? Which weekend suits for training the doctors and admin team? New after the call.
 
@@ -658,7 +647,7 @@ The clinic answered the rest on 11 November. Those answers are under Decisions a
 
 - Agreed on the call, 6 November: a banner and an email three weeks before a prescription runs out.
 - Agreed on the call, 6 November: results from other countries are converted to UK units, from a list of base units the clinic will send.
-- Agreed on the call, 6 November: at the first sign-in a patient uploads photo ID and signs the consent form. The clinic will share the form (question 29).
+- Agreed on the call, 6 November: at the first sign-in a patient uploads photo ID and signs the consent form. Replaced on 18 November 2026: the consent at first sign-in counts and no ID upload is needed (question 29).
 - Agreed on the call, 6 November: questions from patients go to info@theschoemanclinic.com, where staff triage them.
 - Agreed on the call, 6 November: reminders go by email and by WhatsApp through GoHighLevel's automatic WhatsApp, in place of SMS.
 - The first release is the bloods loop. Messaging, reminders, invoices and marketing stay in GoHighLevel. Clinical notes and appointments move into Clinic Hub (11 November, question 15), and Semble is retired in stages. Prescribing goes through SignatureRx.
@@ -717,7 +706,7 @@ The clinic answered the rest on 11 November. Those answers are under Decisions a
 - Only doctors sign letters, and prescribing will go through SignatureRx. Signatures are built. The SignatureRx connection is built too, but switched off by default until its security review and the data agreement are done (flow 8). (Question 24)
 - WhatsApp goes through GoHighLevel: a plug-in diverts GoHighLevel's text messages to WhatsApp, so a message sent as a text arrives as a WhatsApp. WhatsApp appears in a patient's notification choices once GoHighLevel is connected, off until they turn it on. Built; needs the GoHighLevel key. (Question 25)
 - The email confirmation is enough for a staff member to change their sign-in email, and the old address is told. Built. (Question 26)
-- When a doctor, an admin or a guardian who can act is invited, other admins or PAs get a notice in the portal bell, and for doctors and admins an email to Dr Gina Schoeman. The date of birth, and for patients the ID at first sign-in, are the checks. Built. (Question 28)
+- When a doctor, an admin or a guardian who can act is invited, other admins or PAs get a notice in the portal bell, and for doctors and admins an email to Dr Gina Schoeman. The date of birth is the check. Built. (Question 28)
 - Lab files and imports not yet matched to a patient are for PAs and admins only (decided 12 November). Built.
 - Clinic Hub follows the clinic's four choices for bloods: the clinic's own lab, TDL, a TDL home kit, or the patient's own results. Only TDL and the home kit are paid through Stripe and get a barcode. Ordering, payment and the barcode are built for TDL and the home kit; sending the order to TDL is not. (Question 33)
 - Repeat prescriptions move from the Typeform into the portal: up to ten medicines at a time, each for one or two months' supply, with the Typeform's appointment and weight-loss questions and the £30 fee through Stripe. Built. (10 and 12 November 2026)
@@ -725,3 +714,21 @@ The clinic answered the rest on 11 November. Those answers are under Decisions a
 - For CQC, a clinical note records that all available treatment options, customised options and NICE guideline options, and side effects, were discussed, with the options offered. Fixed once the note is signed. Built. (12 November 2026)
 - Patient feedback is built in Clinic Hub after all, not GoHighLevel, so the answers stay with the patient's record: a survey after each appointment, green, amber and red routing with a recorded follow-up, the Google review link offered after positive feedback only (the clinic's decision, knowing Google's policy and the CMA's guidance discourage it), and positive feedback kept for the CQC. Built. (12 November 2026)
 - Every form a patient submits is kept on their record, with the questions as asked and the answers, and cannot be changed. Built for repeat requests, questions and feedback; new forms will be added the same way. (12 November 2026)
+
+**Decided on 18 November 2026** (by the team building Clinic Hub, to be changed if the clinic says otherwise):
+
+- Refunds. Only an admin refunds. It is always the whole payment: a paid blood test order, while it is paid or the sample is taken, and the fee of a declined repeat prescription request. The patient is told. A refund made in Stripe's own dashboard is recorded in Clinic Hub. A part refund, or a refund of a blood test once results are in, is decided in Stripe, and admins are told. Built.
+- An unpaid blood test order gets a reminder after 3 days and after 7 days, and closes by itself after 30 days. It is cancelled and kept on the record, and the patient is told. Built.
+- The notes a doctor or PA adds to a blood test order are for the team only. The patient cannot read them. Built.
+- The clinic's choice is that online booking offers new patients the initial consultation only, and takes no deposit. An admin sets which appointment types are offered under Booking settings; nothing is charged when booking. A new patient booked online who has not been checked or invited two working days later is reminded to admins and PAs, once. Built.
+- A possible duplicate record from an online booking is shown to the team, with the likely record, and nobody is merged automatically. If it is a duplicate, the team archives the extra record: nothing is deleted. Built.
+- Releasing results: only a doctor releases, one doctor is enough, and no marker is held back. This can be revisited with the clinic. (Question 11)
+- Identity and consent: the consent given at first sign-in is what counts, and no document check blocks the portal. The date of birth asked at the invitation is the check. The photo ID upload agreed on 6 November is not built and is no longer planned. (Question 29)
+- Questions to the clinic are answered by any team member who can open the patient, and the portal promises a reply within two working days.
+- Feedback: 9 to 10 is green, 7 to 8 amber and 0 to 6 red. Admins and PAs own the follow-ups.
+- Appointments: a visit that has ended counts as completed on its own. A PA, doctor or admin marks a no-show with "Did not attend" on the booking page. Built.
+- Lab files nobody matched are kept 30 days.
+- CQC: the four treatment-option confirmations are not required before a note is signed. Admins have a list of every results sign-off to show an inspector. Built.
+- The education videos can be on YouTube, Vimeo or Loom. Clinic Hub does not host video.
+- Clinic Hub has a light theme only.
+- The first round of testing covers the bloods loop, clinical notes and booking. Wearables and call recording are left for a later round, because they wait on outside approvals.

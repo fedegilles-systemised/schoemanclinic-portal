@@ -65,7 +65,7 @@ export function EditCourseForm({ courseId, title, description, published }: { co
         <Textarea id="edit-description" name="description" defaultValue={description ?? ""} maxLength={4000} />
       </div>
       <label className="type-body flex items-center gap-2">
-        <input type="checkbox" name="published" defaultChecked={published} />
+        <input type="checkbox" name="published" defaultChecked={published} className="size-4 accent-secondary" />
         Published: patients it is assigned to can see it
       </label>
       <FormMessage state={state} />

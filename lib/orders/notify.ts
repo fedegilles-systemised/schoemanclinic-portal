@@ -82,7 +82,7 @@ export async function announceOrderRefunded(orderId: string): Promise<Delivery |
       topic: "payments",
       notice: { title: "Your blood test has been refunded", body: `${amount} is on its way back to your card.`, link: `/portal/bloods/${orderId}` },
       email: bloodsRefundedEmail({ siteUrl, firstName: order.data.patient.first_name, amount }),
-      whatsapp: `Hello ${order.data.patient.first_name}, we have refunded ${amount} for your blood test. It can take up to 10 working days to appear on your statement.`,
+      whatsapp: `Hello ${order.data.patient.first_name}, we have refunded ${amount} for your blood test. Your bank decides when it shows on your statement, usually within 10 working days.`,
     });
   } catch {
     console.error("Could not tell the patient about the refund.");

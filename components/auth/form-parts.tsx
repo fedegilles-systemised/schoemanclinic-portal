@@ -1,7 +1,7 @@
 import { CircleAlert } from "lucide-react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Label } from "@/components/ui/label";
+import { Field } from "@/components/ui/field";
 
 /** Errors sit in an alert block above the submit button, never in a toast. */
 function FormError({ message }: { message?: string }) {
@@ -15,14 +15,6 @@ function FormError({ message }: { message?: string }) {
 }
 
 /** A visible label above its control. */
-function Field({ id, label, children }: { id: string; label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <Label htmlFor={id}>{label}</Label>
-      {children}
-    </div>
-  );
-}
 
 function AuthHeading({ eyebrow, title, description }: { eyebrow?: string; title: string; description?: string }) {
   return (

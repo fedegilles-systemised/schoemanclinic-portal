@@ -75,31 +75,27 @@ export default async function ClinicOrdersPage({ searchParams }: { searchParams:
 
       <section aria-labelledby="open" className="mb-12 flex flex-col gap-4">
         <SectionHeader id="open" title="In " accent="progress" />
-        {open.length === 0 ? <EmptyState>No orders in progress.</EmptyState> : <OrdersTable rows={open} showPatient />}
-        {canAct
-          ? open
-              .filter((o) => o.status === "sent_to_patient" || o.status === "paid")
-              .map((o) => (
-                <div key={o.id} className="type-small flex flex-wrap items-center gap-4 border-t border-surface-border pt-3">
-                  <span className="text-content-muted">
-                    {o.patientName} · {o.panelName}
-                  </span>
-                  {o.status === "paid" ? <SampleTakenButton orderId={o.id} /> : <CancelOrderButton orderId={o.id} />}
+        {open.length === 0 ? (
+          <EmptyState>No orders in progress.</EmptyState>
+        ) : (
+          <OrdersTable
+            rows={open}
+            showPatient
+            actions={(o) => {
+              const sample = canAct && o.status === "paid";
+              const cancel = canAct && o.status === "sent_to_patient";
+              const refund = isAdmin && (o.status === "paid" || o.status === "sample_taken");
+              if (!sample && !cancel && !refund) return <span className="type-small text-content-muted">None</span>;
+              return (
+                <div className="flex flex-wrap items-start gap-2">
+                  {sample ? <SampleTakenButton orderId={o.id} label={`${o.panelName} for ${o.patientName}`} /> : null}
+                  {cancel ? <CancelOrderButton orderId={o.id} label={`${o.panelName} for ${o.patientName}`} /> : null}
+                  {refund ? <RefundOrderButton orderId={o.id} amount={formatMoney(o.pricePence)} label={`${o.panelName} for ${o.patientName}`} /> : null}
                 </div>
-              ))
-          : null}
-        {isAdmin
-          ? open
-              .filter((o) => o.status === "paid" || o.status === "sample_taken")
-              .map((o) => (
-                <div key={`refund-${o.id}`} className="type-small flex flex-wrap items-center gap-4 border-t border-surface-border pt-3">
-                  <span className="text-content-muted">
-                    {o.patientName} · {o.panelName} · {formatMoney(o.pricePence)} paid
-                  </span>
-                  <RefundOrderButton orderId={o.id} amount={formatMoney(o.pricePence)} label={`${o.panelName} for ${o.patientName}`} />
-                </div>
-              ))
-          : null}
+              );
+            }}
+          />
+        )}
       </section>
 
       <section aria-labelledby="done" className="flex flex-col gap-4">

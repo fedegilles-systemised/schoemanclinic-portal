@@ -107,3 +107,37 @@ export async function cancelAppointment(_state: BookingFormState, formData: Form
   revalidatePath("/clinic/diary", "layout");
   return { saved: `Appointment cancelled. ${deliveryLine(delivery)}` };
 }
+
+/** A PA, doctor or admin marks an appointment that has ended as a no-show. The database checks who and when. */
+export async function markNoShow(_state: BookingFormState, formData: FormData): Promise<BookingFormState> {
+  const user = await getCurrentUser();
+  if (!user || user.isSuspended || !user.isStaff) redirect("/clinic");
+  const parsed = z.object({ appointmentId: z.uuid(), patientId: z.uuid() }).safeParse({
+    appointmentId: formData.get("appointmentId"),
+    patientId: formData.get("patientId"),
+  });
+  if (!parsed.success) return { error: GENERIC_FAILURE };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("mark_appointment_no_show", { _appointment: parsed.data.appointmentId });
+  if (error) return { error: friendly(error) };
+  revalidatePath(`/clinic/patients/${parsed.data.patientId}`);
+  revalidatePath("/clinic/diary", "layout");
+  redirect(`/clinic/diary/${parsed.data.appointmentId}?noshow=1`);
+}
+
+/** A PA or admin puts a wrong no-show right. */
+export async function undoNoShow(_state: BookingFormState, formData: FormData): Promise<BookingFormState> {
+  const user = await getCurrentUser();
+  if (!user || user.isSuspended || !user.isStaff) redirect("/clinic");
+  const parsed = z.object({ appointmentId: z.uuid(), patientId: z.uuid() }).safeParse({
+    appointmentId: formData.get("appointmentId"),
+    patientId: formData.get("patientId"),
+  });
+  if (!parsed.success) return { error: GENERIC_FAILURE };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("undo_appointment_no_show", { _appointment: parsed.data.appointmentId });
+  if (error) return { error: friendly(error) };
+  revalidatePath(`/clinic/patients/${parsed.data.patientId}`);
+  revalidatePath("/clinic/diary", "layout");
+  redirect(`/clinic/diary/${parsed.data.appointmentId}`);
+}
