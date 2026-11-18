@@ -94,6 +94,34 @@ export function createOrderCheckout({
   return createCheckout({ productName: "Blood test", metadataKey: "lab_order_id", id: orderId, amountPence, successUrl, cancelUrl });
 }
 
+export type Refund = { id: string; status: string; amountPence: number };
+
+/**
+ * Refunds the whole of one payment. No amount is sent, so Stripe returns everything that was paid. The
+ * idempotency key is fixed for the order, so pressing the button twice, or retrying after a dropped
+ * connection, can never refund twice. Stripe is told our order id only.
+ */
+export async function refundOrderPayment({ orderId, paymentIntent }: { orderId: string; paymentIntent: string }): Promise<Refund> {
+  const { STRIPE_SECRET_KEY } = getStripeEnv();
+  const response = await fetch(`${API}/refunds`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${STRIPE_SECRET_KEY}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+      "Stripe-Version": "2024-06-20",
+      "Idempotency-Key": `lab-order-refund-${orderId}`,
+    },
+    body: new URLSearchParams({ payment_intent: paymentIntent, "metadata[lab_order_id]": orderId }),
+    cache: "no-store",
+  });
+  if (!response.ok) throw new Error(`Stripe refused the refund (${response.status}).`);
+  const data = (await response.json()) as { id?: unknown; status?: unknown; amount?: unknown };
+  if (typeof data.id !== "string" || !data.id.startsWith("re_") || typeof data.status !== "string" || typeof data.amount !== "number" || !Number.isInteger(data.amount)) {
+    throw new Error("Stripe sent back an unexpected refund.");
+  }
+  return { id: data.id, status: data.status, amountPence: data.amount };
+}
+
 /**
  * Checks a webhook's Stripe-Signature header against the raw body, as Stripe documents: an HMAC
  * SHA-256 of "<timestamp>.<body>" with the endpoint's signing secret, within five minutes.

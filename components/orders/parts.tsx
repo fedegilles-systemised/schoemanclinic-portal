@@ -16,8 +16,8 @@ const STATUS: Record<OrderStatus, { tone: "warning" | "success" | "neutral" | "i
   cancelled: { tone: "neutral", icon: Ban },
 };
 
-export function OrderStatusPill({ status }: { status: OrderStatus }) {
-  return <StatusPill tone={STATUS[status].tone} icon={STATUS[status].icon} label={ORDER_STATUS_LABELS[status]} />;
+export function OrderStatusPill({ status, refunded = false }: { status: OrderStatus; refunded?: boolean }) {
+  return <StatusPill tone={STATUS[status].tone} icon={STATUS[status].icon} label={refunded ? "Refunded" : ORDER_STATUS_LABELS[status]} />;
 }
 
 export function OrdersTable({ rows, base, showPatient }: { rows: OrderSummary[]; base?: string; showPatient: boolean }) {
@@ -58,7 +58,7 @@ export function OrdersTable({ rows, base, showPatient }: { rows: OrderSummary[];
             <TableCell>{r.dueBy ? formatDate(r.dueBy) : "No date"}</TableCell>
             <TableCell>{formatMoney(r.pricePence)}</TableCell>
             <TableCell>
-              <OrderStatusPill status={r.status} />
+              <OrderStatusPill status={r.status} refunded={Boolean(r.refundedAt)} />
             </TableCell>
           </TableRow>
         ))}

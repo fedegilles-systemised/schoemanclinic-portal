@@ -11,7 +11,7 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { Panel, RouteFee } from "@/lib/data/orders";
 import { formatDate, formatMoney } from "@/lib/format";
-import { addPanel, cancelOrder, createOrder, recordSampleTaken, saveRouteFee, savePanel, type OrderFormState } from "@/lib/orders/actions";
+import { addPanel, cancelOrder, createOrder, recordSampleTaken, refundOrder, saveRouteFee, savePanel, type OrderFormState } from "@/lib/orders/actions";
 import { ROUTE_LABELS, SEX_LABELS } from "@/lib/orders/constants";
 
 const initial: OrderFormState = {};
@@ -106,6 +106,27 @@ export function CancelOrderButton({ orderId }: { orderId: string }) {
         confirmText="The patient will no longer be able to pay for it. The order stays on the record as cancelled."
       >
         Cancel order
+      </ConfirmButton>
+      <FormMessage state={state} />
+    </form>
+  );
+}
+
+/** An admin refunds the whole payment of a paid order. It asks first: the money goes back and the order is cancelled. */
+export function RefundOrderButton({ orderId, amount, label }: { orderId: string; amount: string; label: string }) {
+  const [state, action, pending] = useActionState(refundOrder, initial);
+  return (
+    <form action={action} className="flex flex-col gap-2">
+      <input type="hidden" name="orderId" value={orderId} />
+      <ConfirmButton
+        variant="outline"
+        loading={pending}
+        confirmVariant="destructive"
+        confirmTitle={`Refund ${amount}?`}
+        confirmText="The whole payment goes back to the patient's card and the order is cancelled. This cannot be undone. The patient is told by email."
+        aria-label={`Refund ${label}`}
+      >
+        Refund
       </ConfirmButton>
       <FormMessage state={state} />
     </form>

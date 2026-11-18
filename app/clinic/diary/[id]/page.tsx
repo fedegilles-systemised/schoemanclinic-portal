@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { getCurrentUser } from "@/lib/auth/session";
 import { addDays, dayHeading, isDay, londonInstant, londonParts, todayInLondon } from "@/lib/calendar/time";
-import { getDiary, getDiaryPeople } from "@/lib/data/diary";
+import { getDiary, getDiaryPeople, getPossibleDuplicates } from "@/lib/data/diary";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Booking · Clinic Hub" };
@@ -53,6 +53,8 @@ export default async function DiaryEntryPage({ params, searchParams }: { params:
   const ends = londonParts(entry.endsAt).time ?? "";
   // Today or later; the database refuses a move into the past.
   const future = day >= todayInLondon();
+  // For a new online record, an admin or a PA is shown any record that may be the same person.
+  const duplicates = entry.newPatient && user.roles.some((r) => r === "admin" || r === "pa") ? await getPossibleDuplicates(entry.patientId) : [];
 
   return (
     <>
@@ -67,6 +69,26 @@ export default async function DiaryEntryPage({ params, searchParams }: { params:
           <Alert variant="info">
             <AlertDescription>
               A new patient booked this online. Before the appointment, a PA or admin checks their details on their record and invites them to the portal.
+            </AlertDescription>
+          </Alert>
+        </div>
+      ) : null}
+
+      {duplicates.length > 0 ? (
+        <div className="mb-6">
+          <Alert variant="warning">
+            <AlertDescription>
+              <p>This new record may be someone already on the clinic&apos;s books. Open each one and compare before you invite them to the portal. Nothing has been merged.</p>
+              <ul className="mt-2 flex list-disc flex-col gap-1 pl-5">
+                {duplicates.map((d) => (
+                  <li key={d.patientId}>
+                    <Link href={`/clinic/patients/${d.patientId}`} className="text-content">
+                      {d.clinicRef}
+                    </Link>
+                    : {d.reason.toLowerCase()}
+                  </li>
+                ))}
+              </ul>
             </AlertDescription>
           </Alert>
         </div>
