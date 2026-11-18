@@ -507,6 +507,29 @@ export function bloodsOrderedEmail({
   };
 }
 
+/** The clinic has refunded a blood test. Never which panel. */
+export function bloodsRefundedEmail({
+  siteUrl,
+  firstName,
+  amount,
+}: Base & { firstName?: string; amount: string }): EmailContent {
+  const hello = firstName ? `Dear ${firstName},` : "Hello,";
+  const line = `We have refunded ${amount} for your blood test, to the card you paid with. It can take up to 10 working days to appear on your statement. If you have any questions, please reply to this email.`;
+  const reason = "You are receiving this email because a payment for a blood test at The Schoeman Clinic was refunded.";
+  return {
+    subject: "Your blood test has been refunded",
+    html: renderEmail({
+      siteUrl,
+      preheader: "The refund is on its way to your card.",
+      eyebrow: "Blood tests",
+      title: { before: "Your payment has been ", accent: "refunded" },
+      body: paragraph(escapeHtml(hello)) + paragraph(escapeHtml(line)) + paragraph(SIGN_OFF_HTML),
+      reason,
+    }),
+    text: `${hello}\n\n${line}\n\n${textFooter(reason)}`,
+  };
+}
+
 /** The receipt, and where to find the barcode and the preparation. Never which panel. */
 export function bloodsPaidEmail({
   siteUrl,

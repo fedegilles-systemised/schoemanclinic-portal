@@ -11,7 +11,7 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { Panel, RouteFee } from "@/lib/data/orders";
 import { formatDate, formatMoney } from "@/lib/format";
-import { addPanel, cancelOrder, createOrder, recordSampleTaken, saveRouteFee, savePanel, type OrderFormState } from "@/lib/orders/actions";
+import { addPanel, cancelOrder, createOrder, recordSampleTaken, refundOrder, saveRouteFee, savePanel, type OrderFormState } from "@/lib/orders/actions";
 import { ROUTE_LABELS, SEX_LABELS } from "@/lib/orders/constants";
 
 const initial: OrderFormState = {};
@@ -112,6 +112,27 @@ export function CancelOrderButton({ orderId }: { orderId: string }) {
   );
 }
 
+/** An admin refunds the whole payment of a paid order. It asks first: the money goes back and the order is cancelled. */
+export function RefundOrderButton({ orderId, amount, label }: { orderId: string; amount: string; label: string }) {
+  const [state, action, pending] = useActionState(refundOrder, initial);
+  return (
+    <form action={action} className="flex flex-col gap-2">
+      <input type="hidden" name="orderId" value={orderId} />
+      <ConfirmButton
+        variant="outline"
+        loading={pending}
+        confirmVariant="destructive"
+        confirmTitle={`Refund ${amount}?`}
+        confirmText="The whole payment goes back to the patient's card and the order is cancelled. This cannot be undone. The patient is told by email."
+        aria-label={`Refund ${label}`}
+      >
+        Refund
+      </ConfirmButton>
+      <FormMessage state={state} />
+    </form>
+  );
+}
+
 export function SampleTakenButton({ orderId }: { orderId: string }) {
   const [state, action, pending] = useActionState(recordSampleTaken, initial);
   return (
@@ -179,11 +200,11 @@ export function PanelForm({ panel, labs }: { panel?: Panel; labs?: { id: string;
         </Field>
       </div>
       <label className="type-body flex items-center gap-2">
-        <input type="checkbox" name="fasting" defaultChecked={panel?.fasting ?? false} />
+        <input type="checkbox" name="fasting" defaultChecked={panel?.fasting ?? false} className="size-4 accent-secondary" />
         Fasting needed
       </label>
       <label className="type-body flex items-center gap-2">
-        <input type="checkbox" name="active" defaultChecked={panel?.active ?? true} />
+        <input type="checkbox" name="active" defaultChecked={panel?.active ?? true} className="size-4 accent-secondary" />
         Can be ordered
       </label>
       <div className="flex flex-col gap-2 sm:col-span-2">

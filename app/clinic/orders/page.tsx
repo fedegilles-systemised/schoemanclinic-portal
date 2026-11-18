@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { CancelOrderButton, SampleTakenButton } from "@/components/orders/forms";
+import { CancelOrderButton, RefundOrderButton, SampleTakenButton } from "@/components/orders/forms";
 import { OrdersTable } from "@/components/orders/parts";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -10,21 +10,23 @@ import { PageHeader, SectionHeader } from "@/components/ui/page-header";
 import { getCurrentUser } from "@/lib/auth/session";
 import { listClinicOrders } from "@/lib/data/orders";
 import { isStripeConfigured } from "@/lib/env";
+import { formatMoney } from "@/lib/format";
 import { OPEN_STATUSES } from "@/lib/orders/constants";
 
 export const metadata: Metadata = { title: "Lab orders · Clinic Hub" };
 
 /** Blood test orders: those waiting for payment or a sample, and those finished. */
-export default async function ClinicOrdersPage({ searchParams }: { searchParams: Promise<{ ordered?: string }> }) {
+export default async function ClinicOrdersPage({ searchParams }: { searchParams: Promise<{ ordered?: string; refunded?: string }> }) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   if (user.isSuspended || !user.roles.some((r) => r === "doctor" || r === "pa" || r === "admin")) redirect("/clinic");
-  const { ordered } = await searchParams;
+  const { ordered, refunded } = await searchParams;
   const orders = await listClinicOrders();
   const canAct = user.roles.some((r) => r === "doctor" || r === "pa");
   const isAdmin = user.roles.includes("admin");
   const open = orders.filter((o) => OPEN_STATUSES.includes(o.status));
-  const done = orders.filter((o) => !OPEN_STATUSES.includes(o.status)).slice(0, 50);
+  const finished = orders.filter((o) => !OPEN_STATUSES.includes(o.status));
+  const done = finished.slice(0, 50);
 
   return (
     <>
@@ -46,6 +48,19 @@ export default async function ClinicOrdersPage({ searchParams }: { searchParams:
           <Alert variant={ordered === "told" ? "success" : "warning"}>
             <AlertDescription>
               {ordered === "told" ? "Order made, and the patient has been told." : "Order made. The patient could not be told by email or WhatsApp, so please let them know."}
+            </AlertDescription>
+          </Alert>
+        </div>
+      ) : null}
+      {refunded && isAdmin ? (
+        <div className="mb-6">
+          <Alert variant={refunded === "told" ? "success" : "warning"}>
+            <AlertDescription>
+              {refunded === "told"
+                ? "Refunded, and the patient has been told."
+                : refunded === "already"
+                  ? "That order was already refunded."
+                  : "Refunded. The patient could not be told by email or WhatsApp, so please let them know."}
             </AlertDescription>
           </Alert>
         </div>
@@ -73,11 +88,24 @@ export default async function ClinicOrdersPage({ searchParams }: { searchParams:
                 </div>
               ))
           : null}
+        {isAdmin
+          ? open
+              .filter((o) => o.status === "paid" || o.status === "sample_taken")
+              .map((o) => (
+                <div key={`refund-${o.id}`} className="type-small flex flex-wrap items-center gap-4 border-t border-surface-border pt-3">
+                  <span className="text-content-muted">
+                    {o.patientName} · {o.panelName} · {formatMoney(o.pricePence)} paid
+                  </span>
+                  <RefundOrderButton orderId={o.id} amount={formatMoney(o.pricePence)} label={`${o.panelName} for ${o.patientName}`} />
+                </div>
+              ))
+          : null}
       </section>
 
       <section aria-labelledby="done" className="flex flex-col gap-4">
         <SectionHeader id="done" title="Recently " accent="finished" />
         {done.length === 0 ? <EmptyState>None yet.</EmptyState> : <OrdersTable rows={done} showPatient />}
+        {finished.length > done.length ? <p className="type-small text-content-muted">Showing the 50 most recent. Older orders are kept on each patient&apos;s record.</p> : null}
       </section>
     </>
   );

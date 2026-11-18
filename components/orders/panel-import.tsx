@@ -1,5 +1,6 @@
 "use client";
 
+import { CircleAlert } from "lucide-react";
 import { useActionState, useState, useTransition } from "react";
 
 import { FormMessage } from "@/components/profile/form-message";
@@ -22,6 +23,7 @@ const initial: PanelImportState = {};
  */
 export function PanelImportForm({ labs }: { labs: { id: string; name: string }[] }) {
   const [text, setText] = useState("");
+  const [fileNote, setFileNote] = useState<string | null>(null);
   const [checkedText, setCheckedText] = useState<string | null>(null);
   const [labId, setLabId] = useState(labs.length === 1 ? (labs[0]?.id ?? "") : "");
   const [orderable, setOrderable] = useState(true);
@@ -58,9 +60,21 @@ export function PanelImportForm({ labs }: { labs: { id: string; name: string }[]
           accept=".csv,.tsv,.txt,text/csv,text/plain"
           onChange={async (event) => {
             const file = event.target.files?.[0];
-            if (file && file.size <= 200_000) setText(await file.text());
+            if (!file) return;
+            if (file.size > 200_000) {
+              setFileNote("That file is too large (over 200 KB). Split the list into smaller files.");
+              return;
+            }
+            setFileNote(null);
+            setText(await file.text());
           }}
         />
+        {fileNote ? (
+          <Alert variant="danger">
+            <CircleAlert aria-hidden />
+            <AlertDescription>{fileNote}</AlertDescription>
+          </Alert>
+        ) : null}
       </div>
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="import-data">The list</Label>
@@ -77,7 +91,7 @@ export function PanelImportForm({ labs }: { labs: { id: string; name: string }[]
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="import-lab">Lab for new panels</Label>
-          <Select id="import-lab" name="labPartnerId" value={labId} onChange={(event) => setLabId(event.target.value)}>
+          <Select id="import-lab" name="labPartnerId" value={labId} onChange={(event) => setLabId(event.target.value)} aria-describedby="import-lab-hint">
             <option value="">Choose the lab</option>
             {labs.map((l) => (
               <option key={l.id} value={l.id}>
@@ -85,19 +99,29 @@ export function PanelImportForm({ labs }: { labs: { id: string; name: string }[]
               </option>
             ))}
           </Select>
+          <p id="import-lab-hint" className="type-small text-content-muted">
+            Needed for new panels. A panel already in the catalogue keeps its own lab.
+          </p>
         </div>
         <label className="type-body flex items-center gap-2 self-end">
-          <input type="checkbox" name="orderable" checked={orderable} onChange={(event) => setOrderable(event.target.checked)} />
+          <input type="checkbox" name="orderable" checked={orderable} onChange={(event) => setOrderable(event.target.checked)} className="size-4 accent-secondary" />
           New panels can be ordered straight away
         </label>
       </div>
 
+      {preview && preview.errors.length === 0 && preview.rows.length > 0 && checkedText !== text ? (
+        <Alert variant="info">
+          <AlertDescription>The list has changed since it was checked. Check it again before you import.</AlertDescription>
+        </Alert>
+      ) : null}
+
       {preview && preview.errors.length > 0 ? (
         <Alert variant="danger">
+          <CircleAlert aria-hidden />
           <AlertDescription>
             <ul className="flex list-disc flex-col gap-1 pl-5">
-              {preview.errors.map((message) => (
-                <li key={message}>{message}</li>
+              {preview.errors.map((message, index) => (
+                <li key={`${index}-${message}`}>{message}</li>
               ))}
             </ul>
           </AlertDescription>
@@ -127,7 +151,7 @@ export function PanelImportForm({ labs }: { labs: { id: string; name: string }[]
                 <TableRow key={r.code}>
                   <TableCell>{r.code}</TableCell>
                   <TableCell>{r.name}</TableCell>
-                  <TableCell>
+                  <TableCell className="tabular-nums">
                     {formatMoney(r.pricePence)}
                     {r.previousPricePence !== null && r.previousPricePence !== r.pricePence ? (
                       <span className="type-small text-content-muted"> was {formatMoney(r.previousPricePence)}</span>

@@ -60,3 +60,16 @@ export async function getDiaryPeople(): Promise<{ clinicians: DiaryClinician[]; 
     locations: locations.data.map((l) => ({ id: l.id, name: l.name })),
   };
 }
+
+export type PossibleDuplicate = { patientId: string; clinicRef: string; reason: string };
+
+/**
+ * Other records that may be the same person as this one, for an admin or a PA. Names are not shown:
+ * the clinic reference and why it looks alike are enough to open the record and decide. Nothing is merged.
+ */
+export async function getPossibleDuplicates(patientId: string): Promise<PossibleDuplicate[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("possible_duplicates", { _patient: patientId });
+  if (error) return [];
+  return data.map((d) => ({ patientId: d.patient_id, clinicRef: d.clinic_ref, reason: d.reason }));
+}

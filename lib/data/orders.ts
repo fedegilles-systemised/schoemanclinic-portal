@@ -64,6 +64,7 @@ export type OrderSummary = {
   route: OrderRoute | null;
   pricePence: number;
   dueBy: string | null;
+  refundedAt: string | null;
   createdAt: string;
   panelName: string;
   patientId: string;
@@ -73,7 +74,7 @@ export type OrderSummary = {
 
 // A patient cannot read the patient table directly, so the patient's own screens never embed it. Only
 // staff lists add the name.
-const SUMMARY_SELECT = "id, order_ref, status, route, price_pence, due_by, created_at, patient_id, panel:lab_panels!inner(name)";
+const SUMMARY_SELECT = "id, order_ref, status, route, price_pence, due_by, refunded_at, created_at, patient_id, panel:lab_panels!inner(name)";
 const STAFF_SELECT = `${SUMMARY_SELECT}, patient:patient_profiles!inner(first_name, last_name, clinic_ref)`;
 
 type SummaryRow = {
@@ -83,6 +84,7 @@ type SummaryRow = {
   route: OrderRoute | null;
   price_pence: number;
   due_by: string | null;
+  refunded_at: string | null;
   created_at: string;
   patient_id: string;
   panel: { name: string };
@@ -97,6 +99,7 @@ function toSummary(r: SummaryRow): OrderSummary {
     route: r.route,
     pricePence: r.price_pence,
     dueBy: r.due_by,
+    refundedAt: r.refunded_at,
     createdAt: r.created_at,
     panelName: r.panel.name,
     patientId: r.patient_id,
@@ -139,7 +142,7 @@ export async function getOrder(id: string): Promise<OrderDetail | null> {
   const { data, error } = await supabase
     .from("lab_orders")
     .select(
-      "id, order_ref, status, route, price_pence, fee_pence, fasting, sample_date, clinical_notes, barcode, paid_at, sample_taken_at, due_by, created_at, patient_id, panel:lab_panels!inner(name, code, preparation, tubes)",
+      "id, order_ref, status, route, price_pence, fee_pence, fasting, sample_date, clinical_notes, barcode, paid_at, sample_taken_at, due_by, refunded_at, created_at, patient_id, panel:lab_panels!inner(name, code, preparation, tubes)",
     )
     .eq("id", id)
     .maybeSingle();

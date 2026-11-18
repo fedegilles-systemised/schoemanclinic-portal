@@ -605,14 +605,14 @@ isOneToOne: false
                   ]
                 },"lab_orders": {
                   Row: {
-                    "appointment_id": string | null,"barcode": string | null,"cancelled_at": string | null,"clinical_notes": string | null,"created_at": string,"due_by": string | null,"fasting": boolean,"fee_pence": number,"id": string,"lab_partner_id": string,"order_ref": string,"ordered_by": string,"paid_at": string | null,"panel_id": string,"patient_id": string,"price_pence": number,"route": Database["public"]['Enums']["order_route"] | null,"sample_date": string | null,"sample_taken_at": string | null,"status": Database["public"]['Enums']["order_status"],"stripe_checkout_id": string | null,"stripe_payment_intent_id": string | null
+                    "appointment_id": string | null,"barcode": string | null,"cancelled_at": string | null,"clinical_notes": string | null,"created_at": string,"due_by": string | null,"fasting": boolean,"fee_pence": number,"id": string,"lab_partner_id": string,"order_ref": string,"ordered_by": string,"paid_at": string | null,"panel_id": string,"patient_id": string,"price_pence": number,"refund_pence": number | null,"refunded_at": string | null,"refunded_by": string | null,"route": Database["public"]['Enums']["order_route"] | null,"sample_date": string | null,"sample_taken_at": string | null,"status": Database["public"]['Enums']["order_status"],"stripe_checkout_id": string | null,"stripe_payment_intent_id": string | null,"stripe_refund_id": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "appointment_id"?: string | null,"barcode"?: string | null,"cancelled_at"?: string | null,"clinical_notes"?: string | null,"created_at"?: string,"due_by"?: string | null,"fasting"?: boolean,"fee_pence"?: number,"id"?: string,"lab_partner_id": string,"order_ref": string,"ordered_by": string,"paid_at"?: string | null,"panel_id": string,"patient_id": string,"price_pence": number,"route"?: Database["public"]['Enums']["order_route"] | null,"sample_date"?: string | null,"sample_taken_at"?: string | null,"status"?: Database["public"]['Enums']["order_status"],"stripe_checkout_id"?: string | null,"stripe_payment_intent_id"?: string | null
+                    "appointment_id"?: string | null,"barcode"?: string | null,"cancelled_at"?: string | null,"clinical_notes"?: string | null,"created_at"?: string,"due_by"?: string | null,"fasting"?: boolean,"fee_pence"?: number,"id"?: string,"lab_partner_id": string,"order_ref": string,"ordered_by": string,"paid_at"?: string | null,"panel_id": string,"patient_id": string,"price_pence": number,"refund_pence"?: number | null,"refunded_at"?: string | null,"refunded_by"?: string | null,"route"?: Database["public"]['Enums']["order_route"] | null,"sample_date"?: string | null,"sample_taken_at"?: string | null,"status"?: Database["public"]['Enums']["order_status"],"stripe_checkout_id"?: string | null,"stripe_payment_intent_id"?: string | null,"stripe_refund_id"?: string | null
                   }
                   Update: {
-                    "appointment_id"?: string | null,"barcode"?: string | null,"cancelled_at"?: string | null,"clinical_notes"?: string | null,"created_at"?: string,"due_by"?: string | null,"fasting"?: boolean,"fee_pence"?: number,"id"?: string,"lab_partner_id"?: string,"order_ref"?: string,"ordered_by"?: string,"paid_at"?: string | null,"panel_id"?: string,"patient_id"?: string,"price_pence"?: number,"route"?: Database["public"]['Enums']["order_route"] | null,"sample_date"?: string | null,"sample_taken_at"?: string | null,"status"?: Database["public"]['Enums']["order_status"],"stripe_checkout_id"?: string | null,"stripe_payment_intent_id"?: string | null
+                    "appointment_id"?: string | null,"barcode"?: string | null,"cancelled_at"?: string | null,"clinical_notes"?: string | null,"created_at"?: string,"due_by"?: string | null,"fasting"?: boolean,"fee_pence"?: number,"id"?: string,"lab_partner_id"?: string,"order_ref"?: string,"ordered_by"?: string,"paid_at"?: string | null,"panel_id"?: string,"patient_id"?: string,"price_pence"?: number,"refund_pence"?: number | null,"refunded_at"?: string | null,"refunded_by"?: string | null,"route"?: Database["public"]['Enums']["order_route"] | null,"sample_date"?: string | null,"sample_taken_at"?: string | null,"status"?: Database["public"]['Enums']["order_status"],"stripe_checkout_id"?: string | null,"stripe_payment_intent_id"?: string | null,"stripe_refund_id"?: string | null
                   }
                   Relationships: [
                     {
@@ -644,6 +644,12 @@ isOneToOne: false
       columns: ["patient_id"]
 isOneToOne: false
       referencedRelation: "patient_profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "lab_orders_refunded_by_fkey"
+      columns: ["refunded_by"]
+isOneToOne: false
+      referencedRelation: "staff_profiles"
       referencedColumns: ["id"]
     }
                   ]
@@ -1642,6 +1648,11 @@ isOneToOne: false
               "ends_at": string,"starts_at": string
             }[]
                            },
+"possible_duplicates":
+{ Args: { "_patient": string }; Returns: {
+              "clinic_ref": string,"patient_id": string,"reason": string
+            }[]
+                           },
 "queue_feedback":
 { Args: Record<PropertyKey, never>; Returns: {
               "feedback_id": string,"patient_id": string
@@ -1654,6 +1665,9 @@ isOneToOne: false
                            },
 "record_feedback_follow_up":
 { Args: { "_feedback": string,"_note": string }; Returns: undefined
+                           },
+"record_lab_order_refund":
+{ Args: { "_amount": number,"_by": string,"_order": string,"_refund": string }; Returns: boolean
                            },
 "record_sample_taken":
 { Args: { "_order": string }; Returns: undefined

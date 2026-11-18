@@ -9,9 +9,10 @@ import { allowAuthAttempt } from "@/lib/auth/throttle";
 import { getPortalPatientId } from "@/lib/data/education";
 import { getSiteUrl, isStripeConfigured } from "@/lib/env";
 import { ORDER_ROUTES } from "@/lib/orders/constants";
-import { announceOrderMade } from "@/lib/orders/notify";
+import { announceOrderMade, announceOrderRefunded } from "@/lib/orders/notify";
 import { parsePanelImport } from "@/lib/orders/panel-import";
-import { createOrderCheckout } from "@/lib/stripe/client";
+import { createOrderCheckout, refundOrderPayment } from "@/lib/stripe/client";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 export type OrderFormState = { error?: string; saved?: string; sentAt?: number };
@@ -32,6 +33,7 @@ function friendly(message: string | undefined, fallback = GENERIC_FAILURE): stri
     "Only an order that has not been paid for can be cancelled.",
     "The sample can be recorded once the order is paid.",
     "You cannot change this order.",
+    "Only a paid order whose results have not arrived can be refunded.",
   ];
   return known.find((k) => message?.includes(k)) ?? fallback;
 }
@@ -117,6 +119,59 @@ export async function cancelOrder(_state: OrderFormState, formData: FormData): P
 
 export async function recordSampleTaken(_state: OrderFormState, formData: FormData): Promise<OrderFormState> {
   return orderAction(formData, "record_sample_taken", "Sample recorded.");
+}
+
+/**
+ * An admin refunds the whole payment of a paid order. Stripe is asked first, with a fixed key so a
+ * second press cannot refund twice, and only then is the refund recorded and the order cancelled. If
+ * Stripe has refunded but the record fails, pressing the button again is safe: Stripe returns the same
+ * refund and the record is made.
+ */
+export async function refundOrder(_state: OrderFormState, formData: FormData): Promise<OrderFormState> {
+  const user = await requireAdmin();
+  const id = z.uuid().safeParse(formData.get("orderId"));
+  if (!id.success) return { error: GENERIC_FAILURE };
+  if (!isStripeConfigured()) return { error: "Payments are not switched on, so there is nothing to refund here." };
+  if (!(await allowAuthAttempt("bloods-order", user.email))) return { error: TOO_MANY };
+
+  const supabase = await createClient();
+  const [order, staff] = await Promise.all([
+    supabase.from("lab_orders").select("id, status, price_pence, stripe_payment_intent_id, refunded_at").eq("id", id.data).maybeSingle(),
+    supabase.from("staff_profiles").select("id").eq("user_id", user.id).maybeSingle(),
+  ]);
+  if (order.error || staff.error || !order.data || !staff.data) return { error: GENERIC_FAILURE };
+  const o = order.data;
+  if (o.refunded_at) return { error: "This order has already been refunded." };
+  if ((o.status !== "paid" && o.status !== "sample_taken") || !o.stripe_payment_intent_id) {
+    return { error: "Only a paid order whose results have not arrived can be refunded." };
+  }
+
+  let refund;
+  try {
+    refund = await refundOrderPayment({ orderId: o.id, paymentIntent: o.stripe_payment_intent_id });
+  } catch {
+    console.error("Stripe refund not made.");
+    return { error: "Stripe could not make the refund. Nothing has changed. Please try again, or refund it in Stripe." };
+  }
+  if (refund.status !== "succeeded" && refund.status !== "pending") {
+    return { error: "Stripe did not complete the refund. Nothing has changed. Check it in Stripe." };
+  }
+  if (refund.amountPence !== o.price_pence) {
+    return { error: "Stripe refunded a different amount from the price paid. Check this order in Stripe." };
+  }
+
+  const admin = createAdminClient();
+  const recorded = await admin.rpc("record_lab_order_refund", { _order: o.id, _refund: refund.id, _amount: refund.amountPence, _by: staff.data.id });
+  if (recorded.error) {
+    console.error("Refund made in Stripe but not recorded.");
+    return { error: "Stripe has refunded this order, but Clinic Hub could not record it. Press Refund again: it will not refund twice." };
+  }
+  const delivery = recorded.data ? await announceOrderRefunded(o.id) : null;
+  revalidatePath("/clinic/orders");
+  revalidatePath("/portal/bloods", "layout");
+  // The refunded order leaves "In progress", taking this button with it, so the result is shown on the list.
+  const told = delivery && (delivery.email === "sent" || delivery.whatsapp === "sent");
+  redirect(`/clinic/orders?refunded=${!recorded.data ? "already" : told ? "told" : "untold"}`);
 }
 
 // Admin: the catalogue ---------------------------------------------------------------------------
