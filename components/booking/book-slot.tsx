@@ -4,7 +4,7 @@ import { useActionState } from "react";
 
 import { FormMessage } from "@/components/profile/form-message";
 import { ConfirmButton } from "@/components/ui/confirm-button";
-import { bookAppointment, cancelAppointment, type BookingFormState } from "@/lib/booking/actions";
+import { bookAppointment, cancelAppointment, markNoShow, undoNoShow, type BookingFormState } from "@/lib/booking/actions";
 
 const initial: BookingFormState = {};
 
@@ -61,6 +61,54 @@ export function CancelAppointmentButton({ appointmentId, patientId, label }: { a
       >
         Cancel appointment
       </ConfirmButton>
+      <FormMessage state={state} />
+    </form>
+  );
+}
+
+/** The patient did not come. It asks first, because the visit then shows as a no-show on their record. */
+export function NoShowButton({ appointmentId, patientId, label }: { appointmentId: string; patientId: string; label: string }) {
+  const [state, action, pending] = useActionState(markNoShow, initial);
+  return (
+    <form action={action} className="flex flex-col gap-2">
+      <input type="hidden" name="appointmentId" value={appointmentId} />
+      <input type="hidden" name="patientId" value={patientId} />
+      <div>
+        <ConfirmButton
+          variant="outline"
+          loading={pending}
+          aria-label={`Mark as did not attend: ${label}`}
+          confirmTitle="Mark as did not attend?"
+          confirmText="The visit shows as a no-show on the diary and the patient's record. A visit that has ended and is not marked counts as completed. A PA or an admin can put this right."
+          confirmLabel="Mark as did not attend"
+        >
+          Did not attend
+        </ConfirmButton>
+      </div>
+      <FormMessage state={state} />
+    </form>
+  );
+}
+
+/** A PA or admin puts a wrong no-show right. The visit goes back to counting as attended. */
+export function UndoNoShowButton({ appointmentId, patientId, label }: { appointmentId: string; patientId: string; label: string }) {
+  const [state, action, pending] = useActionState(undoNoShow, initial);
+  return (
+    <form action={action} className="flex flex-col gap-2">
+      <input type="hidden" name="appointmentId" value={appointmentId} />
+      <input type="hidden" name="patientId" value={patientId} />
+      <div>
+        <ConfirmButton
+          variant="outline"
+          loading={pending}
+          aria-label={`Remove no-show: ${label}`}
+          confirmTitle="Remove the no-show?"
+          confirmText="The visit no longer shows as a no-show. It counts as attended again."
+          confirmLabel="Remove no-show"
+        >
+          Remove no-show
+        </ConfirmButton>
+      </div>
       <FormMessage state={state} />
     </form>
   );

@@ -261,6 +261,14 @@ export async function addPanel(_state: OrderFormState, formData: FormData): Prom
   return { saved: "Panel added.", sentAt: Date.now() };
 }
 
+/** A price worth a second look: nothing, very high (a decimal comma can be misread), or far from the current one. */
+function priceWarning(pricePence: number, currentPence: number | null): string | null {
+  if (pricePence === 0) return "The price is £0.";
+  if (pricePence > 200_000) return "The price is over £2,000. Check it was not typed with a comma for the decimal point.";
+  if (currentPence !== null && currentPence > 0 && Math.abs(pricePence - currentPence) / currentPence > 0.5) return "The price changes by more than half.";
+  return null;
+}
+
 export type ImportPreviewRow = {
   code: string;
   name: string;
@@ -273,6 +281,8 @@ export type ImportPreviewRow = {
   change: "new" | "update";
   /** Something worth a second look before importing, such as a price of nothing or a big change. */
   warning: string | null;
+  /** The warning is about the price: the admin must tick that they checked before importing (S-258). */
+  needsAck: boolean;
   labName: string | null;
 };
 export type PanelImportState = OrderFormState & { preview?: { rows: ImportPreviewRow[]; errors: string[] } };
@@ -336,11 +346,8 @@ export async function importPanels(_state: PanelImportState, formData: FormData)
       orderable: r.active ?? (current ? current.active : defaultOrderable),
       change: current ? "update" : "new",
       warning:
-        r.pricePence === 0
-          ? "The price is £0."
-          : current && current.price_pence > 0 && Math.abs(r.pricePence - current.price_pence) / current.price_pence > 0.5
-            ? "The price changes by more than half."
-            : null,
+        [priceWarning(r.pricePence, current?.price_pence ?? null), current && r.lab ? "The lab named on the sheet is ignored: this panel keeps its own lab." : null].filter(Boolean).join(" ") || null,
+      needsAck: priceWarning(r.pricePence, current?.price_pence ?? null) !== null,
       labName: labId ? (labs.data.find((l) => l.id === labId)?.name ?? null) : null,
       labId,
       panelId: current?.id ?? null,
@@ -359,12 +366,16 @@ export async function importPanels(_state: PanelImportState, formData: FormData)
       orderable: r.orderable,
       change: r.change,
       warning: r.warning,
+      needsAck: r.needsAck,
       labName: r.labName,
     })),
     errors,
   };
   if (errors.length > 0) return { error: "Fix the rows below, then check again.", preview };
   if (mode === "preview") return { preview, sentAt: Date.now() };
+  if (rows.some((r) => r.needsAck) && field(formData, "acknowledged") !== "on") {
+    return { error: "Some prices need a second look. Tick the box to confirm you have checked them, then import.", preview };
+  }
 
   const fresh = rows.filter((r) => r.change === "new");
   const changed = rows.filter((r) => r.change === "update");

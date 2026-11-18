@@ -20,7 +20,18 @@ export function OrderStatusPill({ status, refunded = false }: { status: OrderSta
   return <StatusPill tone={STATUS[status].tone} icon={STATUS[status].icon} label={refunded ? "Refunded" : ORDER_STATUS_LABELS[status]} />;
 }
 
-export function OrdersTable({ rows, base, showPatient }: { rows: OrderSummary[]; base?: string; showPatient: boolean }) {
+export function OrdersTable({
+  rows,
+  base,
+  showPatient,
+  actions,
+}: {
+  rows: OrderSummary[];
+  base?: string;
+  showPatient: boolean;
+  /** What the signed-in person can do to an order, in its own row. Empty for an order with nothing to do. */
+  actions?: (row: OrderSummary) => React.ReactNode;
+}) {
   return (
     <Table>
       <TableHeader>
@@ -31,6 +42,7 @@ export function OrdersTable({ rows, base, showPatient }: { rows: OrderSummary[];
           <TableHead>Due by</TableHead>
           <TableHead>Price</TableHead>
           <TableHead>Status</TableHead>
+          {actions ? <TableHead>Actions</TableHead> : null}
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -38,7 +50,7 @@ export function OrdersTable({ rows, base, showPatient }: { rows: OrderSummary[];
           <TableRow key={r.id}>
             <TableCell>
               {base ? (
-                <Link href={`${base}/${r.id}`} className="text-content">
+                <Link href={`${base}/${r.id}`} className="text-content underline underline-offset-4">
                   {r.panelName}
                 </Link>
               ) : (
@@ -48,7 +60,7 @@ export function OrdersTable({ rows, base, showPatient }: { rows: OrderSummary[];
             </TableCell>
             {showPatient ? (
               <TableCell>
-                <Link href={`/clinic/patients/${r.patientId}`} className="text-content">
+                <Link href={`/clinic/patients/${r.patientId}`} className="text-content underline underline-offset-4">
                   {r.patientName}
                 </Link>
                 <span className="type-small text-content-muted"> · {r.clinicRef}</span>
@@ -60,6 +72,7 @@ export function OrdersTable({ rows, base, showPatient }: { rows: OrderSummary[];
             <TableCell>
               <OrderStatusPill status={r.status} refunded={Boolean(r.refundedAt)} />
             </TableCell>
+            {actions ? <TableCell>{actions(r)}</TableCell> : null}
           </TableRow>
         ))}
       </TableBody>

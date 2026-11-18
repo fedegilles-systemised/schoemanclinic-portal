@@ -27,6 +27,7 @@ export function PanelImportForm({ labs }: { labs: { id: string; name: string }[]
   const [checkedText, setCheckedText] = useState<string | null>(null);
   const [labId, setLabId] = useState(labs.length === 1 ? (labs[0]?.id ?? "") : "");
   const [orderable, setOrderable] = useState(true);
+  const [acknowledged, setAcknowledged] = useState(false);
   const [state, dispatch, pending] = useActionState(async (previous: PanelImportState, formData: FormData) => {
     setCheckedText(typeof formData.get("data") === "string" ? (formData.get("data") as string) : null);
     return importPanels(previous, formData);
@@ -41,10 +42,12 @@ export function PanelImportForm({ labs }: { labs: { id: string; name: string }[]
     formData.set("data", text);
     formData.set("labPartnerId", labId);
     if (orderable) formData.set("orderable", "on");
+    if (acknowledged) formData.set("acknowledged", "on");
     startTransition(() => dispatch(formData));
   }
 
   const preview = state.preview;
+  const needsAck = Boolean(preview?.rows.some((r) => r.needsAck));
   const ready = Boolean(preview && preview.errors.length === 0 && preview.rows.length > 0 && checkedText === text);
 
   return (
@@ -67,6 +70,7 @@ export function PanelImportForm({ labs }: { labs: { id: string; name: string }[]
             }
             setFileNote(null);
             setText(await file.text());
+            setAcknowledged(false);
           }}
         />
         {fileNote ? (
@@ -83,7 +87,10 @@ export function PanelImportForm({ labs }: { labs: { id: string; name: string }[]
           name="data"
           rows={8}
           value={text}
-          onChange={(event) => setText(event.target.value)}
+          onChange={(event) => {
+            setText(event.target.value);
+            setAcknowledged(false);
+          }}
           placeholder={"code\tname\tprice\tfasting\ttubes\tsex\nGS5\tFemale Hormone and Metabolic\t295\tyes\t1 purple, 2 gold, 1 grey\tfemale"}
           className="font-mono"
         />
@@ -172,13 +179,20 @@ export function PanelImportForm({ labs }: { labs: { id: string; name: string }[]
         </div>
       ) : null}
 
+      {ready && needsAck ? (
+        <label className="type-body flex items-center gap-2">
+          <input type="checkbox" checked={acknowledged} onChange={(event) => setAcknowledged(event.target.checked)} className="size-4 accent-secondary" />
+          I have checked the prices marked above
+        </label>
+      ) : null}
+
       <FormMessage state={state} />
       <div className="flex flex-wrap gap-3">
         <Button type="button" variant="outline" loading={pending} onClick={() => submit("preview")}>
           Check the list
         </Button>
         {ready ? (
-          <Button type="button" loading={pending} onClick={() => submit("import")}>
+          <Button type="button" loading={pending} disabled={needsAck && !acknowledged} onClick={() => submit("import")}>
             Import {preview?.rows.length} {preview?.rows.length === 1 ? "panel" : "panels"}
           </Button>
         ) : null}

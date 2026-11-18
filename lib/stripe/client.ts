@@ -96,12 +96,46 @@ export function createOrderCheckout({
 
 export type Refund = { id: string; status: string; amountPence: number };
 
+type RawRefund = { id?: unknown; status?: unknown; amount?: unknown };
+
+function toRefund(data: RawRefund): Refund {
+  if (typeof data.id !== "string" || !data.id.startsWith("re_") || typeof data.status !== "string" || typeof data.amount !== "number" || !Number.isInteger(data.amount)) {
+    throw new Error("Stripe sent back an unexpected refund.");
+  }
+  return { id: data.id, status: data.status, amountPence: data.amount };
+}
+
+/** The refunds Stripe holds for one payment that have not failed or been cancelled, newest first. */
+export async function listPaymentRefunds(paymentIntent: string): Promise<Refund[]> {
+  const { STRIPE_SECRET_KEY } = getStripeEnv();
+  const response = await fetch(`${API}/refunds?${new URLSearchParams({ payment_intent: paymentIntent, limit: "20" })}`, {
+    headers: { Authorization: `Bearer ${STRIPE_SECRET_KEY}`, "Stripe-Version": "2024-06-20" },
+    cache: "no-store",
+  });
+  if (!response.ok) throw new Error(`Stripe refused to list the refunds (${response.status}).`);
+  const data = (await response.json()) as { data?: unknown };
+  if (!Array.isArray(data.data)) throw new Error("Stripe sent back an unexpected list of refunds.");
+  return (data.data as RawRefund[]).map(toRefund).filter((r) => r.status === "succeeded" || r.status === "pending");
+}
+
 /**
  * Refunds the whole of one payment. No amount is sent, so Stripe returns everything that was paid. The
- * idempotency key is fixed for the order, so pressing the button twice, or retrying after a dropped
- * connection, can never refund twice. Stripe is told our order id only.
+ * idempotency key is fixed for the thing being refunded, so pressing the button twice, or retrying after a
+ * dropped connection, can never refund twice. Stripe keeps a key for about a day: after that, a retry
+ * is answered "already refunded", and then the refunds Stripe already holds are read instead and their
+ * total is returned, so the caller can record them. Stripe is told our id only.
  */
-export async function refundOrderPayment({ orderId, paymentIntent }: { orderId: string; paymentIntent: string }): Promise<Refund> {
+async function refundPayment({
+  key,
+  paymentIntent,
+  metadataKey,
+  id,
+}: {
+  key: string;
+  paymentIntent: string;
+  metadataKey: "lab_order_id" | "repeat_request_id";
+  id: string;
+}): Promise<Refund> {
   const { STRIPE_SECRET_KEY } = getStripeEnv();
   const response = await fetch(`${API}/refunds`, {
     method: "POST",
@@ -109,17 +143,29 @@ export async function refundOrderPayment({ orderId, paymentIntent }: { orderId: 
       Authorization: `Bearer ${STRIPE_SECRET_KEY}`,
       "Content-Type": "application/x-www-form-urlencoded",
       "Stripe-Version": "2024-06-20",
-      "Idempotency-Key": `lab-order-refund-${orderId}`,
+      "Idempotency-Key": key,
     },
-    body: new URLSearchParams({ payment_intent: paymentIntent, "metadata[lab_order_id]": orderId }),
+    body: new URLSearchParams({ payment_intent: paymentIntent, [`metadata[${metadataKey}]`]: id }),
     cache: "no-store",
   });
-  if (!response.ok) throw new Error(`Stripe refused the refund (${response.status}).`);
-  const data = (await response.json()) as { id?: unknown; status?: unknown; amount?: unknown };
-  if (typeof data.id !== "string" || !data.id.startsWith("re_") || typeof data.status !== "string" || typeof data.amount !== "number" || !Number.isInteger(data.amount)) {
-    throw new Error("Stripe sent back an unexpected refund.");
+  if (response.ok) return toRefund((await response.json()) as RawRefund);
+  const failure = (await response.json().catch(() => null)) as { error?: { code?: unknown } } | null;
+  if (response.status === 400 && failure?.error?.code === "charge_already_refunded") {
+    const held = await listPaymentRefunds(paymentIntent);
+    const first = held[0];
+    if (first) return { id: first.id, status: first.status, amountPence: held.reduce((sum, r) => sum + r.amountPence, 0) };
   }
-  return { id: data.id, status: data.status, amountPence: data.amount };
+  throw new Error(`Stripe refused the refund (${response.status}).`);
+}
+
+/** Refunds the whole payment of one blood test order. */
+export function refundOrderPayment({ orderId, paymentIntent }: { orderId: string; paymentIntent: string }): Promise<Refund> {
+  return refundPayment({ key: `lab-order-refund-${orderId}`, paymentIntent, metadataKey: "lab_order_id", id: orderId });
+}
+
+/** Refunds the whole fee of one repeat prescription request. */
+export function refundRepeatPayment({ requestId, paymentIntent }: { requestId: string; paymentIntent: string }): Promise<Refund> {
+  return refundPayment({ key: `repeat-request-refund-${requestId}`, paymentIntent, metadataKey: "repeat_request_id", id: requestId });
 }
 
 /**

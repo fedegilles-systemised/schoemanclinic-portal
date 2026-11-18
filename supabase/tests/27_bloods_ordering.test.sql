@@ -30,7 +30,7 @@ select is((select price_pence from public.lab_orders o join made m on m.id = o.i
 select is((select fee_pence from public.lab_orders o join made m on m.id = o.id), 4500, 'the fee is frozen on the order');
 select is((select status::text from public.lab_orders o join made m on m.id = o.id), 'sent_to_patient', 'a new order starts as sent to patient');
 select is((select fasting from public.lab_orders o join made m on m.id = o.id), true, 'fasting comes from the panel');
-select is((select clinical_notes from public.lab_orders o join made m on m.id = o.id), 'Fasting sample.', 'notes are trimmed');
+select is((select public.lab_order_notes((select id from made))), 'Fasting sample.', 'notes are trimmed (read through the staff function: the column itself is closed to clients)');
 select is((select barcode from public.lab_orders o join made m on m.id = o.id), null, 'there is no barcode before payment');
 select matches((select order_ref from public.lab_orders o join made m on m.id = o.id), '^LO-\d{4}-\d{3,}$', 'the order reference is made by the database');
 select is(

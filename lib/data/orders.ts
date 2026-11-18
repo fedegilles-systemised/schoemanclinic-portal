@@ -128,7 +128,6 @@ export type OrderDetail = OrderSummary & {
   feePence: number;
   fasting: boolean;
   sampleDate: string | null;
-  clinicalNotes: string | null;
   barcode: string | null;
   paidAt: string | null;
   sampleTakenAt: string | null;
@@ -142,7 +141,7 @@ export async function getOrder(id: string): Promise<OrderDetail | null> {
   const { data, error } = await supabase
     .from("lab_orders")
     .select(
-      "id, order_ref, status, route, price_pence, fee_pence, fasting, sample_date, clinical_notes, barcode, paid_at, sample_taken_at, due_by, refunded_at, created_at, patient_id, panel:lab_panels!inner(name, code, preparation, tubes)",
+      "id, order_ref, status, route, price_pence, fee_pence, fasting, sample_date, barcode, paid_at, sample_taken_at, due_by, refunded_at, created_at, patient_id, panel:lab_panels!inner(name, code, preparation, tubes)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -153,7 +152,6 @@ export async function getOrder(id: string): Promise<OrderDetail | null> {
     feePence: data.fee_pence,
     fasting: data.fasting,
     sampleDate: data.sample_date,
-    clinicalNotes: data.clinical_notes,
     barcode: data.barcode,
     paidAt: data.paid_at,
     sampleTakenAt: data.sample_taken_at,

@@ -15,6 +15,7 @@ import {
   Inbox,
   LayoutGrid,
   ListChecks,
+  ShieldCheck,
   MessageSquare,
   MessageSquareHeart,
   Pill,
@@ -96,6 +97,7 @@ const NAV: Record<PortalKind, NavGroup[]> = {
       items: [
         { label: "Team and settings", icon: Settings, href: "/clinic/team", roles: ["pa", "admin", "doctor"] },
         { label: "Panels and fees", icon: ListChecks, href: "/clinic/panels", roles: ["admin"] },
+        { label: "Results sign-offs", icon: ShieldCheck, href: "/clinic/signoffs", roles: ["admin"] },
         { label: "Education", icon: GraduationCap, href: "/clinic/education" },
         { label: "Activity", icon: Activity, href: "/clinic/activity", roles: ["admin"] },
         { label: "BrightHR", icon: Briefcase, href: "/clinic/hr" },

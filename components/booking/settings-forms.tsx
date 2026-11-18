@@ -40,11 +40,11 @@ export function AddTypeForm() {
         </Select>
       </div>
       <label className="type-body flex items-center gap-2 self-end">
-        <input type="checkbox" name="bookableByPatients" defaultChecked />
+        <input type="checkbox" name="bookableByPatients" defaultChecked className="size-4 accent-secondary" />
         Patients can book it in the portal
       </label>
       <label className="type-body flex items-center gap-2 self-end">
-        <input type="checkbox" name="bookableOnline" />
+        <input type="checkbox" name="bookableOnline" className="size-4 accent-secondary" />
         New patients can book it on the public booking page
       </label>
       <div className="sm:col-span-2">

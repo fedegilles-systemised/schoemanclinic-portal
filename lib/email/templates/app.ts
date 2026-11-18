@@ -507,6 +507,53 @@ export function bloodsOrderedEmail({
   };
 }
 
+/** The fee of a repeat prescription request has been refunded. Never which medicine. */
+export function repeatRefundedEmail({ siteUrl, firstName, amount }: Base & { firstName?: string; amount: string }): EmailContent {
+  const hello = firstName ? `Dear ${firstName},` : "Hello,";
+  const line = `We have refunded ${amount}, the fee for your repeat prescription request, to the card you paid with. Your bank decides when it shows on your statement, usually within 10 working days. If you have any questions, please reply to this email.`;
+  const reason = "You are receiving this email because a payment to The Schoeman Clinic was refunded.";
+  return {
+    subject: "Your repeat prescription fee has been refunded",
+    html: renderEmail({
+      siteUrl,
+      preheader: "The refund is on its way to your card.",
+      eyebrow: "Repeat prescriptions",
+      title: { before: "Your fee has been ", accent: "refunded" },
+      body: paragraph(escapeHtml(hello)) + paragraph(escapeHtml(line)) + paragraph(SIGN_OFF_HTML),
+      reason,
+    }),
+    text: `${hello}\n\n${line}\n\n${textFooter(reason)}`,
+  };
+}
+
+/** An unpaid blood test order: a reminder, or word that it has lapsed. Never which panel. */
+export function bloodsReminderEmail({
+  siteUrl,
+  firstName,
+  portalUrl,
+  kind,
+  dueBy,
+}: Base & { firstName?: string; portalUrl: string; kind: "reminder" | "lapsed"; dueBy?: string | null }): EmailContent {
+  const hello = firstName ? `Dear ${firstName},` : "Hello,";
+  const line =
+    kind === "reminder"
+      ? `Your blood test is still waiting for payment${dueBy ? `, and is due by ${dueBy}` : ""}. Please open your order to pay and see how to prepare. If you no longer need it, you can ignore this email.`
+      : "Your blood test order has now closed because it was not paid for within 30 days. If you still need the test, please contact the clinic and we will set up a new order.";
+  const reason = "You are receiving this email because a blood test was ordered for you at The Schoeman Clinic.";
+  return {
+    subject: kind === "reminder" ? "Your blood test is waiting for payment" : "Your blood test order has closed",
+    html: renderEmail({
+      siteUrl,
+      preheader: kind === "reminder" ? "Open your order to pay and see how to prepare." : "Contact the clinic if you still need the test.",
+      eyebrow: "Blood tests",
+      title: kind === "reminder" ? { before: "Your blood test is ", accent: "waiting" } : { before: "Your order has ", accent: "closed" },
+      body: paragraph(escapeHtml(hello)) + paragraph(escapeHtml(line)) + (kind === "reminder" ? button("Open your order", portalUrl) : "") + paragraph(SIGN_OFF_HTML),
+      reason,
+    }),
+    text: `${hello}\n\n${line}\n\n${kind === "reminder" ? `Open your order: ${portalUrl}\n\n` : ""}${textFooter(reason)}`,
+  };
+}
+
 /** The clinic has refunded a blood test. Never which panel. */
 export function bloodsRefundedEmail({
   siteUrl,
@@ -514,7 +561,7 @@ export function bloodsRefundedEmail({
   amount,
 }: Base & { firstName?: string; amount: string }): EmailContent {
   const hello = firstName ? `Dear ${firstName},` : "Hello,";
-  const line = `We have refunded ${amount} for your blood test, to the card you paid with. It can take up to 10 working days to appear on your statement. If you have any questions, please reply to this email.`;
+  const line = `We have refunded ${amount} for your blood test, to the card you paid with. Your bank decides when it shows on your statement, usually within 10 working days. If you have any questions, please reply to this email.`;
   const reason = "You are receiving this email because a payment for a blood test at The Schoeman Clinic was refunded.";
   return {
     subject: "Your blood test has been refunded",

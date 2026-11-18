@@ -69,7 +69,7 @@ export default async function PortalOrderPage({
         <div className="mb-6">
           <Alert variant="info">
             <AlertDescription>
-              We have refunded {formatMoney(order.pricePence)} to the card you paid with. It can take up to 10 working days to appear on your statement.
+              We have refunded {formatMoney(order.pricePence)} to the card you paid with. Your bank decides when it shows on your statement, usually within 10 working days.
             </AlertDescription>
           </Alert>
         </div>
