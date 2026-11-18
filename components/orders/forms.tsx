@@ -179,11 +179,11 @@ export function PanelForm({ panel, labs }: { panel?: Panel; labs?: { id: string;
         </Field>
       </div>
       <label className="type-body flex items-center gap-2">
-        <input type="checkbox" name="fasting" defaultChecked={panel?.fasting ?? false} />
+        <input type="checkbox" name="fasting" defaultChecked={panel?.fasting ?? false} className="size-4 accent-secondary" />
         Fasting needed
       </label>
       <label className="type-body flex items-center gap-2">
-        <input type="checkbox" name="active" defaultChecked={panel?.active ?? true} />
+        <input type="checkbox" name="active" defaultChecked={panel?.active ?? true} className="size-4 accent-secondary" />
         Can be ordered
       </label>
       <div className="flex flex-col gap-2 sm:col-span-2">

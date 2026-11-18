@@ -24,7 +24,8 @@ export default async function ClinicOrdersPage({ searchParams }: { searchParams:
   const canAct = user.roles.some((r) => r === "doctor" || r === "pa");
   const isAdmin = user.roles.includes("admin");
   const open = orders.filter((o) => OPEN_STATUSES.includes(o.status));
-  const done = orders.filter((o) => !OPEN_STATUSES.includes(o.status)).slice(0, 50);
+  const finished = orders.filter((o) => !OPEN_STATUSES.includes(o.status));
+  const done = finished.slice(0, 50);
 
   return (
     <>
@@ -78,6 +79,7 @@ export default async function ClinicOrdersPage({ searchParams }: { searchParams:
       <section aria-labelledby="done" className="flex flex-col gap-4">
         <SectionHeader id="done" title="Recently " accent="finished" />
         {done.length === 0 ? <EmptyState>None yet.</EmptyState> : <OrdersTable rows={done} showPatient />}
+        {finished.length > done.length ? <p className="type-small text-content-muted">Showing the 50 most recent. Older orders are kept on each patient&apos;s record.</p> : null}
       </section>
     </>
   );
