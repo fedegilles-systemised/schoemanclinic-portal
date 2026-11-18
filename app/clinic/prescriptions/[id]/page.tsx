@@ -4,20 +4,23 @@ import { notFound, redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { z } from "zod";
 
-import { DecisionForm, WithdrawRequestButton } from "@/components/prescriptions/forms";
+import { DecisionForm, RefundRepeatButton, WithdrawRequestButton } from "@/components/prescriptions/forms";
 import { RequestAnswers, RequestStagePill } from "@/components/prescriptions/parts";
 import { SignatureRxSection } from "@/components/prescriptions/signaturerx-panel";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getRepeatRequest } from "@/lib/data/prescriptions";
 import { getSignatureRxPanel } from "@/lib/data/signaturerx";
+import { formatDate, formatMoney } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Repeat request · Clinic Hub" };
 
-export default async function ClinicRepeatRequestPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ClinicRepeatRequestPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ refunded?: string }> }) {
   const { id } = await params;
+  const { refunded } = await searchParams;
   if (!z.uuid().safeParse(id).success) notFound();
   const user = await getCurrentUser();
   if (!user) redirect("/login");
@@ -59,6 +62,35 @@ export default async function ClinicRepeatRequestPage({ params }: { params: Prom
           <CardTitle>Note to the patient</CardTitle>
           <p className="type-body whitespace-pre-wrap">{request.decisionNote}</p>
           {decidedBy ? <p className="type-small text-content-muted">Last changed by {decidedBy}.</p> : null}
+        </Card>
+      ) : null}
+
+      {refunded && user.isAdmin ? (
+        <div className="mb-6">
+          <Alert variant={refunded === "told" ? "success" : "warning"}>
+            <AlertDescription>
+              {refunded === "told"
+                ? "Refunded, and the patient has been told."
+                : refunded === "already"
+                  ? "That fee was already refunded."
+                  : "Refunded. The patient could not be told by email or WhatsApp, so please let them know."}
+            </AlertDescription>
+          </Alert>
+        </div>
+      ) : null}
+
+      {request.refundedAt ? (
+        <div className="mb-6">
+          <Alert variant="info">
+            <AlertDescription>The fee of {formatMoney(request.feePence)} was refunded on {formatDate(request.refundedAt)}.</AlertDescription>
+          </Alert>
+        </div>
+      ) : request.status === "declined" && request.paidAt && user.isAdmin ? (
+        <Card className="mb-6">
+          <CardContent className="flex flex-col gap-3">
+            <p className="type-body">This request was declined and its fee of {formatMoney(request.feePence)} was paid. An admin can refund it in full.</p>
+            <RefundRepeatButton requestId={request.id} amount={formatMoney(request.feePence)} />
+          </CardContent>
         </Card>
       ) : null}
 

@@ -5,8 +5,8 @@ import { useActionState } from "react";
 import { FormMessage } from "@/components/profile/form-message";
 import { Button } from "@/components/ui/button";
 import { ConfirmButton } from "@/components/ui/confirm-button";
+import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -21,15 +21,6 @@ import {
 import { ALLERGY_SEVERITIES, DIAGNOSIS_STATUS_LABELS, DIAGNOSIS_STATUSES, SEVERITIES, SEVERITY_LABELS, type DiagnosisStatus } from "@/lib/record/constants";
 
 const initial: RecordFormState = {};
-
-function Field({ id, label, children }: { id: string; label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <Label htmlFor={id}>{label}</Label>
-      {children}
-    </div>
-  );
-}
 
 export function AllergyForm({ patientId }: { patientId: string }) {
   const [state, action, pending] = useActionState(addAllergy, initial);

@@ -5,6 +5,7 @@ import { isStripeConfigured } from "@/lib/env";
 import { announceOrderPaid } from "@/lib/orders/notify";
 import { announceRequest } from "@/lib/prescriptions/notify";
 import { verifyStripeSignature } from "@/lib/stripe/client";
+import { handleRefundEvent, REFUND_EVENTS } from "@/lib/stripe/refund-events";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const PAID_EVENTS = new Set(["checkout.session.completed", "checkout.session.async_payment_succeeded"]);
@@ -29,7 +30,7 @@ async function markFailed(admin: ReturnType<typeof createAdminClient>, id: strin
 }
 
 /**
- * Stripe tells us a repeat prescription fee or a blood test order was paid. The signature proves the call is from Stripe;
+ * Stripe tells us a repeat prescription fee or a blood test order was paid, or that one was refunded in its dashboard. The signature proves the call is from Stripe;
  * each event is stored once by its id, so a retried event is not handled twice; only the amount and
  * our request id are kept, never the customer's details.
  */
@@ -48,6 +49,11 @@ export async function POST(request: NextRequest) {
   }
   const event = eventSchema.safeParse(parsedJson);
   if (!event.success) return new NextResponse(null, { status: 400 });
+  // A refund made in Stripe's own dashboard is recorded; a refund that fails later tells the admins.
+  if (REFUND_EVENTS.has(event.data.type)) {
+    const outcome = await handleRefundEvent({ id: event.data.id, type: event.data.type, object: event.data.data.object });
+    return new NextResponse(null, { status: outcome === "retry" ? 500 : 200 });
+  }
   // Other events are acknowledged and left alone.
   if (!PAID_EVENTS.has(event.data.type)) return new NextResponse(null, { status: 200 });
 

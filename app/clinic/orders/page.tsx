@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { CancelOrderButton, SampleTakenButton } from "@/components/orders/forms";
+import { CancelOrderButton, RefundOrderButton, SampleTakenButton } from "@/components/orders/forms";
 import { OrdersTable } from "@/components/orders/parts";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -10,21 +10,23 @@ import { PageHeader, SectionHeader } from "@/components/ui/page-header";
 import { getCurrentUser } from "@/lib/auth/session";
 import { listClinicOrders } from "@/lib/data/orders";
 import { isStripeConfigured } from "@/lib/env";
+import { formatMoney } from "@/lib/format";
 import { OPEN_STATUSES } from "@/lib/orders/constants";
 
 export const metadata: Metadata = { title: "Lab orders · Clinic Hub" };
 
 /** Blood test orders: those waiting for payment or a sample, and those finished. */
-export default async function ClinicOrdersPage({ searchParams }: { searchParams: Promise<{ ordered?: string }> }) {
+export default async function ClinicOrdersPage({ searchParams }: { searchParams: Promise<{ ordered?: string; refunded?: string }> }) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   if (user.isSuspended || !user.roles.some((r) => r === "doctor" || r === "pa" || r === "admin")) redirect("/clinic");
-  const { ordered } = await searchParams;
+  const { ordered, refunded } = await searchParams;
   const orders = await listClinicOrders();
   const canAct = user.roles.some((r) => r === "doctor" || r === "pa");
   const isAdmin = user.roles.includes("admin");
   const open = orders.filter((o) => OPEN_STATUSES.includes(o.status));
-  const done = orders.filter((o) => !OPEN_STATUSES.includes(o.status)).slice(0, 50);
+  const finished = orders.filter((o) => !OPEN_STATUSES.includes(o.status));
+  const done = finished.slice(0, 50);
 
   return (
     <>
@@ -50,6 +52,19 @@ export default async function ClinicOrdersPage({ searchParams }: { searchParams:
           </Alert>
         </div>
       ) : null}
+      {refunded && isAdmin ? (
+        <div className="mb-6">
+          <Alert variant={refunded === "told" ? "success" : "warning"}>
+            <AlertDescription>
+              {refunded === "told"
+                ? "Refunded, and the patient has been told."
+                : refunded === "already"
+                  ? "That order was already refunded."
+                  : "Refunded. The patient could not be told by email or WhatsApp, so please let them know."}
+            </AlertDescription>
+          </Alert>
+        </div>
+      ) : null}
       {!isStripeConfigured() ? (
         <div className="mb-6">
           <Alert variant="warning">
@@ -60,24 +75,33 @@ export default async function ClinicOrdersPage({ searchParams }: { searchParams:
 
       <section aria-labelledby="open" className="mb-12 flex flex-col gap-4">
         <SectionHeader id="open" title="In " accent="progress" />
-        {open.length === 0 ? <EmptyState>No orders in progress.</EmptyState> : <OrdersTable rows={open} showPatient />}
-        {canAct
-          ? open
-              .filter((o) => o.status === "sent_to_patient" || o.status === "paid")
-              .map((o) => (
-                <div key={o.id} className="type-small flex flex-wrap items-center gap-4 border-t border-surface-border pt-3">
-                  <span className="text-content-muted">
-                    {o.patientName} · {o.panelName}
-                  </span>
-                  {o.status === "paid" ? <SampleTakenButton orderId={o.id} /> : <CancelOrderButton orderId={o.id} />}
+        {open.length === 0 ? (
+          <EmptyState>No orders in progress.</EmptyState>
+        ) : (
+          <OrdersTable
+            rows={open}
+            showPatient
+            actions={(o) => {
+              const sample = canAct && o.status === "paid";
+              const cancel = canAct && o.status === "sent_to_patient";
+              const refund = isAdmin && (o.status === "paid" || o.status === "sample_taken");
+              if (!sample && !cancel && !refund) return <span className="type-small text-content-muted">None</span>;
+              return (
+                <div className="flex flex-wrap items-start gap-2">
+                  {sample ? <SampleTakenButton orderId={o.id} label={`${o.panelName} for ${o.patientName}`} /> : null}
+                  {cancel ? <CancelOrderButton orderId={o.id} label={`${o.panelName} for ${o.patientName}`} /> : null}
+                  {refund ? <RefundOrderButton orderId={o.id} amount={formatMoney(o.pricePence)} label={`${o.panelName} for ${o.patientName}`} /> : null}
                 </div>
-              ))
-          : null}
+              );
+            }}
+          />
+        )}
       </section>
 
       <section aria-labelledby="done" className="flex flex-col gap-4">
         <SectionHeader id="done" title="Recently " accent="finished" />
         {done.length === 0 ? <EmptyState>None yet.</EmptyState> : <OrdersTable rows={done} showPatient />}
+        {finished.length > done.length ? <p className="type-small text-content-muted">Showing the 50 most recent. Older orders are kept on each patient&apos;s record.</p> : null}
       </section>
     </>
   );

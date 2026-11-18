@@ -46,10 +46,11 @@ export type RequestDetail = RequestSummary & {
   requestedBy: string;
   resolvedAt: string | null;
   cancelledAt: string | null;
+  refundedAt: string | null;
 };
 
 const REQUEST_COLUMNS =
-  "id, patient_id, requested_at, paid_at, cancelled_at, status, fee_pence, note, has_future_appointment, wants_appointment, still_losing_weight, weight_lost_last_month, has_side_effects, side_effects, decision_note, decided_by, requested_by, resolved_at, patient:patient_profiles!repeat_requests_patient_id_fkey(first_name, last_name, clinic_ref), legacy:medications!repeat_requests_medication_fkey(name), items:repeat_request_items(id, supply_months, other_name, medication:medications!repeat_request_items_medication_fkey(name, dose), medicine:prescribable_medicines(name))";
+  "id, patient_id, requested_at, paid_at, cancelled_at, refunded_at, status, fee_pence, note, has_future_appointment, wants_appointment, still_losing_weight, weight_lost_last_month, has_side_effects, side_effects, decision_note, decided_by, requested_by, resolved_at, patient:patient_profiles!repeat_requests_patient_id_fkey(first_name, last_name, clinic_ref), legacy:medications!repeat_requests_medication_fkey(name), items:repeat_request_items(id, supply_months, other_name, medication:medications!repeat_request_items_medication_fkey(name, dose), medicine:prescribable_medicines(name))";
 
 type ItemRow = {
   id: string;
@@ -116,6 +117,7 @@ type RequestRow = {
   requested_at: string;
   paid_at: string | null;
   cancelled_at: string | null;
+  refunded_at: string | null;
   status: RequestStatus;
   patient: { first_name: string; last_name: string; clinic_ref: string } | null;
   legacy: { name: string } | null;
@@ -190,5 +192,6 @@ export async function getRepeatRequest(id: string): Promise<RequestDetail | null
     requestedBy: r.requested_by,
     resolvedAt: r.resolved_at,
     cancelledAt: r.cancelled_at,
+    refundedAt: r.refunded_at,
   };
 }

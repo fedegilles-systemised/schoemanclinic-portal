@@ -54,13 +54,23 @@ export default async function PortalOrderPage({
         Lab orders
       </Link>
       <PageHeader eyebrow={order.orderRef} title="Your " accent="blood test">
-        <OrderStatusPill status={order.status} />
+        <OrderStatusPill status={order.status} refunded={Boolean(order.refundedAt)} />
       </PageHeader>
 
       {banner && !(query.paid && order.paidAt) ? (
         <div className="mb-6">
           <Alert variant={banner.variant}>
             <AlertDescription>{banner.text}</AlertDescription>
+          </Alert>
+        </div>
+      ) : null}
+
+      {order.refundedAt ? (
+        <div className="mb-6">
+          <Alert variant="info">
+            <AlertDescription>
+              We have refunded {formatMoney(order.pricePence)} to the card you paid with. Your bank decides when it shows on your statement, usually within 10 working days.
+            </AlertDescription>
           </Alert>
         </div>
       ) : null}

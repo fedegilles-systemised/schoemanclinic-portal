@@ -110,8 +110,11 @@ function sexOf(value: string): "F" | "M" | null | undefined {
   return undefined;
 }
 
+/** Pounds as typed: 295, 45.50, £1,200 (comma for thousands) or 12,50 (a decimal comma, as some spreadsheets save it). */
 function priceOf(value: string): number | null {
-  const cleaned = value.trim().replace(/^£\s*/, "").replace(/,/g, "");
+  let cleaned = value.trim().replace(/^£\s*/, "");
+  if (/^\d{1,3}(,\d{3})+(\.\d{1,2})?$/.test(cleaned)) cleaned = cleaned.replace(/,/g, "");
+  else if (/^\d{1,5},\d{1,2}$/.test(cleaned)) cleaned = cleaned.replace(",", ".");
   if (!/^\d{1,5}(\.\d{1,2})?$/.test(cleaned)) return null;
   return Math.round(Number(cleaned) * 100);
 }

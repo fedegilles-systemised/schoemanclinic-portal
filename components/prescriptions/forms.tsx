@@ -7,8 +7,8 @@ import { FormMessage } from "@/components/profile/form-message";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { ConfirmButton } from "@/components/ui/confirm-button";
+import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -17,21 +17,13 @@ import {
   cancelRepeat,
   changeMedication,
   decideRepeat,
+  refundRepeat,
   setListMedicineArchived,
   type PrescriptionFormState,
 } from "@/lib/prescriptions/actions";
 import type { RequestStatus } from "@/lib/prescriptions/constants";
 
 const initial: PrescriptionFormState = {};
-
-function Field({ id, label, children }: { id: string; label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <Label htmlFor={id}>{label}</Label>
-      {children}
-    </div>
-  );
-}
 
 export function WithdrawRequestButton({ requestId, byClinic = false }: { requestId: string; byClinic?: boolean }) {
   const [state, action, pending] = useActionState(cancelRepeat, initial);
@@ -50,6 +42,28 @@ export function WithdrawRequestButton({ requestId, byClinic = false }: { request
           }
         >
           Withdraw request
+        </ConfirmButton>
+      </div>
+      <FormMessage state={state} />
+    </form>
+  );
+}
+
+/** An admin refunds the whole fee of a declined request. It asks first: the money goes back and this cannot be undone. */
+export function RefundRepeatButton({ requestId, amount }: { requestId: string; amount: string }) {
+  const [state, action, pending] = useActionState(refundRepeat, initial);
+  return (
+    <form action={action} className="flex flex-col gap-2">
+      <input type="hidden" name="requestId" value={requestId} />
+      <div>
+        <ConfirmButton
+          variant="outline"
+          loading={pending}
+          confirmVariant="destructive"
+          confirmTitle={`Refund ${amount}?`}
+          confirmText="The whole fee goes back to the patient's card. This cannot be undone. The patient is told."
+        >
+          Refund the fee
         </ConfirmButton>
       </div>
       <FormMessage state={state} />

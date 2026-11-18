@@ -9,9 +9,10 @@ import { allowAuthAttempt } from "@/lib/auth/throttle";
 import { getPortalPatientId } from "@/lib/data/education";
 import { getSiteUrl, isStripeConfigured } from "@/lib/env";
 import { ORDER_ROUTES } from "@/lib/orders/constants";
-import { announceOrderMade } from "@/lib/orders/notify";
+import { announceOrderMade, announceOrderRefunded } from "@/lib/orders/notify";
 import { parsePanelImport } from "@/lib/orders/panel-import";
-import { createOrderCheckout } from "@/lib/stripe/client";
+import { createOrderCheckout, refundOrderPayment } from "@/lib/stripe/client";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 export type OrderFormState = { error?: string; saved?: string; sentAt?: number };
@@ -32,6 +33,7 @@ function friendly(message: string | undefined, fallback = GENERIC_FAILURE): stri
     "Only an order that has not been paid for can be cancelled.",
     "The sample can be recorded once the order is paid.",
     "You cannot change this order.",
+    "Only a paid order whose results have not arrived can be refunded.",
   ];
   return known.find((k) => message?.includes(k)) ?? fallback;
 }
@@ -117,6 +119,59 @@ export async function cancelOrder(_state: OrderFormState, formData: FormData): P
 
 export async function recordSampleTaken(_state: OrderFormState, formData: FormData): Promise<OrderFormState> {
   return orderAction(formData, "record_sample_taken", "Sample recorded.");
+}
+
+/**
+ * An admin refunds the whole payment of a paid order. Stripe is asked first, with a fixed key so a
+ * second press cannot refund twice, and only then is the refund recorded and the order cancelled. If
+ * Stripe has refunded but the record fails, pressing the button again is safe: Stripe returns the same
+ * refund and the record is made.
+ */
+export async function refundOrder(_state: OrderFormState, formData: FormData): Promise<OrderFormState> {
+  const user = await requireAdmin();
+  const id = z.uuid().safeParse(formData.get("orderId"));
+  if (!id.success) return { error: GENERIC_FAILURE };
+  if (!isStripeConfigured()) return { error: "Payments are not switched on, so there is nothing to refund here." };
+  if (!(await allowAuthAttempt("bloods-order", user.email))) return { error: TOO_MANY };
+
+  const supabase = await createClient();
+  const [order, staff] = await Promise.all([
+    supabase.from("lab_orders").select("id, status, price_pence, stripe_payment_intent_id, refunded_at").eq("id", id.data).maybeSingle(),
+    supabase.from("staff_profiles").select("id").eq("user_id", user.id).maybeSingle(),
+  ]);
+  if (order.error || staff.error || !order.data || !staff.data) return { error: GENERIC_FAILURE };
+  const o = order.data;
+  if (o.refunded_at) return { error: "This order has already been refunded." };
+  if ((o.status !== "paid" && o.status !== "sample_taken") || !o.stripe_payment_intent_id) {
+    return { error: "Only a paid order whose results have not arrived can be refunded." };
+  }
+
+  let refund;
+  try {
+    refund = await refundOrderPayment({ orderId: o.id, paymentIntent: o.stripe_payment_intent_id });
+  } catch {
+    console.error("Stripe refund not made.");
+    return { error: "Stripe could not make the refund. Nothing has changed. Please try again, or refund it in Stripe." };
+  }
+  if (refund.status !== "succeeded" && refund.status !== "pending") {
+    return { error: "Stripe did not complete the refund. Nothing has changed. Check it in Stripe." };
+  }
+  if (refund.amountPence !== o.price_pence) {
+    return { error: "Stripe refunded a different amount from the price paid. Check this order in Stripe." };
+  }
+
+  const admin = createAdminClient();
+  const recorded = await admin.rpc("record_lab_order_refund", { _order: o.id, _refund: refund.id, _amount: refund.amountPence, _by: staff.data.id });
+  if (recorded.error) {
+    console.error("Refund made in Stripe but not recorded.");
+    return { error: "Stripe has refunded this order, but Clinic Hub could not record it. Press Refund again: it will not refund twice." };
+  }
+  const delivery = recorded.data ? await announceOrderRefunded(o.id) : null;
+  revalidatePath("/clinic/orders");
+  revalidatePath("/portal/bloods", "layout");
+  // The refunded order leaves "In progress", taking this button with it, so the result is shown on the list.
+  const told = delivery && (delivery.email === "sent" || delivery.whatsapp === "sent");
+  redirect(`/clinic/orders?refunded=${!recorded.data ? "already" : told ? "told" : "untold"}`);
 }
 
 // Admin: the catalogue ---------------------------------------------------------------------------
@@ -206,6 +261,14 @@ export async function addPanel(_state: OrderFormState, formData: FormData): Prom
   return { saved: "Panel added.", sentAt: Date.now() };
 }
 
+/** A price worth a second look: nothing, very high (a decimal comma can be misread), or far from the current one. */
+function priceWarning(pricePence: number, currentPence: number | null): string | null {
+  if (pricePence === 0) return "The price is £0.";
+  if (pricePence > 200_000) return "The price is over £2,000. Check it was not typed with a comma for the decimal point.";
+  if (currentPence !== null && currentPence > 0 && Math.abs(pricePence - currentPence) / currentPence > 0.5) return "The price changes by more than half.";
+  return null;
+}
+
 export type ImportPreviewRow = {
   code: string;
   name: string;
@@ -218,6 +281,8 @@ export type ImportPreviewRow = {
   change: "new" | "update";
   /** Something worth a second look before importing, such as a price of nothing or a big change. */
   warning: string | null;
+  /** The warning is about the price: the admin must tick that they checked before importing (S-258). */
+  needsAck: boolean;
   labName: string | null;
 };
 export type PanelImportState = OrderFormState & { preview?: { rows: ImportPreviewRow[]; errors: string[] } };
@@ -281,11 +346,8 @@ export async function importPanels(_state: PanelImportState, formData: FormData)
       orderable: r.active ?? (current ? current.active : defaultOrderable),
       change: current ? "update" : "new",
       warning:
-        r.pricePence === 0
-          ? "The price is £0."
-          : current && current.price_pence > 0 && Math.abs(r.pricePence - current.price_pence) / current.price_pence > 0.5
-            ? "The price changes by more than half."
-            : null,
+        [priceWarning(r.pricePence, current?.price_pence ?? null), current && r.lab ? "The lab named on the sheet is ignored: this panel keeps its own lab." : null].filter(Boolean).join(" ") || null,
+      needsAck: priceWarning(r.pricePence, current?.price_pence ?? null) !== null,
       labName: labId ? (labs.data.find((l) => l.id === labId)?.name ?? null) : null,
       labId,
       panelId: current?.id ?? null,
@@ -304,12 +366,16 @@ export async function importPanels(_state: PanelImportState, formData: FormData)
       orderable: r.orderable,
       change: r.change,
       warning: r.warning,
+      needsAck: r.needsAck,
       labName: r.labName,
     })),
     errors,
   };
   if (errors.length > 0) return { error: "Fix the rows below, then check again.", preview };
   if (mode === "preview") return { preview, sentAt: Date.now() };
+  if (rows.some((r) => r.needsAck) && field(formData, "acknowledged") !== "on") {
+    return { error: "Some prices need a second look. Tick the box to confirm you have checked them, then import.", preview };
+  }
 
   const fresh = rows.filter((r) => r.change === "new");
   const changed = rows.filter((r) => r.change === "update");

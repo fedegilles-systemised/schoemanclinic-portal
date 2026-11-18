@@ -8,8 +8,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { ConfirmButton } from "@/components/ui/confirm-button";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
+import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { StatusPill } from "@/components/ui/status-pill";
 import type { SignatureRxPanel } from "@/lib/data/signaturerx";
@@ -18,16 +18,6 @@ import { checkSignatureRxStatus, resolveSignatureRxSend, sendToSignatureRx, type
 import { SRX_ACTIONS, SRX_CLOSED_STATUSES, SRX_FINAL_STATUSES, srxStatusLabel } from "@/lib/signaturerx/constants";
 
 const initial: SignatureRxFormState = {};
-
-function Field({ id, label, hint, children }: { id: string; label: string; hint?: string; children: React.ReactNode }) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <Label htmlFor={id}>{label}</Label>
-      {children}
-      {hint ? <p className="type-small text-content-muted">{hint}</p> : null}
-    </div>
-  );
-}
 
 function StatusBadge({ status }: { status: string | null }) {
   if (!status) return <StatusPill tone="neutral" icon={Clock} label="Not checked yet" />;

@@ -4,22 +4,13 @@ import { useActionState } from "react";
 
 import { FormMessage } from "@/components/profile/form-message";
 import { Button } from "@/components/ui/button";
+import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import type { PatientContact } from "@/lib/data/patient-contact";
 import { updatePatientContact, type CareTeamFormState } from "@/lib/patients/actions";
 
 const initial: CareTeamFormState = {};
-
-function Field({ id, label, children }: { id: string; label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <Label htmlFor={id}>{label}</Label>
-      {children}
-    </div>
-  );
-}
 
 /** For a PA: the patient's date of birth, sex at birth, contact details and postal address, which SignatureRx needs. */
 export function PatientContactForm({ patientId, contact }: { patientId: string; contact: PatientContact }) {

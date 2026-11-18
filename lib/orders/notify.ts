@@ -1,6 +1,6 @@
 import "server-only";
 
-import { bloodsOrderedEmail, bloodsPaidEmail } from "@/lib/email/templates/app";
+import { bloodsOrderedEmail, bloodsPaidEmail, bloodsRefundedEmail } from "@/lib/email/templates/app";
 import { getSiteUrl } from "@/lib/env";
 import { formatDate, formatMoney } from "@/lib/format";
 import { notifyPatient, type Delivery } from "@/lib/notify/patient";
@@ -63,5 +63,29 @@ export async function announceOrderPaid(orderId: string): Promise<void> {
     });
   } catch {
     console.error("Could not send the blood test receipt.");
+  }
+}
+
+/** The patient is told their blood test was refunded. Never throws: a failed message cannot undo a refund. */
+export async function announceOrderRefunded(orderId: string): Promise<Delivery | null> {
+  try {
+    const admin = createAdminClient();
+    const order = await admin
+      .from("lab_orders")
+      .select("id, patient_id, refund_pence, patient:patient_profiles!inner(first_name)")
+      .eq("id", orderId)
+      .maybeSingle();
+    if (order.error || !order.data || order.data.refund_pence === null) return null;
+    const siteUrl = getSiteUrl();
+    const amount = formatMoney(order.data.refund_pence);
+    return await notifyPatient(order.data.patient_id, {
+      topic: "payments",
+      notice: { title: "Your blood test has been refunded", body: `${amount} is on its way back to your card.`, link: `/portal/bloods/${orderId}` },
+      email: bloodsRefundedEmail({ siteUrl, firstName: order.data.patient.first_name, amount }),
+      whatsapp: `Hello ${order.data.patient.first_name}, we have refunded ${amount} for your blood test. Your bank decides when it shows on your statement, usually within 10 working days.`,
+    });
+  } catch {
+    console.error("Could not tell the patient about the refund.");
+    return null;
   }
 }

@@ -605,14 +605,14 @@ isOneToOne: false
                   ]
                 },"lab_orders": {
                   Row: {
-                    "appointment_id": string | null,"barcode": string | null,"cancelled_at": string | null,"clinical_notes": string | null,"created_at": string,"due_by": string | null,"fasting": boolean,"fee_pence": number,"id": string,"lab_partner_id": string,"order_ref": string,"ordered_by": string,"paid_at": string | null,"panel_id": string,"patient_id": string,"price_pence": number,"route": Database["public"]['Enums']["order_route"] | null,"sample_date": string | null,"sample_taken_at": string | null,"status": Database["public"]['Enums']["order_status"],"stripe_checkout_id": string | null,"stripe_payment_intent_id": string | null
+                    "appointment_id": string | null,"barcode": string | null,"cancelled_at": string | null,"chase_count": number,"clinical_notes": string | null,"created_at": string,"due_by": string | null,"fasting": boolean,"fee_pence": number,"id": string,"lab_partner_id": string,"last_chased_at": string | null,"order_ref": string,"ordered_by": string,"paid_at": string | null,"panel_id": string,"patient_id": string,"price_pence": number,"refund_pence": number | null,"refunded_at": string | null,"refunded_by": string | null,"route": Database["public"]['Enums']["order_route"] | null,"sample_date": string | null,"sample_taken_at": string | null,"status": Database["public"]['Enums']["order_status"],"stripe_checkout_id": string | null,"stripe_payment_intent_id": string | null,"stripe_refund_id": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "appointment_id"?: string | null,"barcode"?: string | null,"cancelled_at"?: string | null,"clinical_notes"?: string | null,"created_at"?: string,"due_by"?: string | null,"fasting"?: boolean,"fee_pence"?: number,"id"?: string,"lab_partner_id": string,"order_ref": string,"ordered_by": string,"paid_at"?: string | null,"panel_id": string,"patient_id": string,"price_pence": number,"route"?: Database["public"]['Enums']["order_route"] | null,"sample_date"?: string | null,"sample_taken_at"?: string | null,"status"?: Database["public"]['Enums']["order_status"],"stripe_checkout_id"?: string | null,"stripe_payment_intent_id"?: string | null
+                    "appointment_id"?: string | null,"barcode"?: string | null,"cancelled_at"?: string | null,"chase_count"?: number,"clinical_notes"?: string | null,"created_at"?: string,"due_by"?: string | null,"fasting"?: boolean,"fee_pence"?: number,"id"?: string,"lab_partner_id": string,"last_chased_at"?: string | null,"order_ref": string,"ordered_by": string,"paid_at"?: string | null,"panel_id": string,"patient_id": string,"price_pence": number,"refund_pence"?: number | null,"refunded_at"?: string | null,"refunded_by"?: string | null,"route"?: Database["public"]['Enums']["order_route"] | null,"sample_date"?: string | null,"sample_taken_at"?: string | null,"status"?: Database["public"]['Enums']["order_status"],"stripe_checkout_id"?: string | null,"stripe_payment_intent_id"?: string | null,"stripe_refund_id"?: string | null
                   }
                   Update: {
-                    "appointment_id"?: string | null,"barcode"?: string | null,"cancelled_at"?: string | null,"clinical_notes"?: string | null,"created_at"?: string,"due_by"?: string | null,"fasting"?: boolean,"fee_pence"?: number,"id"?: string,"lab_partner_id"?: string,"order_ref"?: string,"ordered_by"?: string,"paid_at"?: string | null,"panel_id"?: string,"patient_id"?: string,"price_pence"?: number,"route"?: Database["public"]['Enums']["order_route"] | null,"sample_date"?: string | null,"sample_taken_at"?: string | null,"status"?: Database["public"]['Enums']["order_status"],"stripe_checkout_id"?: string | null,"stripe_payment_intent_id"?: string | null
+                    "appointment_id"?: string | null,"barcode"?: string | null,"cancelled_at"?: string | null,"chase_count"?: number,"clinical_notes"?: string | null,"created_at"?: string,"due_by"?: string | null,"fasting"?: boolean,"fee_pence"?: number,"id"?: string,"lab_partner_id"?: string,"last_chased_at"?: string | null,"order_ref"?: string,"ordered_by"?: string,"paid_at"?: string | null,"panel_id"?: string,"patient_id"?: string,"price_pence"?: number,"refund_pence"?: number | null,"refunded_at"?: string | null,"refunded_by"?: string | null,"route"?: Database["public"]['Enums']["order_route"] | null,"sample_date"?: string | null,"sample_taken_at"?: string | null,"status"?: Database["public"]['Enums']["order_status"],"stripe_checkout_id"?: string | null,"stripe_payment_intent_id"?: string | null,"stripe_refund_id"?: string | null
                   }
                   Relationships: [
                     {
@@ -644,6 +644,12 @@ isOneToOne: false
       columns: ["patient_id"]
 isOneToOne: false
       referencedRelation: "patient_profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "lab_orders_refunded_by_fkey"
+      columns: ["refunded_by"]
+isOneToOne: false
+      referencedRelation: "staff_profiles"
       referencedColumns: ["id"]
     }
                   ]
@@ -1015,14 +1021,14 @@ isOneToOne: false
                   ]
                 },"patient_profiles": {
                   Row: {
-                    "address_line1": string | null,"address_line2": string | null,"archived_at": string | null,"booked_online_at": string | null,"city": string | null,"clinic_ref": string,"contact_email": string | null,"contact_phone": string | null,"country": string | null,"created_at": string,"date_of_birth": string,"first_name": string,"gender_identity": string | null,"ghl_contact_id": string | null,"id": string,"last_name": string,"postcode": string | null,"primary_clinician_id": string | null,"semble_patient_id": string | null,"sex": string | null,"stripe_customer_id": string | null,"updated_at": string,"user_id": string | null
+                    "address_line1": string | null,"address_line2": string | null,"archived_at": string | null,"booked_online_at": string | null,"city": string | null,"clinic_ref": string,"contact_email": string | null,"contact_phone": string | null,"country": string | null,"created_at": string,"date_of_birth": string,"first_name": string,"gender_identity": string | null,"ghl_contact_id": string | null,"id": string,"last_name": string,"online_check_reminded_at": string | null,"postcode": string | null,"primary_clinician_id": string | null,"semble_patient_id": string | null,"sex": string | null,"stripe_customer_id": string | null,"updated_at": string,"user_id": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "address_line1"?: string | null,"address_line2"?: string | null,"archived_at"?: string | null,"booked_online_at"?: string | null,"city"?: string | null,"clinic_ref": string,"contact_email"?: string | null,"contact_phone"?: string | null,"country"?: string | null,"created_at"?: string,"date_of_birth": string,"first_name": string,"gender_identity"?: string | null,"ghl_contact_id"?: string | null,"id"?: string,"last_name": string,"postcode"?: string | null,"primary_clinician_id"?: string | null,"semble_patient_id"?: string | null,"sex"?: string | null,"stripe_customer_id"?: string | null,"updated_at"?: string,"user_id"?: string | null
+                    "address_line1"?: string | null,"address_line2"?: string | null,"archived_at"?: string | null,"booked_online_at"?: string | null,"city"?: string | null,"clinic_ref": string,"contact_email"?: string | null,"contact_phone"?: string | null,"country"?: string | null,"created_at"?: string,"date_of_birth": string,"first_name": string,"gender_identity"?: string | null,"ghl_contact_id"?: string | null,"id"?: string,"last_name": string,"online_check_reminded_at"?: string | null,"postcode"?: string | null,"primary_clinician_id"?: string | null,"semble_patient_id"?: string | null,"sex"?: string | null,"stripe_customer_id"?: string | null,"updated_at"?: string,"user_id"?: string | null
                   }
                   Update: {
-                    "address_line1"?: string | null,"address_line2"?: string | null,"archived_at"?: string | null,"booked_online_at"?: string | null,"city"?: string | null,"clinic_ref"?: string,"contact_email"?: string | null,"contact_phone"?: string | null,"country"?: string | null,"created_at"?: string,"date_of_birth"?: string,"first_name"?: string,"gender_identity"?: string | null,"ghl_contact_id"?: string | null,"id"?: string,"last_name"?: string,"postcode"?: string | null,"primary_clinician_id"?: string | null,"semble_patient_id"?: string | null,"sex"?: string | null,"stripe_customer_id"?: string | null,"updated_at"?: string,"user_id"?: string | null
+                    "address_line1"?: string | null,"address_line2"?: string | null,"archived_at"?: string | null,"booked_online_at"?: string | null,"city"?: string | null,"clinic_ref"?: string,"contact_email"?: string | null,"contact_phone"?: string | null,"country"?: string | null,"created_at"?: string,"date_of_birth"?: string,"first_name"?: string,"gender_identity"?: string | null,"ghl_contact_id"?: string | null,"id"?: string,"last_name"?: string,"online_check_reminded_at"?: string | null,"postcode"?: string | null,"primary_clinician_id"?: string | null,"semble_patient_id"?: string | null,"sex"?: string | null,"stripe_customer_id"?: string | null,"updated_at"?: string,"user_id"?: string | null
                   }
                   Relationships: [
                     {
@@ -1159,14 +1165,14 @@ isOneToOne: false
                   ]
                 },"repeat_requests": {
                   Row: {
-                    "cancelled_at": string | null,"created_at": string,"decided_by": string | null,"decision_note": string | null,"fee_pence": number,"ghl_task_id": string | null,"has_future_appointment": boolean | null,"has_side_effects": boolean | null,"id": string,"medication_id": string | null,"note": string | null,"paid_at": string | null,"patient_id": string,"requested_at": string,"requested_by": string,"resolved_at": string | null,"side_effects": string | null,"status": Database["public"]['Enums']["request_status"],"still_losing_weight": boolean | null,"stripe_checkout_session_id": string | null,"stripe_payment_intent_id": string | null,"wants_appointment": boolean | null,"weight_lost_last_month": string | null
+                    "cancelled_at": string | null,"created_at": string,"decided_by": string | null,"decision_note": string | null,"fee_pence": number,"ghl_task_id": string | null,"has_future_appointment": boolean | null,"has_side_effects": boolean | null,"id": string,"medication_id": string | null,"note": string | null,"paid_at": string | null,"patient_id": string,"refund_pence": number | null,"refunded_at": string | null,"refunded_by": string | null,"requested_at": string,"requested_by": string,"resolved_at": string | null,"side_effects": string | null,"status": Database["public"]['Enums']["request_status"],"still_losing_weight": boolean | null,"stripe_checkout_session_id": string | null,"stripe_payment_intent_id": string | null,"stripe_refund_id": string | null,"wants_appointment": boolean | null,"weight_lost_last_month": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "cancelled_at"?: string | null,"created_at"?: string,"decided_by"?: string | null,"decision_note"?: string | null,"fee_pence"?: number,"ghl_task_id"?: string | null,"has_future_appointment"?: boolean | null,"has_side_effects"?: boolean | null,"id"?: string,"medication_id"?: string | null,"note"?: string | null,"paid_at"?: string | null,"patient_id": string,"requested_at"?: string,"requested_by": string,"resolved_at"?: string | null,"side_effects"?: string | null,"status"?: Database["public"]['Enums']["request_status"],"still_losing_weight"?: boolean | null,"stripe_checkout_session_id"?: string | null,"stripe_payment_intent_id"?: string | null,"wants_appointment"?: boolean | null,"weight_lost_last_month"?: string | null
+                    "cancelled_at"?: string | null,"created_at"?: string,"decided_by"?: string | null,"decision_note"?: string | null,"fee_pence"?: number,"ghl_task_id"?: string | null,"has_future_appointment"?: boolean | null,"has_side_effects"?: boolean | null,"id"?: string,"medication_id"?: string | null,"note"?: string | null,"paid_at"?: string | null,"patient_id": string,"refund_pence"?: number | null,"refunded_at"?: string | null,"refunded_by"?: string | null,"requested_at"?: string,"requested_by": string,"resolved_at"?: string | null,"side_effects"?: string | null,"status"?: Database["public"]['Enums']["request_status"],"still_losing_weight"?: boolean | null,"stripe_checkout_session_id"?: string | null,"stripe_payment_intent_id"?: string | null,"stripe_refund_id"?: string | null,"wants_appointment"?: boolean | null,"weight_lost_last_month"?: string | null
                   }
                   Update: {
-                    "cancelled_at"?: string | null,"created_at"?: string,"decided_by"?: string | null,"decision_note"?: string | null,"fee_pence"?: number,"ghl_task_id"?: string | null,"has_future_appointment"?: boolean | null,"has_side_effects"?: boolean | null,"id"?: string,"medication_id"?: string | null,"note"?: string | null,"paid_at"?: string | null,"patient_id"?: string,"requested_at"?: string,"requested_by"?: string,"resolved_at"?: string | null,"side_effects"?: string | null,"status"?: Database["public"]['Enums']["request_status"],"still_losing_weight"?: boolean | null,"stripe_checkout_session_id"?: string | null,"stripe_payment_intent_id"?: string | null,"wants_appointment"?: boolean | null,"weight_lost_last_month"?: string | null
+                    "cancelled_at"?: string | null,"created_at"?: string,"decided_by"?: string | null,"decision_note"?: string | null,"fee_pence"?: number,"ghl_task_id"?: string | null,"has_future_appointment"?: boolean | null,"has_side_effects"?: boolean | null,"id"?: string,"medication_id"?: string | null,"note"?: string | null,"paid_at"?: string | null,"patient_id"?: string,"refund_pence"?: number | null,"refunded_at"?: string | null,"refunded_by"?: string | null,"requested_at"?: string,"requested_by"?: string,"resolved_at"?: string | null,"side_effects"?: string | null,"status"?: Database["public"]['Enums']["request_status"],"still_losing_weight"?: boolean | null,"stripe_checkout_session_id"?: string | null,"stripe_payment_intent_id"?: string | null,"stripe_refund_id"?: string | null,"wants_appointment"?: boolean | null,"weight_lost_last_month"?: string | null
                   }
                   Relationships: [
                     {
@@ -1186,6 +1192,12 @@ isOneToOne: false
       columns: ["patient_id"]
 isOneToOne: false
       referencedRelation: "patient_profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "repeat_requests_refunded_by_fkey"
+      columns: ["refunded_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
       referencedColumns: ["id"]
     },{
       foreignKeyName: "repeat_requests_requested_by_fkey"
@@ -1608,17 +1620,34 @@ isOneToOne: false
 "has_my_signaturerx_code":
 { Args: Record<PropertyKey, never>; Returns: boolean
                            },
+"lab_order_notes":
+{ Args: { "_order": string }; Returns: string
+                           },
+"lapse_unpaid_lab_orders":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "for_patient": string,"order_id": string
+            }[]
+                           },
 "log_feedback_export":
 { Args: { "_rows": number,"_set": string }; Returns: undefined
                            },
 "log_record_view":
 { Args: { "_entity": string,"_entity_id"?: string,"_patient": string }; Returns: undefined
                            },
+"mark_appointment_no_show":
+{ Args: { "_appointment": string }; Returns: undefined
+                           },
 "mark_google_revocation":
 { Args: { "_id": string,"_revoked": boolean }; Returns: undefined
                            },
+"mark_lab_order_chased":
+{ Args: { "_order": string,"_reminder": number }; Returns: boolean
+                           },
 "mark_lab_order_paid":
 { Args: { "_amount": number,"_order": string,"_payment_intent": string,"_session": string }; Returns: boolean
+                           },
+"mark_online_check_reminded":
+{ Args: { "_patients": (string)[] }; Returns: undefined
                            },
 "mark_repeat_request_paid":
 { Args: { "_amount": number,"_payment_intent": string,"_request": string,"_session": string }; Returns: boolean
@@ -1642,6 +1671,11 @@ isOneToOne: false
               "ends_at": string,"starts_at": string
             }[]
                            },
+"possible_duplicates":
+{ Args: { "_patient": string }; Returns: {
+              "clinic_ref": string,"patient_id": string,"reason": string
+            }[]
+                           },
 "queue_feedback":
 { Args: Record<PropertyKey, never>; Returns: {
               "feedback_id": string,"patient_id": string
@@ -1654,6 +1688,12 @@ isOneToOne: false
                            },
 "record_feedback_follow_up":
 { Args: { "_feedback": string,"_note": string }; Returns: undefined
+                           },
+"record_lab_order_refund":
+{ Args: { "_amount": number,"_by": string,"_order": string,"_refund": string }; Returns: boolean
+                           },
+"record_repeat_request_refund":
+{ Args: { "_amount": number,"_by": string,"_refund": string,"_request": string }; Returns: boolean
                            },
 "record_sample_taken":
 { Args: { "_order": string }; Returns: undefined
@@ -1729,8 +1769,21 @@ isOneToOne: false
 "submit_feedback":
 { Args: { "_could_improve": string,"_feedback": string,"_may_quote": boolean,"_score": number,"_wants_contact": boolean,"_went_well": string }; Returns: string
                            },
+"unchecked_online_patients":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "for_patient": string
+            }[]
+                           },
+"undo_appointment_no_show":
+{ Args: { "_appointment": string }; Returns: undefined
+                           },
 "unmatch_lab_file":
 { Args: { "_import": string,"_new_path": string }; Returns: undefined
+                           },
+"unpaid_orders_to_chase":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "for_patient": string,"order_id": string,"reminder": number
+            }[]
                            },
 "update_wearable_tokens":
 { Args: { "_access_encrypted": string,"_connection": string,"_expires_at": string,"_refresh_encrypted": string }; Returns: undefined
