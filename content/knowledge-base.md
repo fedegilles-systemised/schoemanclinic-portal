@@ -11,6 +11,8 @@ Where a flow uses data from another system (an API, a webhook or a lab feed) or 
 
 **What we ask of the clinic:** read the roles and the access table first, because they decide what the database allows; then the flows; then answer the open questions. Anything wrong or missing can be sent to the project team.
 
+**A shorter view.** The Roadmap tab, next to this one, says in one page what is built, what is still to do and what is holding us back, with how to clear each thing and who it depends on.
+
 ## The product in one page
 
 Clinic Hub is a patient portal and a clinic portal built around one journey, the bloods loop. A patient's blood test goes from order to released result in one place, and the patient sees the trend over time.
