@@ -7,6 +7,8 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // Photos, signatures and lab reports are uploaded through server actions: 10 MiB at most (lab reports), plus form overhead.
   experimental: { serverActions: { bodySizeLimit: "11mb" } },
+  // The knowledge base reads its Markdown at request time, by a name that depends on the address: make sure the files ship.
+  outputFileTracingIncludes: { "/knowledge-base/flows/[slug]": ["./content/flows/**/*"] },
   async headers() {
     return [
       {

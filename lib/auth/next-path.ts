@@ -1,8 +1,15 @@
+import { FLOW_GUIDES, flowHref } from "@/lib/knowledge-base/flows";
+
 /**
  * Pages a person may be sent back to after signing in. A fixed list, never the raw
  * value from the address bar, so the sign-in page cannot redirect off-site.
  */
-const RETURN_PATHS: readonly string[] = ["/knowledge-base", "/knowledge-base/test-results", "/knowledge-base/roadmap"];
+const RETURN_PATHS: readonly string[] = [
+  "/knowledge-base",
+  "/knowledge-base/test-results",
+  "/knowledge-base/roadmap",
+  ...FLOW_GUIDES.map((flow) => flowHref(flow.slug)),
+];
 
 /** The path if it is on the list, otherwise null. */
 export function parseReturnPath(value: unknown): string | null {

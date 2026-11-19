@@ -25,7 +25,7 @@ export function UserFlowsMenu({ flows, activePath }: { flows: readonly UserFlow[
         User flows
         <ChevronDown aria-hidden className="size-4" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="center">
+      <DropdownMenuContent align="center" className="max-h-[min(70dvh,32rem)] overflow-y-auto">
         {flows.map((flow) => (
           <DropdownMenuItem key={flow.href} asChild>
             <Link href={flow.href} aria-current={flow.href === activePath ? "page" : undefined}>

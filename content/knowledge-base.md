@@ -4,14 +4,14 @@ This document describes who uses Clinic Hub, what each person can see and do, wh
 
 **How to read it.** Every screen and flow carries one of two statuses:
 
-- **Built:** the screen exists and reads real data from the database. Action buttons on built screens are switched off for now.
+- **Built:** the screen exists, reads real data and its actions work. Where a connection to another system is not yet switched on, the flow says so.
 - **Planned:** agreed in scope but not built. It shows in the menu as "Coming soon".
 
 Where a flow uses data from another system (an API, a webhook or a lab feed) or sends an email, the flow says so in a line marked **Data in/out** or **Email**. Each flow ends with the questions we need the clinic to answer. All questions are collected again in the last section.
 
 **What we ask of the clinic:** read the roles and the access table first, because they decide what the database allows; then the flows; then answer the open questions. Anything wrong or missing can be sent to the project team.
 
-**A shorter view.** The Roadmap tab, next to this one, says in one page what is built, what is still to do and what is holding us back, with how to clear each thing and who it depends on.
+**A shorter view.** The Roadmap tab, next to this one, says what is built, what the clinic needs to confirm, what is holding us back and who can clear it. The **User flows** menu has a guide for each thing a person does in Clinic Hub: what it does, how it works and how to try it.
 
 ## The product in one page
 
@@ -27,7 +27,7 @@ Clinic Hub is a patient portal and a clinic portal built around one journey, the
 
 Since 11 November, Clinic Hub also holds clinical notes, patient booking, call recordings with transcripts, education and wearables. GoHighLevel sends patient email and WhatsApp and keeps tasks, invoices and marketing; Semble is retired in stages; SignatureRx handles prescribing. The section on integrations lists every connection.
 
-**Status today:** the database for every step above exists and is protected, and both home screens are built. Steps 1 to 7 as screens are built, except sending the order to the lab; the connections to the labs, GoHighLevel and Semble are planned.
+**Status today:** every step above is built as a screen, except sending the order to the lab and matching its results by barcode, which wait on TDL. Clinical notes, booking and the diary, registration of new patients, repeat prescriptions, feedback, education, wearables and call recording are built too. The Roadmap lists what each remaining piece waits for.
 
 ## Roles
 
@@ -143,7 +143,7 @@ Eleven screens are built and the rest are planned. Every built screen reads real
 | Lab orders | List orders, pay, show the barcode, follow progress | Stripe |
 | Upload results | Send PDFs from another lab, for example abroad: up to 5 files each time, PDF only, in the name the patient registered with | AI extraction (provider to be chosen) |
 | Prescriptions | Current medicines; request a repeat for a fee | Stripe, GoHighLevel |
-| Appointments | Upcoming and past visits | GoHighLevel or Semble |
+| Appointments | Upcoming visits, and booking with the care team | Google Calendar |
 | Ask the clinic | Send a question, read replies and write back | Clinic Hub |
 | Letters and documents | Read what the clinic has shared | None |
 | Privacy and consent | See and change consents, notification choices | GoHighLevel reads the choices |
@@ -247,10 +247,10 @@ Each flow names who acts, the steps, whether it needs data from another system (
 | 7 | Patient reads results and trends | Built | None | No |
 | 8 | Request a repeat prescription | Built; Stripe needs the clinic's keys; the SignatureRx connection is built but switched off until its security review is done | Stripe | Yes |
 | 9 | Ask the clinic | Built | Clinic Hub | Built |
-| 10 | Appointments and bloods due date | Read built, sync planned | GoHighLevel, Semble | No |
-| 11 | A guardian acts for a patient | Planned | None | Proposed |
-| 12 | Safeguarding alert | Planned | None | No |
-| 13 | A team member leaves | Planned | None | No |
+| 10 | Booking and the diary | Built | Google Calendar | Yes |
+| 11 | A guardian acts for a patient | Built; the guardian's email is a template, not yet sent | None | Proposed |
+| 12 | Safeguarding alert | Built | None | No |
+| 13 | A team member leaves | A switch in the database; no screen yet | None | No |
 | 14 | Update your profile and sign-in details | Built | None | Yes |
 | 15 | Patient feedback after an appointment | Built | GoHighLevel for sending | Yes |
 
@@ -417,17 +417,20 @@ Doctors add a patient's medicines on the record, with the day each supply starts
 
 **Questions:** how quickly does the clinic aim to reply, and who on the team answers which questions?
 
-### 10. Appointments and the bloods due date
+### 10. Booking and the diary
 
-**Who:** the system. **Status:** reading is built; the link to booking systems is planned.
+**Who:** patients, the team, and new patients booking online. **Status:** built. The full guide is under User flows, "Booking and the diary".
 
-1. Bookings live in GoHighLevel or Semble. A background job copies them into Clinic Hub at intervals.
-2. The portals show the copy: the patient's next appointment, and the clinic's diary.
-3. When an appointment needs bloods, the due date is 14 days before it. The clinic home lists appointments in that window that are missing results.
+1. Each clinician sets their weekly hours and connects their Google Calendar. An admin sets which appointment types are offered online.
+2. A patient books with the clinicians on their care team. The team books for any patient they can open. A new patient books on the clinic's public page: the initial consultation only, no deposit, at least a day ahead.
+3. The diary shows every clinician's bookings. Admins and PAs see everyone, others see their own. Each booking goes into the clinician's Google Calendar with the clinic reference only, and the patient gets a confirmation.
+4. Patients cannot cancel or move a booking. The team does it from the diary, and the patient is told. A doctor, PA or admin can mark a no-show, and a PA or admin can undo it.
+5. A new record made by an online booking that looks like someone already on the books is flagged, and nobody is merged automatically. A new patient not checked after two working days is reminded to the team.
+6. When an appointment needs bloods, the due date is 14 days before it.
 
-**Data in/out:** inbound from GoHighLevel and Semble, one way. Nothing is booked, moved or cancelled from Clinic Hub. **Email:** none.
+**Data in/out:** Google Calendar, one way out. **Email:** the booking confirmation, which mentions the 48-hour policy.
 
-**Questions:** which system is the source of truth for bookings, and how often should we copy them? Which appointment types need bloods, and is 14 days right for all? Should a patient be able to book or move a visit from the portal?
+**Questions:** which appointment types need bloods, and is 14 days right for all? Is the initial consultation the only type to offer online?
 
 ### 11. A guardian acts for a patient
 
@@ -664,6 +667,20 @@ The clinic answered the rest on 11 November. Those answers are under Decisions a
 > **What we assume.** Only adult patients with their own account are asked. The answers are a form on the record. GoHighLevel is not told of the news choice. The two links are those on the Semble form.
 
 ## Decisions already taken
+
+**Agreed on 19 November 2026, with George, from Dr Schoeman's list.** These are agreed and not built yet unless the line says built. Each is on the Roadmap.
+
+- Proof of what the clinic sends: a record on each patient of every document shared and every result released, with the date and who did it. The date and the person are kept today; a timeline of every message and when it was delivered is to build.
+- Outstanding results: when a patient has a blood test order, it shows clearly on their record. Built for TDL orders in the Blood tests part of the record; a clearer indicator and the other labs are to build.
+- Electronic signature: instead of connecting DocuSign, Clinic Hub will create the signature itself, from a form or a PDF the patient signs. To build.
+- Conversations: the WhatsApp, text and email conversations kept in GoHighLevel will show in Clinic Hub, so the team works in one place. GoHighLevel's own WhatsApp connection already brings the messages in, and Clinic Hub is already connected to GoHighLevel. To build.
+- Missed calls: a text sent back to the caller is set up in GoHighLevel and will show in Conversations. The phone system is added by the clinic in GoHighLevel with a regulatory bundle.
+- Cancellation: 48 hours' notice. A patient who cancels later, or does not attend, is charged in full. The card is saved in Stripe, and after the appointment the team can charge it from the patient's record. The policy is shown wherever a patient books or is reminded. To build.
+- Reminders before an appointment, for patients who need bloods: 6, 4, 2 and 1 weeks and 3 days before, and the clinic can change those times later. Reminders about a pending order are built (after 3 and 7 days). To build.
+- Call transcripts: built. The transcript arrives on the patient's record as a draft note to check and sign, and the audio is kept in the clinic's own private store. It needs AssemblyAI's agreement signed.
+- Clinical enquiries: when Conversations is in Clinic Hub, a patient's clinical message can be added to their notes. To build.
+- Registration data and Semble: what moves over is the contacts, appointments, notes, documents and lists, and the registration form is only for new patients.
+- Fees and units: the £45 site fee and the £15 kit fee are the clinic's prices to the patient and are fixed. The clinic's markers, base units and ranges in UK units are confirmed.
 
 - Agreed on the call, 6 November: a banner and an email three weeks before a prescription runs out.
 - Agreed on the call, 6 November: results from other countries are converted to UK units, from a list of base units the clinic will send.

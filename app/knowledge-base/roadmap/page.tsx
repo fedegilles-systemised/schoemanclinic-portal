@@ -21,7 +21,7 @@ export default async function RoadmapPage() {
       source={source}
       titleBefore="Where Clinic Hub "
       titleAccent="stands"
-      intro="What we have built, what is still to do, and what is holding us back, with how to clear each thing and who it depends on."
+      intro="What we have built, what we assumed and need you to confirm, what is holding us back and what clears each thing, with base emails to send."
     />
   );
 }
