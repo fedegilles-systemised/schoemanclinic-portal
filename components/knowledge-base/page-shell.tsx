@@ -3,16 +3,36 @@ import { redirect } from "next/navigation";
 
 import { Contents } from "@/components/knowledge-base/contents";
 import { Markdown, slugify } from "@/components/knowledge-base/markdown";
+import { UserFlowsMenu } from "@/components/knowledge-base/user-flows-menu";
 import { SessionGuard } from "@/components/shell/session-guard";
 import { AccentTitle } from "@/components/ui/page-header";
 import { Wordmark } from "@/components/ui/wordmark";
 import { getCurrentUser, homePathFor } from "@/lib/auth/session";
 import { cn } from "@/lib/utils";
 
-const TABS = [
-  { href: "/knowledge-base", label: "How it works" },
-  { href: "/knowledge-base/test-results", label: "Try the results flow" },
-] as const;
+const HOW_IT_WORKS = { href: "/knowledge-base", label: "How it works" } as const;
+const ROADMAP = { href: "/knowledge-base/roadmap", label: "Roadmap" } as const;
+
+/**
+ * The step-by-step guides under the "User flows" tab. Each flow is a page of its own; add a line here when a new
+ * one is written, and its route to RETURN_PATHS in lib/auth/next-path.ts.
+ */
+const USER_FLOWS = [{ href: "/knowledge-base/test-results", label: "Results flow" }] as const;
+
+type KnowledgeBasePath = typeof HOW_IT_WORKS.href | typeof ROADMAP.href | (typeof USER_FLOWS)[number]["href"];
+
+function TabLink({ tab, activePath }: { tab: { href: string; label: string }; activePath: string }) {
+  const active = tab.href === activePath;
+  return (
+    <Link
+      href={tab.href}
+      aria-current={active ? "page" : undefined}
+      className={cn("border-b pb-1", active ? "border-content text-content" : "border-transparent text-content-muted hover:text-content")}
+    >
+      {tab.label}
+    </Link>
+  );
+}
 
 /**
  * For signed-in admins only. It holds no patient or account data, but it describes how the
@@ -32,7 +52,7 @@ export function KnowledgeBaseShell({
   titleAccent,
   intro,
 }: {
-  activePath: (typeof TABS)[number]["href"];
+  activePath: KnowledgeBasePath;
   source: string;
   titleBefore: string;
   titleAccent: string;
@@ -57,21 +77,9 @@ export function KnowledgeBaseShell({
           </h1>
           <p className="type-body mt-4 max-w-[58ch] text-content-muted">{intro}</p>
           <nav aria-label="Knowledge base" className="type-eyebrow mt-8 flex flex-wrap justify-center gap-x-8 gap-y-3">
-            {TABS.map((tab) => (
-              <Link
-                key={tab.href}
-                href={tab.href}
-                aria-current={tab.href === activePath ? "page" : undefined}
-                className={cn(
-                  "border-b pb-1",
-                  tab.href === activePath
-                    ? "border-content text-content"
-                    : "border-transparent text-content-muted hover:text-content",
-                )}
-              >
-                {tab.label}
-              </Link>
-            ))}
+            <TabLink tab={HOW_IT_WORKS} activePath={activePath} />
+            <UserFlowsMenu flows={USER_FLOWS} activePath={activePath} />
+            <TabLink tab={ROADMAP} activePath={activePath} />
           </nav>
         </header>
 

@@ -11,6 +11,8 @@ Where a flow uses data from another system (an API, a webhook or a lab feed) or 
 
 **What we ask of the clinic:** read the roles and the access table first, because they decide what the database allows; then the flows; then answer the open questions. Anything wrong or missing can be sent to the project team.
 
+**A shorter view.** The Roadmap tab, next to this one, says in one page what is built, what is still to do and what is holding us back, with how to clear each thing and who it depends on.
+
 ## The product in one page
 
 Clinic Hub is a patient portal and a clinic portal built around one journey, the bloods loop. A patient's blood test goes from order to released result in one place, and the patient sees the trend over time.
@@ -74,6 +76,8 @@ This table is what the database enforces since the clinic's decisions of 11 Nove
 | Diagnoses | Read | Read | Read, add, change | Read | Read | Read | Read |
 | Medications | Read | Read | Read, add, change | Read | Read | Read | Read |
 | Consents | Read, add | Read, add if can act | Read | Read | Read | Read | Read |
+| Registration form answers (address, next of kin, GP, reason for the visit) | Read their own; add once | - | Read | Read | Read | Read | Read |
+| Photo ID | Add once; cannot read it back | - | - | - | Read, mark as checked | - | Read, mark as checked |
 | Care team (who looks after whom) | - | - | Read, add, change | Read | Read, add, change | Read | Read, add, change |
 | Clinical notes | - | - | Read; write and sign their own; record calls | Read; write and sign their own; record calls | Read | Read; write and sign their own; record calls | Read |
 | Safeguarding alerts | - | - | Read, add, change | - | - | - | - |
@@ -149,6 +153,8 @@ Eleven screens are built and the rest are planned. Every built screen reads real
 | Page | What it will do | Proposed roles | Uses another system |
 | --- | --- | --- | --- |
 | Patient list | Find a patient and open their record | Doctor, PA, health coach | None |
+| Registration form | Shown in place of the whole portal to a new patient until they complete it: personal details, next of kin and GP, about you, main concerns and health goals, photo ID and consent | Patient (new patients only) | None |
+| Registration (on a patient's record) | The answers, who completed them and when. A PA or admin also opens the photo ID and marks it as checked | Everyone who can open the record; PAs and admins for the photo ID | None |
 | Lab orders | Create and follow orders | Doctor, PA | Stripe, lab partner |
 | Safeguarding alerts | Add and review alerts | Doctor only | None |
 | Team and settings | The list of the team, their roles, and the clinic's tests, prices, partners and locations. Invitations are already built | Admin | None |
@@ -258,7 +264,9 @@ Each flow names who acts, the steps, whether it needs data from another system (
 4. The system emails a one-time link, valid for 3 days. The email never says who the patient is or anything clinical. When a doctor or an admin is invited, the other admins get a notice in the portal bell. When a guardian who can act for a patient is invited, the other PAs get one.
 5. The person opens the link. For a patient or guardian, they are asked for a date of birth: their own for a patient, the patient's for a guardian. After five wrong dates the link is cancelled and the sender is told. If they have no account, they enter their name and choose a password. If they already have an account, they sign in and press one button to add the new access to it, for example a doctor who is also a patient.
 6. The system checks that the link is unused and has not expired, that the person who sent it can still invite, that the address matches, that the date of birth matches (patient and guardian), and that the patient record has no account yet. It then adds the role or link, activates the account and tells the person who invited.
-7. The person lands on their home page.
+7. A patient added after 19 November 2026 lands on the registration form, the same one the clinic sends from Semble, and cannot use the portal until they have completed it (see below). Everyone else lands on their home page.
+
+**The registration form (built, 19 November 2026).** A new patient completes it once, for themselves. It asks for their title, address, gender and phone; their next of kin (name, relationship, telephone) and GP (name, practice and address); their sex at birth and occupation; four questions on why they are coming and their health goals; and a photo ID (passport or driving licence, PDF, JPEG or PNG up to 10 MB). It ends with the consent: that their details are accurate and they agree to the Privacy Notice and the Terms of Treatment and Fees, a choice not to receive news and insights from the doctors, and a consent to WhatsApp messages about their care, which turns WhatsApp on for them. Their name, date of birth and email come from the invitation and are shown, not typed again. What they answer is kept as a permanent copy of the form in Submitted forms, as a Registration section on their record, and fills any gap on their record (address, phone, sex at birth, gender) without overwriting what is there. The photo ID is kept for good in a private store that only PAs and admins can open; opening it is written to the activity log, and a PA or admin marks it as checked once they have compared it with the patient. Patients who already existed, including those who come over from Semble, do not complete it. A patient with no account of their own, such as a child managed by a guardian, is not asked yet: that is an open question (35).
 
 A PA or admin can send an invitation again, which cancels the old link, or cancel it. Nobody else can invite. There is no second approval for doctors or admins, but every invitation and every access it grants is in the permanent log under the inviter's name.
 
@@ -583,7 +591,7 @@ Every message has a template in the clinic's look. The sign-in emails (reset, ch
 
 ## Open questions for the clinic
 
-Five questions remain open, waiting on the clinic, TDL or Semble: 8, 9, 10, 12 and 31. Questions 11 and 29 were settled on 18 November 2026 and are under Decisions already taken. They keep their original numbers. Under each one is what we heard on the call on 6 November, what we have learned since, and what we assume until the clinic answers.
+Six questions remain open, waiting on the clinic, TDL or Semble: 8, 9, 10, 12, 31 and 35. Questions 11 and 29 were settled on 18 November 2026 and are under Decisions already taken. They keep their original numbers. Under each one is what we heard on the call on 6 November, what we have learned since, and what we assume until the clinic answers.
 
 The clinic answered the rest on 11 November. Those answers are under Decisions already taken, each marked as built or not built yet. The short question lists earlier in this document may still mention questions that are now answered.
 
@@ -631,7 +639,7 @@ The clinic answered the rest on 11 November. Those answers are under Decisions a
 >
 > **What we assume.** All values are converted to UK units when entered, and the original value and unit are kept. The conversions in use are the standard factors, and they are replaced by the clinic's list when it arrives. The patient sees the range held for each marker, with a status: low or high against the range, borderline within 5% of an edge, and critical only when a doctor sets it.
 
-**29. Identity.** Settled on 18 November 2026: the consent at first sign-in is what counts, and no document check blocks the portal. See Decisions already taken.
+**29. Identity.** Answered on 19 November 2026 with the clinic's own registration form: the photo ID is required and kept, and the consent is part of the form. See Decisions already taken.
 
 **31. Moving over.** What must move from Semble: historical PDFs, notes, contacts? Who in the clinic checks they are accurate? Which weekend suits for training the doctors and admin team? New after the call.
 
@@ -643,11 +651,23 @@ The clinic answered the rest on 11 November. Those answers are under Decisions a
 >
 > **What we assume.** Nothing moves until we know what Semble can export.
 
+**35. Registration form.** The clinic's Semble form is recreated and built. What is still open:
+
+- Who completes it, and consents, for a patient under 18, or one a guardian looks after. Today only an adult patient with their own account is asked.
+- How patients who already exist, and those who come over from Semble, are handled. Today none of them completes it; how their details and photo ID are brought across is part of the Semble migration (question 31).
+- Whether the answers should also become a clinical note. Today they are a permanent form and a Registration section on the record, not a signed note.
+- Whether the choice not to receive news and insights from the doctors must reach GoHighLevel, which sends the marketing. Today it is kept in Clinic Hub only.
+- The final addresses of the Privacy Notice and the Terms of Treatment and Fees, and the list of titles offered.
+
+*What it decides: Whether the registration form covers everyone.*
+
+> **What we assume.** Only adult patients with their own account are asked. The answers are a form on the record. GoHighLevel is not told of the news choice. The two links are those on the Semble form.
+
 ## Decisions already taken
 
 - Agreed on the call, 6 November: a banner and an email three weeks before a prescription runs out.
 - Agreed on the call, 6 November: results from other countries are converted to UK units, from a list of base units the clinic will send.
-- Agreed on the call, 6 November: at the first sign-in a patient uploads photo ID and signs the consent form. Replaced on 18 November 2026: the consent at first sign-in counts and no ID upload is needed (question 29).
+- Agreed on the call, 6 November: at the first sign-in a patient uploads photo ID and signs the consent form. Replaced on 19 November 2026: the clinic's own registration form, with photo ID and consent, is built (question 29).
 - Agreed on the call, 6 November: questions from patients go to info@theschoemanclinic.com, where staff triage them.
 - Agreed on the call, 6 November: reminders go by email and by WhatsApp through GoHighLevel's automatic WhatsApp, in place of SMS.
 - The first release is the bloods loop. Messaging, reminders, invoices and marketing stay in GoHighLevel. Clinical notes and appointments move into Clinic Hub (11 November, question 15), and Semble is retired in stages. Prescribing goes through SignatureRx.
@@ -706,7 +726,7 @@ The clinic answered the rest on 11 November. Those answers are under Decisions a
 - Only doctors sign letters, and prescribing will go through SignatureRx. Signatures are built. The SignatureRx connection is built too, but switched off by default until its security review and the data agreement are done (flow 8). (Question 24)
 - WhatsApp goes through GoHighLevel: a plug-in diverts GoHighLevel's text messages to WhatsApp, so a message sent as a text arrives as a WhatsApp. WhatsApp appears in a patient's notification choices once GoHighLevel is connected, off until they turn it on. Built; needs the GoHighLevel key. (Question 25)
 - The email confirmation is enough for a staff member to change their sign-in email, and the old address is told. Built. (Question 26)
-- When a doctor, an admin or a guardian who can act is invited, other admins or PAs get a notice in the portal bell, and for doctors and admins an email to Dr Gina Schoeman. The date of birth is the check. Built. (Question 28)
+- When a doctor, an admin or a guardian who can act is invited, other admins or PAs get a notice in the portal bell, and for doctors and admins an email to Dr Gina Schoeman. The date of birth is the check at the invitation, and a new patient also completes the registration form. Built. (Question 28)
 - Lab files and imports not yet matched to a patient are for PAs and admins only (decided 12 November). Built.
 - Clinic Hub follows the clinic's four choices for bloods: the clinic's own lab, TDL, a TDL home kit, or the patient's own results. Only TDL and the home kit are paid through Stripe and get a barcode. Ordering, payment and the barcode are built for TDL and the home kit; sending the order to TDL is not. (Question 33)
 - Repeat prescriptions move from the Typeform into the portal: up to ten medicines at a time, each for one or two months' supply, with the Typeform's appointment and weight-loss questions and the £30 fee through Stripe. Built. (10 and 12 November 2026)
@@ -723,7 +743,7 @@ The clinic answered the rest on 11 November. Those answers are under Decisions a
 - The clinic's choice is that online booking offers new patients the initial consultation only, and takes no deposit. An admin sets which appointment types are offered under Booking settings; nothing is charged when booking. A new patient booked online who has not been checked or invited two working days later is reminded to admins and PAs, once. Built.
 - A possible duplicate record from an online booking is shown to the team, with the likely record, and nobody is merged automatically. If it is a duplicate, the team archives the extra record: nothing is deleted. Built.
 - Releasing results: only a doctor releases, one doctor is enough, and no marker is held back. This can be revisited with the clinic. (Question 11)
-- Identity and consent: the consent given at first sign-in is what counts, and no document check blocks the portal. The date of birth asked at the invitation is the check. The photo ID upload agreed on 6 November is not built and is no longer planned. (Question 29)
+- Identity and consent (changed on 19 November 2026): the clinic's registration form is built, so a new patient uploads a photo ID and gives the consent on the form before using the portal. The decision of 18 November, that no ID was needed, is replaced. (Question 29)
 - Questions to the clinic are answered by any team member who can open the patient, and the portal promises a reply within two working days.
 - Feedback: 9 to 10 is green, 7 to 8 amber and 0 to 6 red. Admins and PAs own the follow-ups.
 - Appointments: a visit that has ended counts as completed on its own. A PA, doctor or admin marks a no-show with "Did not attend" on the booking page. Built.
@@ -732,3 +752,13 @@ The clinic answered the rest on 11 November. Those answers are under Decisions a
 - The education videos can be on YouTube, Vimeo or Loom. Clinic Hub does not host video.
 - Clinic Hub has a light theme only.
 - The first round of testing covers the bloods loop, clinical notes and booking. Wearables and call recording are left for a later round, because they wait on outside approvals.
+
+**Decided on 19 November 2026** (George, for the clinic, with the team building Clinic Hub):
+
+- The registration form the clinic sends from Semble is recreated in Clinic Hub. Every patient added after today completes it once, for themselves, and cannot use the portal until they have. Built.
+- The photo ID is kept for good, not only until it is checked. Only PAs and admins can open it, opening it is logged, and a PA or admin marks it as checked once. Built.
+- Patients who already exist do not complete the form. How they are brought across from Semble is part of that migration (question 31, question 35).
+- What a patient answers is kept as a permanent form on their record and as a Registration section, not as a signed clinical note. This is for now and will be revisited (question 35). Built.
+- The choice not to receive news and insights from the doctors stays in Clinic Hub for now. GoHighLevel is not told.
+- Who completes the form for a child, or a patient a guardian manages, is not decided yet (question 35).
+- The Privacy Notice and Terms of Treatment and Fees links on the form are used as they are, and are to be confirmed by the clinic as final.

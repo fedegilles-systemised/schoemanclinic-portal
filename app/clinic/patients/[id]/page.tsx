@@ -20,6 +20,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { RegistrationPanel } from "@/components/registration/registration-panel";
 import { PageHeader, SectionHeader } from "@/components/ui/page-header";
 import { getCurrentUser } from "@/lib/auth/session";
 import { hasAnyOption, OPTION_CHECKS, type TreatmentOptions } from "@/lib/notes/options";
@@ -32,6 +33,7 @@ import { getPatientContact } from "@/lib/data/patient-contact";
 import { getCatalogue } from "@/lib/data/prescriptions";
 import { listForms, submitterLabels } from "@/lib/data/forms";
 import { getClinicalSummary, getGuardians, getMyStaffId, getPatientRecord, getRecordings, getSafeguardingAlerts } from "@/lib/data/patient-record";
+import { getRegistration } from "@/lib/data/registration";
 import { listQuestions } from "@/lib/data/questions";
 import { todayInLondon } from "@/lib/calendar/time";
 import { isTranscriptionConfigured } from "@/lib/env";
@@ -100,7 +102,7 @@ export default async function PatientRecordPage({
   const today = todayInLondon();
   const myStaffId = canWrite ? await getMyStaffId(user.id) : null;
   const canOrder = user.roles.some((role) => role === "doctor" || role === "pa");
-  const [orders, assignments, library, readings, appointments, summary, documents, questions, safeguarding, consents, medicineList, forms] = await Promise.all([
+  const [orders, assignments, library, readings, appointments, summary, documents, questions, safeguarding, consents, medicineList, forms, registration] = await Promise.all([
     canOrder ? listPatientOrders(record.id) : Promise.resolve([]),
     getPatientAssignments(record.id),
     listCourses(),
@@ -113,8 +115,13 @@ export default async function PatientRecordPage({
     getConsents(record.id),
     isDoctor ? getCatalogue() : Promise.resolve([]),
     listForms(id),
+    getRegistration(id),
   ]);
   const formSubmitters = await submitterLabels(record.id, forms);
+  const identityChecker = registration?.identityCheckedBy
+    ? ((await supabase.rpc("get_staff_directory")).data ?? []).find((person) => person.profile_id === registration.identityCheckedBy)?.full_name ?? null
+    : null;
+  const canSeeIdentity = user.roles.some((role) => role === "pa" || role === "admin");
   const assignable = library.filter((course) => course.published && !assignments.some((a) => a.courseId === course.id));
   const recordings = await getRecordings(record.id);
   const canRecord = canWrite && Boolean(myStaffId) && isTranscriptionConfigured();
@@ -177,6 +184,8 @@ export default async function PatientRecordPage({
       />
 
       <QuestionsSection questions={questions} />
+
+      <RegistrationPanel patientId={record.id} registration={registration} required={record.registrationRequired} canSeeIdentity={canSeeIdentity} checkedBy={identityChecker} />
 
       <section aria-labelledby="forms" className="mb-12 flex flex-col gap-4">
         <SectionHeader id="forms" title="Submitted " accent="forms" />
