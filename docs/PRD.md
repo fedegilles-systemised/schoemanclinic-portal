@@ -156,6 +156,9 @@ Status is "done" only where the screen and data path exist in code. Current stat
 | Patient | Forms `/portal/forms` [2026-11] (George's decision, 12 November 2026): every form submitted for the patient, newest first, with the questions as asked and the answers given; kept with the record and never changed. Today: repeat prescription requests, questions to the clinic and feedback. Forms made before the migration (repeat requests and questions) were copied in once | done [2026-11] (`form_submissions`). New forms must be added the same way |
 | Clinic | Submitted forms on the patient record [2026-11]: the same permanent copies on `/clinic/patients/[id]`, each saying who submitted it (the patient, a named team member, or "a guardian"). Staff in scope read repeat requests and questions; feedback only admins, PAs and the patient's doctors. Nothing changes or removes a copy, the database owner included, and each is written to the audit log | done [2026-11] |
 | Both | Staff Knowledge base `/knowledge-base`: admins only, unlisted page for the clinic to validate roles, access, flows and open questions | done [2026-11]; not a patient feature |
+| Both | Knowledge base "User flows" [2026-11]: 14 step-by-step guides for admins at `/knowledge-base/flows/[slug]` (`app/knowledge-base/flows/[slug]/page.tsx`), each a file `content/flows/<slug>.md` listed in `lib/knowledge-base/flows.ts`: accounts, registration, booking, bloods, results, lab-pdfs, prescriptions, record, questions, feedback, recordings, wearables, education, admin. Only listed slugs are read; sign-in returns to each. The old `/knowledge-base/test-results` redirects to `/knowledge-base/flows/results` | done [2026-11] (uncommitted on `dev` when checked) |
+| Both | Knowledge base Roadmap `/knowledge-base/roadmap` [2026-11]: rewritten 19 November 2026 as "At a glance": what is built, what the clinic is asked to confirm, what is agreed and to build, what blocks us, and base emails A to G. Renders `content/roadmap.md` | done [2026-11] (uncommitted on `dev` when checked) |
+| Clinic | Items agreed 19 November 2026 (second batch): proof-of-sending timeline, clearer outstanding-results indicator, in-house electronic signature, Conversations, missed-call text-back (GoHighLevel), 48-hour cancellation charging with card saved in Stripe, adjustable pre-appointment reminders, clinical enquiries into notes. See section 7 | planned; none built |
 
 ### What each role can configure on the profile [2026-11]
 
@@ -238,6 +241,22 @@ Residue of answered questions, still to settle with the clinic but not on the kn
 - [2026-11] **SignatureRx.** Was left for now by the owner; the first version is now built on `signaturerx` and off by default (section 5). When to switch it on is the owner's call once the PIN form's security review is done and SignatureRx has answered the questions above. (The repeat prescription payment alerts, also left earlier, are now built.)
 
 ## 7. Decisions
+
+### Agreed on 19 November 2026, second batch: Dr Schoeman's list [2026-11]
+
+Agreed with George, for the clinic, from Dr Schoeman's list (end of `content/knowledge-base.md`, "Decisions already taken"; each is on the Roadmap, `content/roadmap.md`). Each is agreed and NOT built unless the line says built. None has a screen, route, migration or server action in the code today (checked; see Findings).
+
+1. **Proof of what the clinic sends.** A timeline on each patient of every message and document, with when it was sent and delivered. Agreed, NOT built. What exists today: the date and the person for every document shared and every result released (section 5, Letters and documents and the sign-off list). Delivery and opening are not recorded; the clinic is asked whether that is enough as proof of sending (Roadmap assumptions table).
+2. **Outstanding results indicator.** A clear indicator on the patient record of results still awaited. Agreed. The knowledge base says an order already shows in the Blood tests part of the record for TDL orders (built); the clearer indicator and the other labs (GutMap, Nordic, Regenerus) are NOT built. Waiting on the clinic's choice for those labs: ordered and paid in Clinic Hub, or only recorded as awaited.
+3. **Electronic signature in-house, not DocuSign.** Clinic Hub creates the signature itself, from a form or a PDF the patient signs. Agreed, NOT built. DocuSign is not connected. Waiting on the list of documents that need signing.
+4. **Conversations from GoHighLevel inside Clinic Hub.** The WhatsApp, text and email conversations kept in GoHighLevel show in Clinic Hub. Agreed, NOT built. Waiting on the phone system in GoHighLevel.
+5. **Missed-call text-back in GoHighLevel.** Set up in GoHighLevel, not in Clinic Hub; it will show in Conversations. The phone system and its regulatory bundle belong to the clinic, which adds them in GoHighLevel (Settings, Phone system, Regulatory bundle). Agreed; not started, and blocked on the clinic.
+6. **Cancellation: 48 hours, card saved in Stripe, manual charge.** A patient who cancels later, or does not attend, is charged in full. The card is saved in Stripe and, after the appointment, the team charges it by hand from the patient record. The policy is shown wherever a patient books or is reminded. Agreed, NOT built (nothing is charged at booking today, and there is no saved card). Waiting on the fee for each appointment type and the policy wording (worth a legal check). Supersedes the "48-hour policy is shown to patients only" position only once built; staff can still cancel at any time today.
+7. **Adjustable pre-appointment reminders.** For patients who need bloods: 6, 4, 2 and 1 weeks and 3 days before, with the times adjustable by the clinic later. Agreed, NOT built. Reminders on an unpaid blood order (after 3 and 7 days) are built. Waiting on which appointment types need bloods.
+8. **Call transcripts saved as draft notes.** Built: the transcript arrives on the patient's record as a draft note to check and sign; the audio is kept in the clinic's private store. Needs AssemblyAI's data processing agreement signed before it is switched on.
+9. **Clinical enquiries into notes, via Conversations.** A patient's clinical message can be added to their notes once Conversations is in Clinic Hub. Agreed, NOT built; depends on item 4.
+10. **Semble scope.** What moves over from Semble is contacts, appointments, notes, documents and lists. The registration form is for new patients only. Agreed; migration NOT started and waits for the clinic to choose when to switch.
+11. **Fees and units confirmed.** The £45 site fee and £15 kit fee are the clinic's prices to the patient and are fixed. The clinic's markers, base units and ranges in UK units are confirmed. This matches what is built (route fees in Clinic Hub, UK-unit conversion).
 
 ### Decided on 19 November 2026: the registration form [2026-11]
 
@@ -386,6 +405,16 @@ From `content/knowledge-base.md`. "Built" is checked against this branch's code;
 - [2026-11] 12 November: "Patient names visible to every clinician in the diary" (George's interim default). Replaced the same day: admins and PAs see everyone; doctors, nurses and health coaches see their own bookings ([2026-11] nurses and health coaches confirmed by the clinic the same day).
 
 ## Findings
+
+- [2026-11] Second batch of 19 November 2026 decisions and the knowledge base's new User flows and Roadmap (uncommitted on `dev`), checked against `lib/knowledge-base/flows.ts`, the flows route, `content/roadmap.md` and the end of `content/knowledge-base.md`:
+  - **Consistent:** 14 guides are listed in `FLOW_GUIDES` and 14 files exist in `content/flows/`; the knowledge base and Roadmap mark the second-batch items agreed and to build, as this document does.
+  - **Nothing for the agreed items exists in code.** A search of `app/`, `lib/`, `components/` and migrations found no DocuSign, e-signature, Conversations, missed-call, cancellation-charge, saved-card or timeline code. They are "planned" here.
+  - **Outstanding results claim not verified.** The knowledge base says TDL orders already show in the Blood tests part of the record; this keeper did not re-read that screen for this batch.
+  - **Cancellation versus code.** Staff can cancel any open appointment at any time with no policy, and nothing charges; the earlier finding on the 48-hour policy stands.
+  - **Older decision lines now overlap.** The "reminders about a pending order" and "Semble migration" lines in the knowledge base repeat earlier decisions; no conflict found. The Roadmap lists photo ID and call-audio retention as clinic confirmations; section 6 here does not yet carry the call-audio retention period as its own question (it sits under the existing retention items).
+  - **Flow guides not read in full.** The 14 guides in `content/flows/` were listed, not read line by line, against the code; their claims are the knowledge base owner's. `content/test-results-flow.md` is renamed to `content/flows/results.md` in the working tree; `/knowledge-base/test-results` now redirects.
+  - **Roadmap wording.** "Built. Waiting on approvals" for wearables and call recording matches section 5; SignatureRx "switched off" matches.
+  - **Not run.** No build, browser or sign-in check of the new pages was made.
 
 - [2026-11] Branch `feat/patient-registration` (uncommitted), checked against migrations `20261129120000` and `20261129120100`, `lib/registration/`, the portal layout and the knowledge base (flow 1, question 35, decisions):
   - **Consistent:** the knowledge base's form fields, who opens the ID, and open question 35 match the code and this document.

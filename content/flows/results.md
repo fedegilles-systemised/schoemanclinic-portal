@@ -1,4 +1,4 @@
-## What you are testing
+## What it does
 
 > **Test with fictional data.** You can try everything here with made-up patients and values. Before the clinic goes live, the test data will be cleared from the database, so that only real patients remain and nothing old is left behind.
 >
@@ -10,7 +10,15 @@ Three people take part, so you need three sign-ins, or three people. The PA ente
 
 > **Why a doctor releases.** A patient never sees a value before a doctor has looked at it. This is enforced in the database, not only on screen, so it holds even if the page is changed. Only doctors can release.
 
-## Before you start
+## How it works
+
+1. A PA enters a lab report, by hand or from a lab's PDF, with each value in the unit on the report.
+2. Clinic Hub converts each value to the clinic's UK unit, keeps the original next to it, and marks it low, high, borderline or in range.
+3. The report waits under **To review**. Only a doctor can release it, and the patient cannot see it before then. Only one doctor is needed, and no marker is held back.
+4. The doctor comments on markers, signs the report off (action needed, with the action, or no action needed) and releases it. The sign-off is for the team only and cannot be changed.
+5. The patient is told by the bell and by an email that holds no value or verdict, then sees the values and a trend over time.
+
+## How to try it: before you start
 
 - **Use a test patient.** Use a fictional person with an account, never a real patient. An admin or a PA can invite one from Team and settings. The patient accepts the invitation and signs in once.
 - **Use an email address you can open.** The patient gets an email when the result is released, so the test patient's address must be one you can read.
@@ -72,10 +80,10 @@ Try each of these. If one does not behave as written, tell us.
 ## Not built yet
 
 - **Corrections.** A released report cannot be withdrawn or corrected.
-- **Lab feeds.** A PA types the values. Electronic feeds from the labs come later.
+- **Lab feeds.** A PA types the values. TDL's electronic feed waits on TDL (see the Roadmap).
 - **Reading a PDF automatically.** Postponed. A person enters the values from the PDF.
 - **Patient uploads.** A patient cannot upload a PDF yet.
-- **Ordering and paying for bloods.** This test starts at the lab report.
+- **Ordering and paying for bloods.** This test starts at the lab report. Ordering has its own guide.
 - **Guardians.** A guardian does not see the patient's results yet.
 - **Results by message.** Only the portal and the email notice exist. WhatsApp comes later.
 
