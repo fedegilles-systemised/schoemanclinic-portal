@@ -1,8 +1,10 @@
 import { redirect } from "next/navigation";
 
+import { RegistrationGate } from "@/components/registration/registration-gate";
 import { AppShell } from "@/components/shell/app-shell";
 import { getCurrentUser, homePathFor } from "@/lib/auth/session";
 import { getAvatarUrl } from "@/lib/data/profile";
+import { getMyRegistration } from "@/lib/data/registration";
 import { getNotifications } from "@/lib/data/shell";
 import { getPortalPatient, getPortalPatients } from "@/lib/portal/patient";
 
@@ -12,11 +14,12 @@ export default async function PortalLayout({ children }: { children: React.React
   if (user.isSuspended) redirect("/login?error=no-access");
   if (!user.hasPatientView) redirect(homePathFor(user) ?? "/login?error=no-access");
 
-  const [notifications, avatarUrl, patients, current] = await Promise.all([
+  const [notifications, avatarUrl, patients, current, registration] = await Promise.all([
     getNotifications(user.id),
     getAvatarUrl(user.avatarPath),
     getPortalPatients(),
     getPortalPatient(),
+    getMyRegistration(),
   ]);
 
   return (
@@ -31,7 +34,7 @@ export default async function PortalLayout({ children }: { children: React.React
       roles={user.roles}
       switchTo={user.isStaff ? { href: "/clinic", label: "Clinic view" } : undefined}
     >
-      {children}
+      {registration?.needed ? <RegistrationGate me={registration} /> : children}
     </AppShell>
   );
 }

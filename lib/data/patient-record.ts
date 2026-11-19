@@ -30,6 +30,8 @@ export type PatientRecord = {
   dateOfBirth: string;
   careTeam: { name: string; relationship: CareRelationship }[];
   notes: RecordNote[];
+  /** Added after the registration form began, so the patient is expected to complete it. */
+  registrationRequired: boolean;
 };
 
 /**
@@ -41,7 +43,7 @@ export async function getPatientRecord(patientId: string): Promise<PatientRecord
   const today = todayInLondon();
   const patient = await supabase
     .from("patient_profiles")
-    .select("id, first_name, last_name, clinic_ref, date_of_birth")
+    .select("id, first_name, last_name, clinic_ref, date_of_birth, registration_required")
     .eq("id", patientId)
     .is("archived_at", null)
     .maybeSingle();
@@ -74,6 +76,7 @@ export async function getPatientRecord(patientId: string): Promise<PatientRecord
     name: `${patient.data.first_name} ${patient.data.last_name}`,
     clinicRef: patient.data.clinic_ref,
     dateOfBirth: patient.data.date_of_birth,
+    registrationRequired: patient.data.registration_required,
     careTeam: team.data.map((row) => ({ name: names.get(row.staff_id) ?? "A former team member", relationship: row.relationship })),
     notes: notes.data.map((n) => ({
       id: n.id,

@@ -454,3 +454,7 @@ insert into public.form_submissions (patient_id, kind, title, answers, source_id
    'f2000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000011', now() - interval '8 days');
 insert into public.patient_feedback (id, patient_id, sent_at) values
   ('f2000000-0000-4000-8000-000000000002', 'd0000000-0000-4000-8000-000000000001', now() - interval '1 day');
+
+-- The people above stand for patients who already existed before the registration form: they do not complete it.
+-- (A patient added after 19 November 2026 does, and has registration_required set by default.)
+update public.patient_profiles set registration_required = false;
