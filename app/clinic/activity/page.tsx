@@ -31,6 +31,7 @@ const ENTITIES: Record<string, string> = {
   patient_feedback: "Patient feedback",
   feedback_follow_ups: "Feedback follow-up",
   form_submissions: "Submitted form",
+  patient_registrations: "Registration form",
 };
 
 function words(value: string): string {
