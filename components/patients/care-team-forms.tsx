@@ -18,16 +18,10 @@ import {
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { addToCareTeam, removeFromCareTeam, type CareTeamFormState } from "@/lib/patients/actions";
+import { RELATIONSHIP_LABELS } from "@/lib/patients/care-team-labels";
 
 const initial: CareTeamFormState = {};
 
-export const RELATIONSHIP_LABELS = {
-  primary_doctor: "Primary doctor",
-  doctor: "Doctor",
-  nurse: "Nurse",
-  pa: "PA",
-  health_coach: "Health coach",
-} as const;
 
 const ROLE_FOR_RELATIONSHIP: Record<keyof typeof RELATIONSHIP_LABELS, string> = {
   primary_doctor: "doctor",
