@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { AddToCareTeamDialog, RELATIONSHIP_LABELS, RemoveFromCareTeamButton } from "@/components/patients/care-team-forms";
+import { AddToCareTeamDialog, RemoveFromCareTeamButton } from "@/components/patients/care-team-forms";
+import { RELATIONSHIP_LABELS } from "@/lib/patients/care-team-labels";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";

@@ -2,12 +2,16 @@
 
 How to give the clinic a set of made-up people and activity to try Clinic Hub with, and how to wind it down afterwards. It lives in the same Supabase project as everything else, so it follows the same rules: nothing is deleted. Accounts are suspended and records archived.
 
-Two files in `supabase/demo/`, run by hand in the Supabase SQL editor. They are not migrations and not part of `seed.sql`.
+Four files in `supabase/demo/`, run by hand in the Supabase SQL editor. They are not migrations and not part of `seed.sql`.
 
 | File | What it does |
 |---|---|
 | `demo-load.sql` | Creates seven `demo.*@example.test` accounts and their activity |
 | `demo-unload.sql` | Locks those accounts at the sign-in service, suspends them, archives the demo patients, medications and staff, and closes what is still open |
+| `demo-markers.sql` | Adds a base set of 21 common biomarkers, only when the project's marker list is empty. Catalogue: it cannot be removed afterwards |
+| `demo-more.sql` | Adds five more demo patients with five reports each over about a year, and fills in the results for the first demo patients |
+
+Order: `demo-load.sql`, then `demo-markers.sql`, then `demo-more.sql`. The unload at the end covers all of them. The marker ranges are standard adult ranges, not the clinic's own: replace them with the clinic's list when it is loaded.
 
 ## What it creates
 

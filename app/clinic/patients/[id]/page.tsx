@@ -9,7 +9,7 @@ import { AppointmentsTable } from "@/components/booking/appointments-table";
 import { CancelAppointmentButton } from "@/components/booking/book-slot";
 import { DraftForm, NewNoteForm } from "@/components/notes/note-forms";
 import { CheckRecordingButton, Recorder } from "@/components/recordings/recorder";
-import { RELATIONSHIP_LABELS } from "@/components/patients/care-team-forms";
+import { RELATIONSHIP_LABELS } from "@/lib/patients/care-team-labels";
 import { PatientContactForm } from "@/components/patients/contact-form";
 import { RemoveGuardianButton } from "@/components/patients/guardian-forms";
 import { FormList } from "@/components/forms/form-list";
