@@ -98,7 +98,9 @@ export default async function ResultsPage() {
                 {queue.imports.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell>
-                      {item.title}
+                      <a href={`/clinic/results/import/${item.id}/file`} target="_blank" rel="noopener noreferrer" className="text-content underline">
+                        {item.title}
+                      </a>
                       {item.source ? (
                         <div className="type-small text-content-muted">
                           From {item.source.provider}
