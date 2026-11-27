@@ -14,16 +14,16 @@ import { SEVERITY_LABELS } from "@/lib/record/constants";
 
 export const metadata: Metadata = { title: "Safeguarding · The Schoeman Clinic" };
 
-/** Active safeguarding alerts on the doctor's own patients. Doctors only. */
+/** Active safeguarding alerts on every patient. Doctors, nurses, health coaches, PAs and admins read them. */
 export default async function SafeguardingPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-  if (user.isSuspended || !user.roles.includes("doctor")) redirect("/clinic");
+  if (user.isSuspended || !user.isStaff) redirect("/clinic");
   const alerts = (await getSafeguardingAlerts()).sort((a, b) => (a.reviewDue ?? "9999").localeCompare(b.reviewDue ?? "9999"));
 
   return (
     <>
-      <PageHeader eyebrow="Clinical" title="Safeguarding " accent="alerts" description="Active alerts on the patients you look after, soonest review first. Only doctors see these." />
+      <PageHeader eyebrow="Clinical" title="Safeguarding " accent="alerts" description="Active alerts on every patient, soonest review first. Only the clinic team sees these. Doctors add and close them." />
       {alerts.length === 0 ? (
         <EmptyState>No active alerts.</EmptyState>
       ) : (

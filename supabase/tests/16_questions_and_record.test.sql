@@ -18,9 +18,9 @@ reset role;
 create temporary table qq on commit drop as select id from public.questions where subject = 'Dose timing';
 grant select on qq to authenticated;
 
--- Her doctor replies; another doctor cannot.
+-- Another doctor, not on the care team, may reply (27 November 2026), and so may her own doctor.
 select pg_temp.become('a0000000-0000-4000-8000-000000000002');
-select throws_ok($$ select public.reply_to_question((select id from qq), 'Hello') $$, '42501', null, 'a doctor not on the care team cannot reply');
+select is(public.reply_to_question((select id from qq), 'Hello'), true, 'a doctor not on the care team can reply');
 reset role;
 select pg_temp.become('a0000000-0000-4000-8000-000000000001');
 select is(public.reply_to_question((select id from qq), 'Take it in the morning.'), true, 'her doctor replies, as the clinic');
@@ -30,7 +30,7 @@ select is((select status::text from public.questions where id = (select id from 
 
 -- The patient reads the reply and writes back.
 select pg_temp.become('a0000000-0000-4000-8000-000000000011');
-select is((select count(*)::int from public.question_replies where question_id = (select id from qq)), 1, 'the patient reads the reply');
+select is((select count(*)::int from public.question_replies where question_id = (select id from qq)), 2, 'the patient reads both replies');
 select is(public.reply_to_question((select id from qq), 'Thank you.'), false, 'and writes back, as the patient side');
 select throws_ok($$ select public.close_question((select id from qq)) $$, '42501', null, 'a patient cannot close a question');
 reset role;
@@ -53,11 +53,11 @@ select pg_temp.become('a0000000-0000-4000-8000-000000000001');
 select cmp_ok((select count(*)::int from public.consents where patient_id = 'd0000000-0000-4000-8000-000000000001'), '>', 0, 'her doctor reads her consents');
 reset role;
 
--- The fuller record: a PA records an allergy but cannot diagnose or see safeguarding.
+-- The fuller record: a PA records an allergy but cannot diagnose.
 select pg_temp.become('a0000000-0000-4000-8000-000000000003');
 select lives_ok($$ insert into public.patient_allergies (patient_id, substance, recorded_by) values ('d0000000-0000-4000-8000-000000000001', 'Penicillin', 'b0000000-0000-4000-8000-000000000003') $$, 'a PA records an allergy');
 select throws_ok($$ insert into public.diagnoses (patient_id, label, recorded_by) values ('d0000000-0000-4000-8000-000000000001', 'Test', 'b0000000-0000-4000-8000-000000000003') $$, '42501', null, 'a PA cannot add a diagnosis');
-select is((select count(*)::int from public.safeguarding_alerts), 0, 'a PA sees no safeguarding alert');
+select is((select count(*)::int from public.safeguarding_alerts), 3, 'a PA reads safeguarding alerts (27 November 2026)');
 select lives_ok($$ update public.patient_allergies set archived_at = now() where substance = 'Penicillin' and recorded_by = 'b0000000-0000-4000-8000-000000000003' $$, 'and can remove an allergy entered by mistake');
 select is((select count(*)::int from public.patient_allergies where patient_id = 'd0000000-0000-4000-8000-000000000001' and archived_at is not null), 1, 'which is archived, not deleted');
 reset role;

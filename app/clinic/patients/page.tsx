@@ -14,9 +14,8 @@ import { formatDate } from "@/lib/format";
 export const metadata: Metadata = { title: "Patients · The Schoeman Clinic" };
 
 /**
- * Every patient this person may see, and who looks after them. PAs and admins see everyone;
- * doctors, nurses and health coaches see the patients whose care team they are on. PAs, admins
- * and doctors keep the care team up to date here.
+ * Every patient, and who looks after them. The whole team sees everyone (the clinic's decision of
+ * 27 November 2026). PAs, admins and doctors keep the care team up to date here.
  */
 export default async function PatientsPage() {
   const user = await getCurrentUser();
@@ -25,7 +24,6 @@ export default async function PatientsPage() {
 
   const { patients, staff } = await getPatientList();
   const canEdit = user.roles.some((role) => role === "pa" || role === "admin" || role === "doctor");
-  const seesEveryone = user.roles.some((role) => role === "pa" || role === "admin");
 
   return (
     <>
@@ -33,16 +31,10 @@ export default async function PatientsPage() {
         eyebrow="Patients"
         title="Patient "
         accent="list"
-        description={
-          seesEveryone
-            ? "Every patient, and who looks after them. Doctors, nurses and health coaches see only the patients whose care team they are on."
-            : "The patients whose care team you are on."
-        }
+        description="Every patient, and who looks after them."
       />
       {patients.length === 0 ? (
-        <EmptyState>
-          {seesEveryone ? "No patients yet." : "You are not on any patient's care team yet. A PA or admin adds you."}
-        </EmptyState>
+        <EmptyState>No patients yet.</EmptyState>
       ) : (
         <Table>
           <TableHeader>

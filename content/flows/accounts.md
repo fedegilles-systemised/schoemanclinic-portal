@@ -3,7 +3,7 @@
 Nobody signs up on their own. A person is invited, accepts the invitation, chooses a password and lands on the right home screen: the patient portal for patients and guardians, the clinic portal for the team.
 
 - **Who invites.** A PA invites patients and guardians. A doctor invites their own patients. An admin invites anyone: patients, guardians, doctors, nurses, health coaches, PAs and admins.
-- **What they get.** Patients and guardians see the portal. Staff see the clinic portal, limited to the patients on their care team (PAs and admins see everyone).
+- **What they get.** Patients and guardians see the portal. Staff see the clinic portal and every patient. The care team says who looks after each patient.
 - **Every invitation is logged** under the sender's name, with the access it grants.
 
 ## How it works

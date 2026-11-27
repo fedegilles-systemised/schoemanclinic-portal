@@ -17,7 +17,7 @@ A patient, or a guardian who can act, writes to the clinic from the portal. The 
 3. As the patient, check the email and the bell. The notice says there is a reply, never what it says.
 4. Reply from the patient's side, then close the conversation as the team.
 
-**What you should see:** a doctor outside the patient's care team cannot see the question.
+**What you should see:** every doctor, nurse and health coach can see the question, whether or not they are on the patient's care team. The patient cannot see anyone else's.
 
 ## Next
 

@@ -22,7 +22,7 @@ It needs AssemblyAI's agreement signed first. Once it is on:
 3. Wait for the state to show transcribed.
 4. Open the draft note, check it and sign it.
 
-**What you should see:** the note is in your name, the audio is not readable by people outside the care team, and only a doctor, nurse or health coach who can open the patient can record.
+**What you should see:** the note is in your name, the audio is not readable by patients or guardians, and only a doctor, nurse or health coach can record.
 
 ## To confirm
 

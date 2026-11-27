@@ -48,9 +48,10 @@ create function t.p_eleanor() returns uuid language sql immutable as $$ select '
 select is(
   t.run(t.gina(), format($q$insert into public.clinical_notes (patient_id, author_id, title, body) values (%L, %L, 'Follow-up', 'Feeling better.')$q$, t.p_eleanor(), t.s_gina())),
   1, 'a doctor writes a draft for her patient');
-select throws_ok(
-  format($$ select t.run(t.laura(), $q$insert into public.clinical_notes (patient_id, author_id, title, body) values (%L, 'b0000000-0000-4000-8000-000000000002', 'X', 'Y')$q$) $$, t.p_eleanor()),
-  '42501', null, 'a doctor cannot write for a patient she does not look after');
+-- Since 27 November 2026 any doctor, nurse or health coach writes in any patient's record.
+select is(
+  t.run(t.laura(), format($q$insert into public.clinical_notes (patient_id, author_id, title, body) values (%L, 'b0000000-0000-4000-8000-000000000002', 'Cover', 'Seen while covering.')$q$, t.p_eleanor())),
+  1, 'a doctor can write for a patient who is not on her care team');
 select throws_ok(
   format($$ select t.run(t.priya(), $q$insert into public.clinical_notes (patient_id, author_id, title, body) values (%L, %L, 'X', 'Y')$q$) $$, t.p_eleanor(), t.s_priya()),
   '42501', null, 'a PA cannot write a note');
@@ -70,9 +71,9 @@ select is(
 
 -- Who reads notes ------------------------------------------------------------------------------
 
-select is(t.n(t.priya(), 'select * from public.clinical_notes'), 1, 'a PA reads notes');
-select is(t.n(t.admin(), 'select * from public.clinical_notes'), 1, 'an admin reads notes');
-select is(t.n(t.laura(), 'select * from public.clinical_notes'), 0, 'a doctor not on the care team does not');
+select is(t.n(t.priya(), 'select * from public.clinical_notes'), 2, 'a PA reads notes');
+select is(t.n(t.admin(), 'select * from public.clinical_notes'), 2, 'an admin reads notes');
+select is(t.n(t.laura(), 'select * from public.clinical_notes'), 2, 'a doctor not on the care team reads them too');
 select is(t.n(t.eleanor(), 'select * from public.clinical_notes'), 0, 'the patient does not see notes');
 
 -- Signing locks the note -------------------------------------------------------------------------

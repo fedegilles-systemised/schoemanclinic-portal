@@ -189,7 +189,7 @@ select pg_temp.become('a0000000-0000-4000-8000-000000000001');
 select is((select count(*)::int from public.signaturerx_prescriptions where repeat_request_id = (select id from made where name = 'approved')), 1, 'a doctor on the care team reads it');
 reset role;
 select pg_temp.become('a0000000-0000-4000-8000-000000000002');
-select is((select count(*)::int from public.signaturerx_prescriptions where repeat_request_id = (select id from made where name = 'approved')), 0, 'a doctor who is not on it does not');
+select is((select count(*)::int from public.signaturerx_prescriptions where repeat_request_id = (select id from made where name = 'approved')), 1, 'a doctor who is not on it reads it too (27 November 2026)');
 reset role;
 select pg_temp.become('a0000000-0000-4000-8000-000000000011');
 select is((select count(*)::int from public.signaturerx_prescriptions), 0, 'the patient does not');

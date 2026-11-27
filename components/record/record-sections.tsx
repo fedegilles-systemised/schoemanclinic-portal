@@ -21,8 +21,8 @@ import { DIAGNOSIS_STATUS_LABELS, SEVERITY_LABELS } from "@/lib/record/constants
 
 const listClass = "flex flex-col divide-y divide-surface-border border border-surface-border";
 
-/** Safeguarding alerts at the top of the record, for doctors only (the database shows nobody else). */
-export function SafeguardingSection({ patientId, alerts, today }: { patientId: string; alerts: SafeguardingRow[]; today: string }) {
+/** Safeguarding alerts at the top of the record. The whole team reads them; only doctors add or close them (the database decides). */
+export function SafeguardingSection({ patientId, alerts, today, canEdit }: { patientId: string; alerts: SafeguardingRow[]; today: string; canEdit: boolean }) {
   const active = alerts.filter((a) => a.status === "active");
   return (
     <section aria-labelledby="safeguarding" className="mb-12 flex flex-col gap-4">
@@ -44,19 +44,21 @@ export function SafeguardingSection({ patientId, alerts, today }: { patientId: s
                   {a.reviewDue ? ` · review by ${formatDate(a.reviewDue)}` : ""}
                 </span>
               </div>
-              <ResolveAlertButton patientId={patientId} alertId={a.id} label={a.alertType} />
+              {canEdit ? <ResolveAlertButton patientId={patientId} alertId={a.id} label={a.alertType} /> : null}
             </li>
           ))}
         </ul>
       )}
-      <Card>
-        <CardHeader>
-          <CardTitle>New safeguarding alert</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <SafeguardingForm patientId={patientId} today={today} />
-        </CardContent>
-      </Card>
+      {canEdit ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>New safeguarding alert</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <SafeguardingForm patientId={patientId} today={today} />
+          </CardContent>
+        </Card>
+      ) : null}
     </section>
   );
 }

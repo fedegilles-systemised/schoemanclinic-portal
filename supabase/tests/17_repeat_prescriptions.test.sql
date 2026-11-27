@@ -110,10 +110,11 @@ select pg_temp.become('a0000000-0000-4000-8000-000000000006');
 select throws_ok($$ select public.decide_repeat_request((select id from rr), 'approved', null) $$, '42501', null, 'an admin cannot decide a request');
 reset role;
 select pg_temp.become('a0000000-0000-4000-8000-000000000002');
-select throws_ok($$ select public.decide_repeat_request((select id from rr), 'approved', null) $$, '42501', null, 'a doctor not on the care team cannot decide');
+-- Since 27 November 2026 any doctor decides any patient's request, not only the care team.
+select lives_ok($$ select public.decide_repeat_request((select id from rr), 'approved', 'Approved for two months') $$, 'a doctor not on the care team approves');
 reset role;
 select pg_temp.become('a0000000-0000-4000-8000-000000000001');
-select lives_ok($$ select public.decide_repeat_request((select id from rr), 'approved', 'Approved for two months') $$, 'her doctor approves');
+select throws_ok($$ select public.decide_repeat_request((select id from rr), 'approved', 'Again') $$, '22023', null, 'and her own doctor cannot decide it a second time');
 select throws_ok($$ select public.decide_repeat_request((select id from rr), 'approved', null) $$, '22023', null, 'approved cannot be approved again');
 select throws_ok($$ select public.decide_repeat_request((select id from rr), 'declined', ' ') $$, '22023', null, 'a decline needs a reason');
 reset role;

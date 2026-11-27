@@ -111,7 +111,7 @@ export default async function PatientRecordPage({
     getClinicalSummary(record.id),
     listDocuments(record.id, { sharedOnly: false }),
     listQuestions({ patientId: record.id, open: true }),
-    isDoctor ? getSafeguardingAlerts(record.id) : Promise.resolve([]),
+    getSafeguardingAlerts(record.id),
     getConsents(record.id),
     isDoctor ? getCatalogue() : Promise.resolve([]),
     listForms(id),
@@ -169,7 +169,7 @@ export default async function PatientRecordPage({
         </div>
       ) : null}
 
-      {isDoctor ? <SafeguardingSection patientId={record.id} alerts={safeguarding} today={today} /> : null}
+      <SafeguardingSection patientId={record.id} alerts={safeguarding} today={today} canEdit={isDoctor} />
 
       <ClinicalSummarySection
         patientId={record.id}

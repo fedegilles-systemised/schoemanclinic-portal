@@ -37,10 +37,10 @@ There are six roles, plus the guardian, who is a link to a patient rather than a
 | --- | --- | --- | --- |
 | Patient | A patient of the clinic | Sees their own record and released results, orders and pays for bloods, uploads results, requests repeat prescriptions, asks the clinic questions, reads shared letters | Patient portal |
 | Guardian | A person verified by the clinic as able to see or act for a patient, for example a parent | Sees the patient's portal, and acts for them (pays, requests, asks) only if the clinic ticked "can act" | Patient portal, viewing that patient |
-| Doctor | A clinician | For the patients on their care team: reviews and releases results, comments on values, writes and signs notes, writes letters, sees safeguarding alerts, orders bloods, invites the patient | Clinic portal |
+| Doctor | A clinician | For every patient: reviews and releases results, comments on values, writes and signs notes, writes letters, sees safeguarding alerts, orders bloods, invites the patient | Clinic portal |
 | PA | A personal assistant or practice administrator | Matches and confirms imported PDFs, manages orders and repeat requests, invites patients and verifies guardians | Clinic portal |
-| Health coach | A coaching team member | Sees everything about the patients on their care team except safeguarding alerts, and writes and signs coaching notes | Clinic portal |
-| Nurse | A nurse at the clinic | Works like a doctor on the patients of their care team: reads the record, enters results, records allergies, writes and signs notes. Does not record diagnoses, prescribe, see safeguarding alerts or release results | Clinic portal |
+| Health coach | A coaching team member | Sees everything about every patient, including safeguarding alerts, and writes and signs coaching notes | Clinic portal |
+| Nurse | A nurse at the clinic | Works like a doctor on every patient: reads the record, enters results, records allergies, writes and signs notes, and reads safeguarding alerts. Does not record diagnoses, prescribe, add safeguarding alerts or release results | Clinic portal |
 | Admin | A clinic or system administrator | Manages the team, roles, settings, care teams and the education library, reads the activity logs, and reads every patient's clinical record | Clinic portal |
 
 **Rules that apply to every role**
@@ -80,7 +80,7 @@ This table is what the database enforces since the clinic's decisions of 11 Nove
 | Photo ID | Add once; cannot read it back | - | - | - | Read, mark as checked | - | Read, mark as checked |
 | Care team (who looks after whom) | - | - | Read, add, change | Read | Read, add, change | Read | Read, add, change |
 | Clinical notes | - | - | Read; write and sign their own; record calls | Read; write and sign their own; record calls | Read | Read; write and sign their own; record calls | Read |
-| Safeguarding alerts | - | - | Read, add, change | - | - | - | - |
+| Safeguarding alerts | - | - | Read, add, change | Read | Read | Read | Read |
 | Invitations | - | - | Patient invitations they sent | - | Patient and guardian invitations | - | All invitations |
 | Appointments | Read, book with their care team | Read, book if can act | Read, book, cancel | Read, book, cancel | Read, book, cancel | Read, book, cancel | Read, book, cancel |
 | Lab orders | Read | Read | Read, add, change | Read | Read, add, change | Read | Read |
@@ -99,7 +99,7 @@ This table is what the database enforces since the clinic's decisions of 11 Nove
 
 **Points the table does not show**
 
-- Doctors, nurses and health coaches see only the patients whose care team they are on: everything in their columns applies to those patients only. PAs and admins see every patient. The care team is kept on the Patient list by PAs, admins and doctors; taking someone off ends their access the same day.
+- Every doctor, nurse, health coach, PA and admin sees every patient, and can read and write in any record within what their role allows (decided 27 November 2026). The care team no longer limits who opens a record: it says who looks after a patient, and where their results and alerts are sent first. PAs, admins and doctors keep it on the Patient list. Nobody opens their own record, or that of someone they look after, as staff.
 - Appointments and payments are never entered by hand: they arrive from the booking system and from Stripe.
 - Patients and guardians never reach unreleased results, safeguarding alerts, imports or the care team, however they ask. This is tested.
 - Every change to a clinical record is written to a permanent log: who, what and when. The log never stores the clinical values themselves.
@@ -156,7 +156,7 @@ Eleven screens are built and the rest are planned. Every built screen reads real
 | Registration form | Shown in place of the whole portal to a new patient until they complete it: personal details, next of kin and GP, about you, main concerns and health goals, photo ID and consent | Patient (new patients only) | None |
 | Registration (on a patient's record) | The answers, who completed them and when. A PA or admin also opens the photo ID and marks it as checked | Everyone who can open the record; PAs and admins for the photo ID | None |
 | Lab orders | Create and follow orders | Doctor, PA | Stripe, lab partner |
-| Safeguarding alerts | Add and review alerts | Doctor only | None |
+| Safeguarding alerts | Add and review alerts | Doctor adds and closes; doctors, nurses, health coaches, PAs and admins read | None |
 | Team and settings | The list of the team, their roles, and the clinic's tests, prices, partners and locations. Invitations are already built | Admin | None |
 
 Today every staff member sees the same clinic menu, and the database decides what each can open. The planned design hides the items a role cannot use.
@@ -423,7 +423,7 @@ Doctors add a patient's medicines on the record, with the day each supply starts
 
 1. Each clinician sets their weekly hours and connects their Google Calendar. An admin sets which appointment types are offered online.
 2. A patient books with the clinicians on their care team. The team books for any patient they can open. A new patient books on the clinic's public page: the initial consultation only, no deposit, at least a day ahead.
-3. The diary shows every clinician's bookings. Admins and PAs see everyone, others see their own. Each booking goes into the clinician's Google Calendar with the clinic reference only, and the patient gets a confirmation.
+3. The diary shows every clinician's bookings to the whole team. Each booking goes into the clinician's Google Calendar with the clinic reference only, and the patient gets a confirmation.
 4. Patients cannot cancel or move a booking. The team does it from the diary, and the patient is told. A doctor, PA or admin can mark a no-show, and a PA or admin can undo it.
 5. A new record made by an online booking that looks like someone already on the books is flagged, and nobody is merged automatically. A new patient not checked after two working days is reminded to the team.
 6. When an appointment needs bloods, the due date is 14 days before it.
@@ -450,7 +450,7 @@ Doctors add a patient's medicines on the record, with the day each supply starts
 **Who:** a doctor. **Status:** planned.
 
 1. A doctor adds an alert to a patient's file with a type, severity (low, moderate, high), a note and a review date.
-2. Only doctors can see alerts. Patients, guardians, PAs, health coaches and admins cannot.
+2. Doctors, nurses, health coaches, PAs and admins can read alerts, so whoever speaks to a vulnerable patient knows. Only doctors add or close them. Patients and guardians never see them.
 3. The alert is reviewed on its date and then closed.
 
 **Data in/out:** none. **Email:** none.
@@ -689,7 +689,7 @@ The clinic answered the rest on 11 November. Those answers are under Decisions a
 - Agreed on the call, 6 November: reminders go by email and by WhatsApp through GoHighLevel's automatic WhatsApp, in place of SMS.
 - The first release is the bloods loop. Messaging, reminders, invoices and marketing stay in GoHighLevel. Clinical notes and appointments move into Clinic Hub (11 November, question 15), and Semble is retired in stages. Prescribing goes through SignatureRx.
 - Who sees which patient was decided on 11 November (questions 1 to 3, below).
-- A patient sees a result only after a doctor releases it. Safeguarding alerts are for doctors only.
+- A patient sees a result only after a doctor releases it. Safeguarding alerts are read by the whole clinic team and added or closed by doctors only (27 November 2026).
 - Sign-in is by email and password. There is no public sign-up.
 - Staff sessions end after 12 hours, or 30 minutes idle. Patient sessions end after 7 days, or 2 hours idle.
 - Records are archived, never deleted. Accounts are suspended, never removed.
@@ -717,9 +717,9 @@ The clinic answered the rest on 11 November. Those answers are under Decisions a
 
 **Decided by the clinic on 11 November.** Answers to the open questions, shown with their old numbers. "Built" means it is in Clinic Hub now; "not built yet" means it is agreed and still to do.
 
-- PAs and admins see every patient. Doctors, nurses and health coaches see only the patients whose care team they are on. PAs, admins and doctors keep the care team up to date on the Patient list. Built. (Question 1)
+- The whole team sees every patient: doctors, nurses, health coaches, PAs and admins (27 November 2026, replacing the care-team rule of 11 November). PAs, admins and doctors keep the care team up to date on the Patient list, which now says who looks after a patient. Built. (Question 1)
 - Admins can read every patient's clinical record, including locked notes. Built. (Questions 2 and 27)
-- A health coach sees everything about the patients on their care team, except safeguarding alerts. Built. (Question 3)
+- A health coach sees everything about every patient, including safeguarding alerts since 27 November 2026. Built. (Question 3)
 - A doctor who is also a patient sees, as a patient, only what any patient sees. Built. (Question 4)
 - A PA can create a link that lets a guardian act, with no second approver. A patient cannot remove a guardian; a PA or an admin does, from the patient's record. Built. Age and consent rules for under-18s are still to be set. (Question 5)
 - Doctors invite their own patients. A new patient a doctor invites joins that doctor's care team as primary doctor. Whenever a doctor or an admin is invited, drgina@theschoemanclinic.com is emailed, as well as the notice in the portal bell. No second approval. Built. (Question 6)
@@ -727,7 +727,7 @@ The clinic answered the rest on 11 November. Those answers are under Decisions a
 - Repeat prescriptions are requested three weeks before they run out. When the patient has paid, the admins, the PAs and the doctor are told that payment is made and the prescription is to be offered. Built, with Stripe for the fee; prescribing through SignatureRx is connected and off until the clinic turns it on. (Question 13)
 - Replies to questions show in the portal with a status. The page says it is not for emergencies. Response times are agreed later. Built. (Question 14)
 - Everything moves into Clinic Hub. Clinical notes are written here, and a signed note is final: nobody edits or corrects it (decided 12 November). Staff connect their own Google Calendar. Patients book with the clinicians on their care team, and staff book for any patient they can open, inside each clinician's weekly hours; a booking goes into the clinician's Google Calendar with the clinic reference only, and the patient gets a confirmation. Patients cannot cancel or move a booking; the team does. Built. (Questions 15 and 32)
-- The clinic diary shows every clinician's bookings by day, week or month, as in Semble, with a column or colour per clinician and filters by clinician and location. Admins and PAs see every clinician's diary; a doctor, nurse or health coach sees only their own bookings. Confirmed by the clinic for nurses and health coaches on 12 November 2026, with no change to bookings already made. Admins, PAs and staff who can open the record move or cancel a booking from the diary, and the patient is told. Built (12 November 2026).
+- The clinic diary shows every clinician's bookings by day, week or month, as in Semble, with a column or colour per clinician and filters by clinician and location. The whole team sees every clinician's diary (27 November 2026, replacing the rule of 12 November under which a doctor, nurse or health coach saw only their own). Admins, PAs and staff who can open the record move or cancel a booking from the diary, and the patient is told. Built (12 November 2026).
 - New patients book online on the clinic's own booking page instead of GoHighLevel calendars: they choose an appointment type offered online, a clinician or the first available, and a free time at least a day ahead, and give their name, date of birth, email and mobile. Someone already on the clinic's books (matched by email and date of birth) is booked on their own record, which nothing they type changes; anyone else gets a new record, and if that record looks like someone already on the books (the same name and date of birth with a different email, the same name and email with a different date of birth, or the same date of birth and phone), the team is told and shown the likely record so a person decides: nothing is merged for them. Clinic Hub makes the booking, puts it in the clinician's Google Calendar, emails a confirmation, and tells admins and PAs to check the details and invite them. Every online booking is confirmed by email straight away; an existing patient's email goes to an address the clinic holds for them (their sign-in email, or the record's contact email if they have no account), not the one typed, so they hear about a booking they did not make: this email is sent even if they have turned appointment emails off, it asks them to contact the clinic if they did not book, and admins and PAs are told if it could not be delivered. The clinic chose this over a confirm link that holds the slot until clicked (12 November 2026). Adults only; two open online bookings per person. Bookings already in GoHighLevel calendars stay there and are not copied in. Built (12 November 2026).
 - Fathom is replaced. From a patient's record, a doctor, nurse or health coach records the call (their microphone and the call's sound, or the microphone only), and the transcript arrives as a draft note in their name to check and sign. Transcription is by AssemblyAI in the EU. The clinic already has patients' consent to record. Built; needs the AssemblyAI key. Every account is in the clinic's name. (Question 16)
 - Messages go by email and WhatsApp through GoHighLevel, which the clinic connects with a private integration key; until it is connected, email goes through the portal's own email service. Built; needs the GoHighLevel key. (Question 17)
@@ -779,3 +779,12 @@ The clinic answered the rest on 11 November. Those answers are under Decisions a
 - The choice not to receive news and insights from the doctors stays in Clinic Hub for now. GoHighLevel is not told.
 - Who completes the form for a child, or a patient a guardian manages, is not decided yet (question 35).
 - The Privacy Notice and Terms of Treatment and Fees links on the form are used as they are, and are to be confirmed by the clinic as final.
+
+**Decided on 27 November 2026** (Dr Gina Schoeman, Medical Director, for the clinic):
+
+- Doctors, nurses, health coaches and admin staff see all patients and their records, and read and write in any record, including adding notes to a patient who is under another care team. What each role may do is unchanged: only doctors prescribe, record diagnoses and release results, and a nurse or a health coach does not. Built.
+- Blood results are sent first to the patient's own care team, and every doctor can see and release them, so the Medical Director and the rest of the team can cover leave and watch incoming results. Built.
+- The whole team sees each other's diaries, to coordinate appointments and find time to discuss a patient. Built.
+- Safeguarding alerts are read by doctors, nurses, health coaches, PAs and admins, because the admin team may be the first contact for a vulnerable patient. Only doctors add or close them. Built.
+- The care team stays on the Patient list. It says who looks after a patient and where results and alerts go first; it no longer limits who can open a record.
+- Not changed: SignatureRx prescribing stays with the doctors on the patient's care team, and the photo ID stays with PAs and admins.

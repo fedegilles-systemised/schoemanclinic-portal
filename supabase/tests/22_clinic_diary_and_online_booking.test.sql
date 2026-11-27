@@ -73,11 +73,11 @@ select pg_temp.become('a0000000-0000-4000-8000-000000000001');
 select is((select count(*)::int from public.clinic_diary(now(), now() + interval '7 days') where id = (select appointment_id from booked)), 1, 'the doctor booked sees her own booking');
 reset role;
 select pg_temp.become('a0000000-0000-4000-8000-000000000002');
-select is((select count(*)::int from public.clinic_diary(now(), now() + interval '7 days') where id = (select appointment_id from booked)), 0, 'another doctor does not');
-select is((select count(*)::int from public.clinic_diary(now(), now() + interval '7 days') where clinician_id is distinct from 'b0000000-0000-4000-8000-000000000002'), 0, 'a doctor sees only her own bookings');
+select is((select count(*)::int from public.clinic_diary(now(), now() + interval '7 days') where id = (select appointment_id from booked)), 1, 'another doctor sees it too (27 November 2026)');
+select cmp_ok((select count(*)::int from public.clinic_diary(now(), now() + interval '7 days') where clinician_id is distinct from 'b0000000-0000-4000-8000-000000000002'), '>', 0, 'and a doctor sees other clinicians'' bookings too');
 reset role;
 select pg_temp.become('a0000000-0000-4000-8000-000000000007');
-select is((select count(*)::int from public.clinic_diary(now(), now() + interval '7 days')), 0, 'a nurse with no bookings sees none');
+select cmp_ok((select count(*)::int from public.clinic_diary(now(), now() + interval '7 days')), '>', 0, 'a nurse with no bookings of her own sees every clinician''s');
 reset role;
 select pg_temp.become('a0000000-0000-4000-8000-000000000011');
 select throws_ok($$ select * from public.clinic_diary(now(), now() + interval '7 days') $$, '42501', null, 'a patient does not');
@@ -85,8 +85,9 @@ reset role;
 
 -- Moving: within hours, no overlap, by the team for patients they can open.
 select pg_temp.become('a0000000-0000-4000-8000-000000000002');
-select throws_ok($$ select public.move_appointment((select appointment_id from booked), 'b0000000-0000-4000-8000-000000000002', pg_temp.slot('15:00')) $$, '42501', null, 'a doctor outside the care team cannot move it');
+select lives_ok($$ select public.move_appointment((select appointment_id from booked), 'b0000000-0000-4000-8000-000000000002', pg_temp.slot('15:00')) $$, 'a doctor outside the care team can move it (27 November 2026)');
 reset role;
+select ok(not exists (select 1 from public.care_team where patient_id = (select patient_id from booked) and staff_id = 'b0000000-0000-4000-8000-000000000002'), 'but moving a booking to herself does not put a doctor on the care team');
 select pg_temp.become('a0000000-0000-4000-8000-000000000003');
 select throws_ok($$ select public.move_appointment((select appointment_id from booked), 'b0000000-0000-4000-8000-000000000001', pg_temp.slot('12:30')) $$, '23505', null, 'not onto another booking');
 select throws_ok($$ select public.move_appointment((select appointment_id from booked), 'b0000000-0000-4000-8000-000000000001', pg_temp.slot('19:30')) $$, '22023', null, 'not past the clinician''s hours');
