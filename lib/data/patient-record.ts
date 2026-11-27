@@ -214,8 +214,8 @@ export async function getClinicalSummary(patientId: string): Promise<{ allergies
 }
 
 /**
- * Safeguarding alerts: doctors only, by row-level security. Pass a patient for one record, or
- * nothing for every active alert on the doctor's own patients.
+ * Safeguarding alerts: read by doctors, nurses, health coaches, PAs and admins, by row-level security.
+ * Pass a patient for one record, or nothing for every active alert.
  */
 export async function getSafeguardingAlerts(patientId?: string): Promise<(SafeguardingRow & { patientId: string; patientName: string })[]> {
   const supabase = await createClient();

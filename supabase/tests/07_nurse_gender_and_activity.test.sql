@@ -46,9 +46,10 @@ create function t.p_eleanor() returns uuid language sql immutable as $$ select '
 select is((select clinical_role::text from public.staff_profiles where user_id = t.nora()), 'nurse', 'the seeded nurse has a staff profile');
 select is(t.val(t.nora(), 'select private.has_role(''nurse'')'), 'true', 'the nurse holds the nurse role');
 select is(t.val(t.nora(), 'select private.is_clinical_staff()'), 'true', 'a nurse is clinical staff');
-select is(t.val(t.nora(), 'select count(*) from public.patient_profiles'), '0', 'a nurse on no care team sees no patient');
-select is(t.val(t.nora(), 'select count(*) from public.lab_reports'), '0', 'or lab report');
-select is(t.val(t.nora(), 'select count(*) from public.results'), '0', 'a nurse sees no result');
+-- Since 27 November 2026 a nurse on no care team still opens every patient.
+select is(t.val(t.nora(), 'select count(*) from public.patient_profiles'), (select count(*)::text from public.patient_profiles), 'a nurse on no care team sees every patient');
+select is(t.val(t.nora(), 'select count(*) from public.lab_reports'), (select count(*)::text from public.lab_reports), 'and every lab report');
+select is(t.val(t.nora(), 'select count(*) from public.results'), (select count(*)::text from public.results), 'and every result');
 
 select lives_ok($$ insert into public.invitations (kind, email, role, invited_by, token_hash, expires_at)
   select 'team', 'new.nurse@example.test', 'nurse', s.id, repeat('a', 64), now() + interval '3 days'
@@ -78,7 +79,7 @@ select throws_ok($$ select t.val(t.priya(), format($q$ select public.log_record_
 
 select throws_ok($$ select t.val(t.eleanor(), format($q$ select public.log_record_view(%L, 'patient_profiles')::text $q$, t.p_eleanor())) $$, '42501', null, 'a patient cannot write to the log');
 select lives_ok($$ select t.val(t.admin(), format($q$ select public.log_record_view(%L, 'patient_profiles')::text $q$, t.p_eleanor())) $$, 'an admin opening a record is logged too');
-select throws_ok($$ select t.val(t.nora(), format($q$ select public.log_record_view(%L, 'patient_profiles')::text $q$, t.p_eleanor())) $$, '42501', null, 'a nurse on no care team cannot write to the log');
+select lives_ok($$ select t.val(t.nora(), format($q$ select public.log_record_view(%L, 'patient_profiles')::text $q$, t.p_eleanor())) $$, 'a nurse opening any patient''s record is logged too');
 select throws_ok($$ select t.val(t.priya(), format($q$ select public.log_record_view(%L, 'profiles')::text $q$, t.p_eleanor())) $$, '22023', null, 'only a patient record or a report can be named');
 select throws_ok($$ select t.val(null, format($q$ select public.log_record_view(%L, 'patient_profiles')::text $q$, t.p_eleanor())) $$, '42501', null, 'someone signed out cannot write to the log');
 

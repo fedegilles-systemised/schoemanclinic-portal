@@ -35,7 +35,7 @@ Use a fictional patient and an email address you can open.
 6. Open the **Activity** screen (admins) to see the opening of the ID and the check.
 7. In **Submitted forms** on the record, open the registration copy: the questions as asked and the answers.
 
-**What you should see:** a doctor or a health coach on the care team can read the details but cannot open the photo ID, and the patient cannot read it back.
+**What you should see:** a doctor or a health coach can read the details but cannot open the photo ID, and the patient cannot read it back.
 
 ## To confirm
 

@@ -22,17 +22,18 @@ select lives_ok(
 reset role;
 
 select pg_temp.become('a0000000-0000-4000-8000-000000000002');
-select throws_ok(
+-- Since 27 November 2026 any doctor records and hears any patient's call.
+select lives_ok(
   $$ insert into public.call_recordings (patient_id, recorded_by, storage_path) values ('d0000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000002', 'd0000000-0000-4000-8000-000000000001/other.webm') $$,
-  '42501', null, 'a doctor cannot record a patient she does not look after');
-select is((select count(*)::int from storage.objects where bucket_id = 'recordings'), 0, 'or hear their recordings');
+  'a doctor can record a patient who is not on her care team');
+select is((select count(*)::int from storage.objects where bucket_id = 'recordings'), 1, 'and hears the recordings');
 reset role;
 
 select pg_temp.become('a0000000-0000-4000-8000-000000000003');
 select throws_ok(
   $$ insert into public.call_recordings (patient_id, recorded_by, storage_path) values ('d0000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000003', 'd0000000-0000-4000-8000-000000000001/pa.webm') $$,
   '42501', null, 'a PA does not record calls');
-select is((select count(*)::int from public.call_recordings), 1, 'but reads the recordings of patients she can open');
+select is((select count(*)::int from public.call_recordings), 2, 'but reads the recordings of patients she can open');
 reset role;
 
 select pg_temp.become('a0000000-0000-4000-8000-000000000011');

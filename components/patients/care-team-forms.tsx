@@ -61,7 +61,7 @@ export function AddToCareTeamDialog({
         <DialogHeader>
           <DialogTitle>Add to the care team</DialogTitle>
           <DialogDescription>
-            {patientName}. Doctors, nurses and health coaches see only the patients whose care team they are on.
+            {patientName}. The care team says who looks after this patient. The whole team can open every record.
           </DialogDescription>
         </DialogHeader>
         <form action={action} className="flex flex-col gap-4">

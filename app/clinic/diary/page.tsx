@@ -12,7 +12,6 @@ import { Select } from "@/components/ui/select";
 import { getCurrentUser } from "@/lib/auth/session";
 import { addDays, dayHeading, isDay, londonInstant, mondayOf, todayInLondon, weekHeading } from "@/lib/calendar/time";
 import { getDiary, getDiaryPeople } from "@/lib/data/diary";
-import { getMyStaffId } from "@/lib/data/patient-record";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Diary · Clinic Hub" };
@@ -42,18 +41,10 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
   const today = todayInLondon();
   const date = isDay(query.date) ? query.date : today;
 
-  const [{ clinicians, locations }, myStaffId] = await Promise.all([getDiaryPeople(), getMyStaffId(user.id)]);
-  const mine = clinicians.find((c) => c.staffId === myStaffId);
-  // Admins and PAs see every clinician's diary; a doctor, nurse or health coach sees only their own
-  // (the clinic's decision of 12 November 2026; the database applies it too).
-  const seesAll = user.roles.some((r) => r === "admin" || r === "pa");
-  const staff = !seesAll
-    ? (mine?.staffId ?? "none")
-    : query.staff === "all"
-      ? "all"
-      : clinicians.some((c) => c.staffId === query.staff)
-        ? query.staff!
-        : "all";
+  const { clinicians, locations } = await getDiaryPeople();
+  // The whole team sees every clinician's diary (the clinic's decision of 27 November 2026, which
+  // replaced the one of 12 November; the database applies it too).
+  const staff = query.staff === "all" ? "all" : clinicians.some((c) => c.staffId === query.staff) ? query.staff! : "all";
   const location = locations.some((l) => l.id === query.location) ? query.location! : "all";
 
   const month = date.slice(0, 7);
@@ -62,7 +53,7 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
   const all = await getDiary(londonInstant(fromDay, "00:00"), londonInstant(toDay, "00:00"));
   const entries = all.filter((e) => (staff === "all" || e.clinicianId === staff) && (location === "all" || e.locationId === location || e.locationId === null));
   const shown = staff === "all" ? clinicians : clinicians.filter((c) => c.staffId === staff);
-  const legend = seesAll ? clinicians : shown;
+  const legend = clinicians;
 
   const step = (by: number) => (view === "day" ? addDays(date, by) : view === "week" ? addDays(date, 7 * by) : `${shiftMonth(month, by)}-01`);
   const params = (changes: Record<string, string>) => {
@@ -110,19 +101,17 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
         <form method="get" action="/clinic/diary" className="flex flex-wrap items-end gap-3">
           <input type="hidden" name="view" value={view} />
           <input type="hidden" name="date" value={date} />
-          {seesAll ? (
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="diary-staff">Clinician</Label>
-              <Select id="diary-staff" name="staff" defaultValue={staff}>
-                <option value="all">All clinicians</option>
-                {clinicians.map((c) => (
-                  <option key={c.staffId} value={c.staffId}>
-                    {c.name}
-                  </option>
-                ))}
-              </Select>
-            </div>
-          ) : null}
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="diary-staff">Clinician</Label>
+            <Select id="diary-staff" name="staff" defaultValue={staff}>
+              <option value="all">All clinicians</option>
+              {clinicians.map((c) => (
+                <option key={c.staffId} value={c.staffId}>
+                  {c.name}
+                </option>
+              ))}
+            </Select>
+          </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="diary-location">Location</Label>
             <Select id="diary-location" name="location" defaultValue={location}>
@@ -140,9 +129,7 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
         </form>
       </div>
 
-      {!seesAll && !mine ? (
-        <EmptyState>The diary shows your own bookings. You have none, as you are not a clinician who can be booked.</EmptyState>
-      ) : clinicians.length === 0 ? (
+      {clinicians.length === 0 ? (
         <EmptyState>No clinicians yet. Add their hours in Booking settings.</EmptyState>
       ) : (
         <div className="flex flex-col gap-4">

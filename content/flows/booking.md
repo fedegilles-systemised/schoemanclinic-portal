@@ -1,6 +1,6 @@
 ## What it does
 
-Clinic Hub holds the clinic's diary. Patients book with the clinicians on their care team, the team books for any patient they can open, and new patients book online from a public page. Each clinician's Google Calendar receives their bookings, with the clinic reference only.
+Clinic Hub holds the clinic's diary. Patients book with the clinicians on their care team, the team books for any patient, and new patients book online from a public page. Each clinician's Google Calendar receives their bookings, with the clinic reference only.
 
 - **No cancel or move button for patients.** The team moves or cancels a booking from the diary, and the patient is told. Messages ask the patient to contact the team and refer to the 48-hour policy.
 - **No-shows.** A doctor marks a visit as a no-show on their own diary; a PA or an admin can mark any. A wrong mark can be undone by a PA or an admin.
@@ -10,7 +10,7 @@ Clinic Hub holds the clinic's diary. Patients book with the clinicians on their 
 
 1. Each clinician sets their weekly hours, and an admin sets which appointment types are offered online, under **Booking settings**. A clinician connects their own Google Calendar under **My calendar**.
 2. A patient opens **Appointments** in the portal, chooses an appointment type and a clinician, and picks a free time inside that clinician's hours. They are sent a confirmation, which mentions the 48-hour policy.
-3. The team books from the **Diary** or from a patient's record. The diary shows every clinician's bookings by day, week or month, with a colour per clinician and filters by clinician and location. Admins and PAs see everyone. A doctor, a nurse or a health coach sees their own.
+3. The team books from the **Diary** or from a patient's record. The diary shows every clinician's bookings by day, week or month, with a colour per clinician and filters by clinician and location. Everyone on the team sees every clinician's bookings.
 4. A new patient opens the clinic's booking page, chooses the appointment type, a clinician or the first available, and a time, then gives their name, date of birth, email and mobile. Anyone already on the books, matched by email and date of birth, is booked on their own record and nothing they type changes it. Anyone else gets a new record.
 5. If the new record looks like someone already on the books, the team sees a warning with the likely record. Nobody is merged automatically. If it is a duplicate, the team archives the extra record.
 6. A new patient who booked online and has not been checked or invited two working days later is reminded to admins and PAs, once.
